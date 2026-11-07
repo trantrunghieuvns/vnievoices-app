@@ -1055,12 +1055,39 @@ def load_enrolled_into_engine(tts):
 TTS_INIT_LOCK = threading.Lock()
 
 
+def _deref_hf_symlinks():
+    if os.name == "nt":
+        return
+    hf_hub = Path.home() / ".cache" / "huggingface" / "hub"
+    if not hf_hub.exists():
+        return
+    for p in hf_hub.glob("models--*/snapshots/*/*"):
+        if p.is_symlink():
+            try:
+                target = p.resolve(strict=True)
+                p.unlink()
+                try:
+                    os.link(target, p)
+                except Exception:
+                    shutil.copy2(target, p)
+            except Exception:
+                pass
+
+
 def get_tts_engine():
     global TTS_ENGINE
     if TTS_ENGINE is not None:
         return TTS_ENGINE
     with TTS_INIT_LOCK:
         if TTS_ENGINE is None:
+            if os.name != "nt":
+                _deref_hf_symlinks()
+                import onnxruntime as ort
+                _orig_sess = ort.InferenceSession
+                def _patched_sess(path_or_bytes, *a, **kw):
+                    _deref_hf_symlinks()
+                    return _orig_sess(path_or_bytes, *a, **kw)
+                ort.InferenceSession = _patched_sess
             from vieneu import Vieneu
             enrolled_bak = REF_DIR / "voices_v3_turbo_enrolled.json"
             if enrolled_bak.exists():

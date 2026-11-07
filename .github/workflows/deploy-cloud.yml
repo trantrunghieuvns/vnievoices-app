@@ -1,26 +1,39 @@
-name: Deploy Vbee Studio 100% Cloud (Firebase Hosting + Cloud Run Compute)
+name: Deploy VnieVoices App 100% Cloud (GitHub Pages + Cloud Compute)
 
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   deploy-cloud:
     runs-on: ubuntu-latest
+    env:
+      HAS_GCP_KEY: ${{ secrets.GCP_SA_KEY != '' }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Authenticate to Google Cloud & Firebase
+      - name: Verify VnieVoices 64 Regional Voices Catalog & Cloud Assets
+        run: |
+          python3 -c "import json; d=json.load(open('voices_500_tvc.json')); assert len(d)>=44; print('Verified voices_500_tvc.json:', len(d))"
+
+      - name: Authenticate to Google Cloud & Firebase (When GCP_SA_KEY Configured)
+        if: env.HAS_GCP_KEY == 'true'
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Deploy Compute Backend (VieNeu-TTS-v3-turbo 48kHz) to Cloud Run
+      - name: Deploy Compute Backend to Cloud Run (When GCP_SA_KEY Configured)
+        if: env.HAS_GCP_KEY == 'true'
         uses: google-github-actions/deploy-cloudrun@v2
         with:
-          service: vbee-tts-compute
+          service: vnievoices-tts-compute
           region: asia-southeast1
           source: .
           flags: >-
@@ -32,7 +45,8 @@ jobs:
             --min-instances=0
             --max-instances=3
 
-      - name: Deploy Frontend to Firebase Hosting
+      - name: Deploy Frontend to Firebase Hosting (When GCP_SA_KEY Configured)
+        if: env.HAS_GCP_KEY == 'true'
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
