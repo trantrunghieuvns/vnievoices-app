@@ -12,3 +12,7 @@ voices_ref/*.webm
 voices_ref/archived_*.mp3
 netlify_site/previews/_archived_duplicates/
 .env
+
+github_oauth_code.txt
+github_oauth_device_state.json
+oauth_device_autopush.py

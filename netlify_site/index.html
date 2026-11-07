@@ -2621,7 +2621,7 @@
       function resolveMediaUrl(relPath) {
         if (!relPath) return "";
         if (relPath.startsWith("http://") || relPath.startsWith("https://")) return relPath;
-        if (relPath.startsWith("/previews/")) return relPath;
+        if (relPath.startsWith("/previews/")) return "." + relPath;
         return (apiBaseUrl || "") + relPath;
       }
 
