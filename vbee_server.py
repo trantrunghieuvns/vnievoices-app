@@ -1590,23 +1590,40 @@ def get_current_tunnel_url() -> str:
 
 
 def ensure_vbee_tunnel_daemon():
-    if not TUNNEL_EXE.exists() and CLOUDFLARED_SRC.exists():
-        try:
-            shutil.copy2(CLOUDFLARED_SRC, TUNNEL_EXE)
-        except Exception:
-            pass
+    tunnel_bin = TUNNEL_EXE if os.name == "nt" else (BASE_DIR / "cloudflared_linux")
+    if os.name == "nt":
+        if not tunnel_bin.exists() and CLOUDFLARED_SRC.exists():
+            try:
+                shutil.copy2(CLOUDFLARED_SRC, tunnel_bin)
+            except Exception:
+                pass
+    else:
+        if not tunnel_bin.exists():
+            try:
+                urllib.request.urlretrieve(
+                    "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64",
+                    str(tunnel_bin)
+                )
+                os.chmod(str(tunnel_bin), 0o755)
+            except Exception:
+                pass
 
     last_pub = ""
     while True:
         try:
-            if TUNNEL_EXE.exists():
-                out = subprocess.check_output(
-                    ["tasklist", "/FI", f"IMAGENAME eq {TUNNEL_EXE.name}"],
-                    text=True,
-                    creationflags=CREATE_NO_WINDOW,
-                    errors="ignore",
-                )
-                if TUNNEL_EXE.name not in out:
+            if tunnel_bin.exists():
+                if os.name == "nt":
+                    out = subprocess.check_output(
+                        ["tasklist", "/FI", f"IMAGENAME eq {tunnel_bin.name}"],
+                        text=True,
+                        creationflags=CREATE_NO_WINDOW,
+                        errors="ignore",
+                    )
+                    is_running = tunnel_bin.name in out
+                else:
+                    res_pg = subprocess.run(["pgrep", "-f", tunnel_bin.name], capture_output=True, text=True)
+                    is_running = res_pg.returncode == 0
+                if not is_running:
                     if TUNNEL_LOG.exists():
                         try:
                             TUNNEL_LOG.unlink()
@@ -1614,7 +1631,7 @@ def ensure_vbee_tunnel_daemon():
                             pass
                     subprocess.Popen(
                         [
-                            str(TUNNEL_EXE),
+                            str(tunnel_bin),
                             "tunnel",
                             "--url",
                             f"http://127.0.0.1:{PORT}",
