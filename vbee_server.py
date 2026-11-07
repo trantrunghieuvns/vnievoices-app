@@ -75,6 +75,16 @@ def clean_and_reword_book_text(text: str) -> dict:
     removed_junk = 0
     reworded_items = 0
 
+    # Strip any leaked internal placeholder tokens or legacy synthetic 'Nhận định lại...' lines
+    t, n_leak = re.subn(r"_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03", " ", t, flags=re.I)
+    t, n_nd = re.subn(
+        r"\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*",
+        "",
+        t,
+        flags=re.I,
+    )
+    removed_junk += (n_leak + n_nd)
+
     protected_tags = []
 
     def _handle_brackets(m):
@@ -83,7 +93,7 @@ def clean_and_reword_book_text(text: str) -> dict:
         if VALID_ACTING_TAG_RE.match(full_tag):
             idx = len(protected_tags)
             protected_tags.append(full_tag)
-            return f"__VBEE_ACT_TAG_{idx}__"
+            return f"\x02VBEEACT{idx}\x03"
         removed_junk += 1
         return " "
 
@@ -116,7 +126,7 @@ def clean_and_reword_book_text(text: str) -> dict:
     line_freq = {}
     for ln in raw_lines:
         s_ln = ln.strip()
-        if 1 <= len(s_ln) <= 85 and not s_ln.startswith(("__VBEE_ACT_TAG_", "-", "–", "—", "“", '"')):
+        if 1 <= len(s_ln) <= 85 and not s_ln.startswith(("\x02VBEEACT", "-", "–", "—", "“", '"')):
             line_freq[s_ln.lower()] = line_freq.get(s_ln.lower(), 0) + 1
 
     bookmark_line_re = re.compile(
@@ -249,7 +259,7 @@ def clean_and_reword_book_text(text: str) -> dict:
                         sent_end_count = 0
         if cur_para:
             p_str = " ".join(cur_para)
-            if not p_str.endswith((".", "!", "?", "…", "”", '"')) and not re.search(r"__VBEE_ACT_TAG_\d+__$", p_str):
+            if not p_str.endswith((".", "!", "?", "…", "”", '"')) and not re.search(r"\x02VBEEACT\d+\x03$", p_str):
                 p_str += "."
             reflowed_paras.append(p_str)
 
@@ -357,7 +367,9 @@ def clean_and_reword_book_text(text: str) -> dict:
     t = re.sub(r"\n{3,}", "\n\n", t).strip()
 
     for idx, val in enumerate(protected_tags):
-        t = t.replace(f"__VBEE_ACT_TAG_{idx}__", val)
+        t = t.replace(f"\x02VBEEACT{idx}\x03", val)
+
+    t = re.sub(r"_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03", " ", t, flags=re.I)
 
     return {
         "text": t.strip(),
@@ -434,8 +446,1197 @@ def extract_document_text(filename: str = "", content_b64: str = "", raw_text: s
     }
 
 
+# ── BILINGUAL ENGLISH & VIETNAMESE ANALYZER + PHONETIC TRANSCRIBER + URL ARTICLE EXTRACTOR ──────────
+# Linguistic Law: In Vietnamese orthography, syllables ending in stop consonants (-p, -t, -c, -ch)
+# NEVER occur without a tone mark (they must carry sắc or nặng). Only open/sonorant-final syllables can be unaccented.
+VN_NO_DIACRITIC_WORDS = {
+    "a", "ai", "am", "an", "anh", "ao", "au", "ay",
+    "ba", "bai", "ban", "bang", "bao", "bau", "bay",
+    "be", "ben", "benh", "bi", "bia", "bien", "bieu", "binh",
+    "bo", "boi", "bom", "bon", "bong", "bu", "bua", "bui", "bun", "bung", "buoi", "buon", "buong", "buu",
+    "ca", "cai", "cam", "can", "canh", "cao", "cau", "cay",
+    "cha", "chai", "cham", "chan", "chang", "chao", "chau", "chay",
+    "che", "chen", "cheo", "chi", "chia", "chiem", "chien", "chieu", "chim", "chin", "chinh",
+    "cho", "choi", "chom", "chon", "chong", "chu", "chua", "chui", "chum", "chung", "chuoi", "chuom", "chuon", "chuong", "chuyen",
+    "co", "coi", "com", "con", "cong", "cu", "cua", "cui", "cum", "cung", "cuoi", "cuon", "cuong", "cuu",
+    "da", "dai", "dam", "dan", "dang", "danh", "dao", "dau", "day",
+    "de", "dem", "den", "deo", "di", "dia", "diem", "dien", "dieu", "dinh",
+    "do", "doa", "doan", "doanh", "doi", "dom", "don", "dong", "du", "dua", "dui", "dum", "dun", "dung", "duoi", "duong",
+    "e", "em", "en", "eo",
+    "ga", "gai", "gam", "gan", "gang", "ganh", "gao", "gau", "gay",
+    "ghe", "ghem", "ghen", "gheo", "ghi", "ghim", "gia", "giai", "giam", "gian", "giang", "gianh", "giao", "giau", "giay",
+    "gie", "gieng", "gieu", "gin", "gio", "gioi", "gion", "giong", "giu", "giua", "giuong",
+    "go", "goi", "gom", "gon", "gong", "gu", "gui", "gum", "gung", "guom", "guong",
+    "ha", "hai", "ham", "han", "hang", "hanh", "hao", "hau", "hay",
+    "he", "hem", "hen", "heo", "hi", "hia", "hien", "hieu", "hinh", "hiu",
+    "ho", "hoa", "hoai", "hoan", "hoang", "hoanh", "hoi", "hom", "hon", "hong", "hu", "hua", "hui", "hum", "hung", "huong", "huou", "huu", "huy", "huyen", "huynh",
+    "i", "im", "in", "inh", "iu",
+    "ke", "kem", "ken", "kenh", "keo", "keu", "kha", "khai", "kham", "khan", "khang", "khanh", "khao", "khau", "khay",
+    "khe", "khem", "khen", "kheo", "kheu", "khi", "khia", "khiem", "khien", "khieu", "khinh", "khiu",
+    "kho", "khoa", "khoai", "khoan", "khoang", "khoanh", "khoe", "khoi", "khom", "khon", "khong", "khu", "khua", "khui", "khum", "khung", "khuon", "khuong", "khuu", "khuy", "khuya", "khuyen", "khuynh", "ki", "kia", "kiem", "kien", "kieu", "kim", "kin", "kinh",
+    "la", "lai", "lam", "lan", "lang", "lanh", "lao", "lau", "lay",
+    "le", "lem", "len", "lenh", "leo", "leu", "li", "lia", "liem", "lien", "lieu", "lim", "linh", "liu",
+    "lo", "loa", "loai", "loan", "loang", "loe", "loi", "lom", "lon", "long", "lu", "lua", "luan", "lui", "lum", "lun", "lung", "luoi", "luom", "luon", "luong", "luu", "luyen",
+    "ma", "mai", "mam", "man", "mang", "manh", "mao", "mau", "may",
+    "me", "mem", "men", "menh", "meo", "meu", "mi", "mia", "mieng", "mien", "mieu", "min", "minh", "miu",
+    "mo", "moi", "mom", "mon", "mong", "mu", "mua", "mui", "mum", "mun", "mung", "muoi", "muon", "muong", "muu", "my",
+    "na", "nai", "nam", "nan", "nang", "nanh", "nao", "nau", "nay",
+    "ne", "nem", "nen", "nenh", "neo", "neu", "nga", "ngai", "ngam", "ngan", "ngang", "nganh", "ngao", "ngau", "ngay",
+    "nghe", "nghen", "ngheng", "ngheo", "ngheu", "nghi", "nghia", "nghiem", "nghien", "nghieu", "nghin", "nghiu",
+    "ngo", "ngoa", "ngoai", "ngoan", "ngoang", "ngoe", "ngoi", "ngom", "ngon", "ngong", "ngu", "ngua", "ngui", "ngum", "ngun", "ngung", "nguoi", "nguong", "nguu", "nguy", "nguyen",
+    "nha", "nhai", "nham", "nhan", "nhang", "nhanh", "nhao", "nhau", "nhay",
+    "nhe", "nhem", "nhen", "nheo", "nhi", "nhia", "nhiem", "nhien", "nhieu", "nhim", "nhin", "nhinh", "nhiu",
+    "nho", "nhoa", "nhoai", "nhoan", "nhoang", "nhoe", "nhoi", "nhom", "nhon", "nhong", "nhu", "nhua", "nhui", "nhum", "nhun", "nhung", "nhuoi", "nhuom", "nhuon", "nhuong", "nhuy", "ni", "nia", "niem", "nien", "nieu", "nim", "ninh", "niu",
+    "no", "noi", "nom", "non", "nong", "nu", "nua", "nui", "num", "nung", "nuoi", "nuong", "nuu",
+    "o", "oa", "oai", "oan", "oang", "oanh", "oe", "oi", "om", "on", "ong",
+    "pha", "phai", "pham", "phan", "phang", "phanh", "phao", "phau", "phay",
+    "phe", "phen", "pheo", "phi", "phia", "phiem", "phien", "phieu", "phim", "phin", "phinh", "phiu",
+    "pho", "phoi", "phom", "phon", "phong", "phu", "phua", "phui", "phun", "phung", "phuong",
+    "qua", "quai", "quam", "quan", "quang", "quanh", "quao", "quau", "quay",
+    "que", "quen", "queo", "qui", "quoi", "quon", "quy", "quyen", "quynh",
+    "ra", "rai", "ram", "ran", "rang", "ranh", "rao", "rau", "ray",
+    "re", "rem", "ren", "reng", "reo", "reu", "ri", "ria", "rieng", "rieu", "rim", "rinh", "riu",
+    "ro", "roa", "roai", "roan", "roang", "roi", "rom", "ron", "rong", "ru", "rua", "rui", "rum", "run", "rung", "ruoi", "ruom", "ruon", "ruong",
+    "sa", "sai", "sam", "san", "sang", "sanh", "sao", "sau", "say",
+    "se", "sem", "sen", "seo", "si", "sia", "siem", "sien", "sieu", "sim", "sinh", "siu",
+    "so", "soa", "soai", "soan", "soang", "soi", "som", "son", "song", "su", "sua", "sui", "sum", "sun", "sung", "suoi", "suon", "suong", "suu", "suy", "suyen",
+    "ta", "tai", "tam", "tan", "tang", "tanh", "tao", "tau", "tay",
+    "te", "tem", "ten", "tenh", "teo", "teu", "tha", "thai", "tham", "than", "thang", "thanh", "thao", "thau", "thay",
+    "the", "them", "then", "thenh", "theo", "theu", "thi", "thia", "thiem", "thien", "thieu", "thim", "thin", "thinh", "thiu",
+    "tho", "thoa", "thoai", "thoan", "thoang", "thoi", "thom", "thon", "thong", "thu", "thua", "thuan", "thui", "thum", "thun", "thung", "thuoi", "thuom", "thuon", "thuong", "thuy", "thuyen",
+    "ti", "tia", "tiem", "tien", "tieu", "tim", "tin", "tinh", "tiu",
+    "to", "toa", "toai", "toan", "toang", "toe", "toi", "tom", "ton", "tong", "tra", "trai", "tram", "tran", "trang", "tranh", "trao", "trau", "tray",
+    "tre", "trem", "tren", "treo", "treu", "tri", "tria", "triem", "trien", "trieu", "trinh", "triu",
+    "tro", "troi", "trom", "tron", "trong", "tru", "trua", "trui", "trum", "trun", "trung", "truoi", "truon", "truong", "truyen", "truy",
+    "tu", "tua", "tuan", "tui", "tum", "tun", "tung", "tuoi", "tuom", "tuon", "tuong", "tuu", "tuy", "tuyen", "tuyn",
+    "u", "ua", "uan", "uang", "ui", "um", "un", "ung", "uoi", "uom", "uon", "uong", "uu", "uy", "uyen",
+    "va", "vai", "vam", "van", "vang", "vanh", "vao", "vau", "vay",
+    "ve", "vem", "ven", "venh", "veo", "veu", "vi", "via", "viem", "vien", "vieu", "vim", "vin", "vinh", "viu",
+    "vo", "voi", "vom", "von", "vong", "vu", "vua", "vui", "vum", "vun", "vung", "vuoi", "vuon", "vuong",
+    "xa", "xai", "xam", "xan", "xang", "xanh", "xao", "xau", "xay",
+    "xe", "xem", "xen", "xeng", "xeo", "xeu", "xi", "xia", "xiem", "xien", "xieu", "xim", "xin", "xinh", "xiu",
+    "xo", "xoa", "xoai", "xoan", "xoang", "xoe", "xoi", "xom", "xon", "xong", "xu", "xua", "xuan", "xui", "xum", "xun", "xung", "xuoi", "xuom", "xuong", "xuy", "xuyen",
+    "y", "ia", "iem", "ien", "ieu", "im", "in", "inh", "iu", "ya", "yen", "yeu",
+}
+
+# Words that exist in both VN_NO_DIACRITIC_WORDS and basic English; when adjacent to English tokens or in an English clause, read as English!
+AMBIGUOUS_EN_VN_MAP = {
+    "to": "tu", "do": "đu", "go": "gâu", "so": "xâu", "no": "nâu",
+    "he": "hi", "me": "mi", "be": "bi", "my": "mai", "in": "in",
+    "on": "on", "an": "ân", "am": "em", "can": "ken", "man": "men",
+    "men": "men", "way": "guây", "day": "đây", "may": "mây", "say": "xây",
+    "pay": "pây", "lay": "lây", "ray": "rây", "bay": "bây", "run": "răn",
+    "sun": "săn", "fun": "phăn", "win": "uyn", "pin": "pin", "fan": "phen",
+    "ban": "ben", "van": "ven", "pan": "pen", "tan": "ten", "son": "săn",
+    "ton": "tăn", "won": "guân", "see": "xi", "sea": "xi", "tea": "ti",
+    "key": "ki", "fee": "phi", "bee": "bi", "too": "tu", "zoo": "du",
+    "who": "hu", "two": "tu", "one": "guăn", "ten": "ten", "six": "xích",
+    "now": "nao", "how": "hao", "low": "lâu", "row": "râu", "bow": "bâu",
+    "new": "niu", "few": "phiu", "law": "lo", "raw": "ro", "saw": "xo",
+    "war": "guo", "car": "ca", "bar": "ba", "far": "pha", "star": "sờ ta",
+    "air": "e", "ear": "ia", "eye": "ai", "age": "ây", "ice": "ai",
+    "use": "diu", "ask": "át", "end": "en", "old": "ôn", "own": "ôn",
+    "buy": "bai", "try": "trai", "fly": "phờ lai", "sky": "sờ cai", "dry": "đờ rai",
+}
+
+CURATED_EN_PHRASES = [
+    (r"\bPersonal\s+Finance\b", "Pơ sơ nồ Phai nen"),
+    (r"\bMiddle\s+Management\b", "Mít đồ Ma nít mần"),
+    (r"\bQuiet\s+Firing\b", "Khoai ợt Phai ơ ring"),
+    (r"\bQuiet\s+Quitting\b", "Khoai ợt Khuýt tinh"),
+    (r"\bSystem\s+Architecture\b", "Xít tầm Ác ki tếch chờ"),
+    (r"\bBeginner's\s+Mind\b", "Bì ghin nờ Mai"),
+    (r"\bArtificial\s+Intelligence\b", "A ti phi sồ In teo li dần"),
+    (r"\bMachine\s+Learning\b", "Mờ sin Lơ ninh"),
+    (r"\bDeep\s+Learning\b", "Đíp Lơ ninh"),
+    (r"\bLarge\s+Language\s+Models?\b", "Lạc Leng guýt Mô đồ"),
+    (r"\bNew\s+York\b", "Niu I óc"),
+    (r"\bWall\s+Street\b", "Phố Guôn"),
+    (r"\bSilicon\s+Valley\b", "Thung lũng Si li con"),
+    (r"\bWhite\s+House\b", "Nhà Trắng"),
+    (r"\bUnited\s+States\b", "Hoa Kỳ"),
+    (r"\bReal\s+Estate\b", "Riu Ét tây"),
+    (r"\bSupply\s+Chain\b", "Sắp pờ lai Chên"),
+    (r"\bCustomer\s+Experience\b", "Cắt tơ mơ Ích pi ri ần"),
+    (r"\bUser\s+Experience\b", "Diu dơ Ích pi ri ần"),
+    (r"\bUser\s+Interface\b", "Diu dơ In tơ phây"),
+    (r"\bKey\s+Visual\b", "Ki Vi duồ"),
+    (r"\bSocial\s+Media\b", "Xô sồ Mi đi a"),
+    (r"\bContent\s+Creator\b", "Con ten Cờ ri ây tờ"),
+    (r"\bBig\s+Data\b", "Bích Đây ta"),
+    (r"\bCloud\s+Computing\b", "Cờ lao Com piu tinh"),
+    (r"\bOpen\s+Source\b", "Ô pần Xoọc"),
+]
+
+CURATED_EN_WORDS = {
+    "ai": "ây ai",
+    "api": "ây pi ai",
+    "app": "áp",
+    "apps": "áp",
+    "apple": "áp pồ",
+    "amazon": "a ma don",
+    "anthropic": "an thờ rô pích",
+    "algorithm": "an gô ri đầm",
+    "analytics": "a na li tích",
+    "architecture": "ác ki tếch chờ",
+    "automation": "o tô mây sần",
+    "backend": "bách en",
+    "benchmark": "ben mác",
+    "bitcoin": "bít coi",
+    "blockchain": "bờ lốc chên",
+    "brand": "bờ ren",
+    "branding": "bờ ren đinh",
+    "brief": "bờ ríp",
+    "browser": "bờ rao dơ",
+    "budget": "bắt giệt",
+    "business": "bít nít",
+    "cache": "cát",
+    "campaign": "cam pên",
+    "capone": "ca pôn",
+    "carnegie": "ca nê ghi",
+    "cashflow": "cát phờ lâu",
+    "ceo": "xi i ô",
+    "cfo": "xi ép ô",
+    "chatgpt": "chát gi pi ti",
+    "chicago": "si ca gô",
+    "chip": "chíp",
+    "claude": "cờ lốt",
+    "client": "cờ lai ần",
+    "cloud": "cờ lao",
+    "code": "cốt",
+    "coding": "cốt đinh",
+    "concept": "con xép",
+    "content": "con ten",
+    "copyright": "cóp pi rai",
+    "core": "co",
+    "corporate": "co pơ rết",
+    "cpu": "xi pi iu",
+    "creator": "cờ ri ây tờ",
+    "crowley": "cờ rao li",
+    "crypto": "cờ ríp tô",
+    "cyber": "sai bơ",
+    "dale": "đêu",
+    "dashboard": "đát bo",
+    "data": "đây ta",
+    "database": "đây ta bây",
+    "deadline": "đét lai",
+    "debug": "đì bấc",
+    "deep": "đíp",
+    "default": "đì phôn",
+    "demo": "đề mô",
+    "deploy": "đì pờ loi",
+    "deployment": "đì pờ loi mần",
+    "design": "đì zai",
+    "designer": "đì zai nơ",
+    "developer": "đì ve lốp pơ",
+    "devops": "đép óp",
+    "digital": "đi gi tồ",
+    "docker": "đóc cơ",
+    "domain": "đô mên",
+    "download": "đao lốt",
+    "ecosystem": "i cô xít tầm",
+    "edison": "ê đi xơn",
+    "email": "i mêu",
+    "empathetic": "em pa thê tích",
+    "empire": "em pai ờ",
+    "engine": "en gin",
+    "engineer": "en gi nia",
+    "engineering": "en gi nia ring",
+    "enterprise": "en tơ pờ rai",
+    "facebook": "phây búc",
+    "feature": "phi chờ",
+    "feedback": "phít bách",
+    "file": "phai",
+    "finance": "phai nen",
+    "fintech": "phin tếch",
+    "firewall": "phai ơ guôn",
+    "firmware": "phơm que",
+    "focus": "phô cớt",
+    "folder": "phôn đơ",
+    "format": "pho mát",
+    "founder": "phao đơ",
+    "framework": "phờ rêm guốc",
+    "franklin": "phờ răng cờ lin",
+    "freelance": "phờ ri len",
+    "freelancer": "phờ ri len xơ",
+    "frontend": "phờ răn en",
+    "fullstack": "phun sờ tách",
+    "function": "phăng sần",
+    "game": "ghêm",
+    "gaming": "ghêm minh",
+    "gdp": "gi đi pi",
+    "gemini": "giê mi nai",
+    "github": "ghít hấp",
+    "global": "gờ lô bồ",
+    "google": "gu gồ",
+    "gpu": "gi pi iu",
+    "growth": "gờ râu",
+    "hacker": "hách cơ",
+    "hardware": "hát que",
+    "hashtag": "hát tác",
+    "highlight": "hai lai",
+    "holding": "hâu đinh",
+    "hollywood": "ho li út",
+    "hosting": "hốt tinh",
+    "hotline": "hót lai",
+    "hybrid": "hai bờ rít",
+    "idea": "ai đia",
+    "impact": "im pách",
+    "import": "im pọt",
+    "index": "in đếch",
+    "influencer": "in phờ lu ân xơ",
+    "innovation": "in nô vây sần",
+    "insight": "in sai",
+    "instagram": "in sờ ta gờ ram",
+    "interface": "in tơ phây",
+    "internet": "in tơ nét",
+    "invest": "in vét",
+    "investment": "in vét mần",
+    "investor": "in vét tơ",
+    "iphone": "ai phôn",
+    "issue": "ít siu",
+    "java": "gia va",
+    "javascript": "gia va sờ cờ ríp",
+    "job": "gióp",
+    "key": "ki",
+    "keyword": "ki guốc",
+    "koc": "ây ô xi",
+    "kol": "ây ô eo",
+    "kpi": "cây pi ai",
+    "laptop": "láp tóp",
+    "launch": "lon",
+    "layout": "lây ao",
+    "lead": "lít",
+    "leader": "lít đơ",
+    "leadership": "lít đơ síp",
+    "learning": "lơ ninh",
+    "level": "le vồ",
+    "lifestyle": "lai sờ tai",
+    "lincoln": "lin côn",
+    "link": "linh",
+    "linkedin": "linh in",
+    "linux": "li nức",
+    "live": "lai",
+    "livestream": "lai chim",
+    "local": "lô cồ",
+    "logic": "lô gíc",
+    "login": "lốc in",
+    "logo": "lô gô",
+    "luxury": "lắc xơ ri",
+    "macbook": "mác búc",
+    "machine": "mờ sin",
+    "management": "ma nít mần",
+    "manager": "ma nít giơ",
+    "margin": "ma gin",
+    "market": "ma kịt",
+    "marketing": "ma két tinh",
+    "master": "mát tơ",
+    "matrix": "mây trích",
+    "media": "mi đi a",
+    "meeting": "mít tinh",
+    "memory": "me mô ri",
+    "mentor": "men tơ",
+    "meta": "mê ta",
+    "metric": "mê trích",
+    "micro": "mai cờ rô",
+    "microsoft": "mai cờ rô xóp",
+    "middle": "mít đồ",
+    "mindset": "mai xét",
+    "mini": "mi ni",
+    "mobile": "mô bai",
+    "mode": "mốt",
+    "model": "mô đồ",
+    "modern": "mô đần",
+    "module": "mô đun",
+    "money": "măn ni",
+    "monitor": "mô ni tơ",
+    "native": "nây típ",
+    "network": "nét guốc",
+    "networking": "nét guốc kinh",
+    "news": "niu",
+    "next": "nếch",
+    "niche": "nít",
+    "node": "nốt",
+    "note": "nốt",
+    "nvidia": "en vi đi a",
+    "office": "óp phít",
+    "offline": "óp lai",
+    "ok": "ô kê",
+    "okay": "ô kê",
+    "onboarding": "on bo đinh",
+    "online": "on lai",
+    "open": "ô pần",
+    "openai": "ô pần ây ai",
+    "operation": "óp pơ rây sần",
+    "optimize": "óp ti mai",
+    "option": "óp sần",
+    "order": "o đơ",
+    "organic": "o ga ních",
+    "output": "ao pút",
+    "outsource": "ao xoọc",
+    "package": "pách kịt",
+    "page": "pây",
+    "panel": "pa nồ",
+    "partner": "pát nơ",
+    "J.P.": "giây pi",
+    "password": "pát guốc",
+    "pattern": "pát tần",
+    "payload": "pây lốt",
+    "payment": "pây mần",
+    "pdf": "pi đi ép",
+    "performance": "pơ pho mần",
+    "personal": "pơ sơ nồ",
+    "pipeline": "pai lai",
+    "pitch": "pít",
+    "pixel": "pích xeo",
+    "plan": "pờ len",
+    "planning": "pờ len ninh",
+    "platform": "pờ lát phom",
+    "play": "pờ lây",
+    "plugin": "pờ lắc in",
+    "plus": "pờ lớt",
+    "podcast": "pót cát",
+    "point": "poi",
+    "policy": "po li xi",
+    "popup": "póp ắp",
+    "portal": "po tồ",
+    "portfolio": "pọt phô li ô",
+    "post": "pốt",
+    "power": "pao ơ",
+    "premium": "pờ ri mi um",
+    "preset": "pờ ri xét",
+    "preview": "pờ ri viu",
+    "price": "pờ rai",
+    "pricing": "pờ rai xinh",
+    "private": "pờ rai vợt",
+    "pro": "pờ rô",
+    "process": "pờ rô xét",
+    "product": "pờ rô đắc",
+    "production": "pờ rô đắc sần",
+    "profile": "pờ rô phai",
+    "program": "pờ rô gờ ram",
+    "project": "pờ rô giếch",
+    "prompt": "pờ rom",
+    "protocol": "pờ rô tô côn",
+    "proxy": "pờ róc xi",
+    "public": "pắp lích",
+    "python": "pai thon",
+    "quality": "qua li ti",
+    "query": "que ri",
+    "queue": "khiu",
+    "quiet": "khoai ợt",
+    "quote": "cuốt",
+    "radar": "ra đa",
+    "radio": "ra đi ô",
+    "ranking": "răng kinh",
+    "rate": "rây",
+    "rating": "rây tinh",
+    "react": "ri ách",
+    "realtime": "riu tai",
+    "record": "rì coọc",
+    "recording": "rì coọc đinh",
+    "refactor": "rì phách tơ",
+    "release": "rì li",
+    "reload": "rì lốt",
+    "remote": "rì mốt",
+    "render": "ren đơ",
+    "rendering": "ren đơ ring",
+    "report": "rì pọt",
+    "request": "rì quét",
+    "research": "rì xớt",
+    "reset": "rì xét",
+    "resource": "rì xoọc",
+    "response": "rì sờ pon",
+    "retail": "rì têu",
+    "return": "rì tơn",
+    "revenue": "re vơ niu",
+    "review": "ri viu",
+    "reword": "rì guốc",
+    "rewording": "rì guốc đinh",
+    "risk": "rít",
+    "roadmap": "rốt máp",
+    "robot": "rô bốt",
+    "rockefeller": "rốc phe lơ",
+    "roi": "a ô ai",
+    "role": "râu",
+    "roosevelt": "ru dơ ven",
+    "route": "rút",
+    "router": "rao tơ",
+    "runtime": "răn tai",
+    "saas": "xát",
+    "sale": "sêu",
+    "sales": "sêu",
+    "sample": "xam pồ",
+    "scale": "sờ kêu",
+    "scaling": "sờ kêu linh",
+    "scan": "sờ can",
+    "scene": "xin",
+    "schedule": "sờ ke điu",
+    "schema": "sờ ki ma",
+    "Schwab": "sờ oáp",
+    "schwab": "sờ oáp",
+    "score": "sờ co",
+    "screen": "sờ cờ rin",
+    "script": "sờ cờ ríp",
+    "scroll": "sờ cờ rôn",
+    "search": "xớt",
+    "section": "xếch sần",
+    "security": "xì kiu ri ti",
+    "segment": "xéc mần",
+    "select": "xì lếch",
+    "senior": "xi ni ơ",
+    "sensor": "xen xơ",
+    "seo": "ét i ô",
+    "series": "xê ri",
+    "server": "xơ vơ",
+    "service": "xơ vịt",
+    "session": "xét sần",
+    "set": "xét",
+    "setting": "xét tinh",
+    "setup": "xét ắp",
+    "share": "se",
+    "shift": "síp",
+    "shock": "sốc",
+    "shop": "sóp",
+    "shopee": "sóp pi",
+    "shopping": "sóp ping",
+    "short": "soọt",
+    "show": "sô",
+    "showroom": "sô rum",
+    "signal": "xích nồ",
+    "simple": "xim pồ",
+    "single": "xinh gồ",
+    "site": "sai",
+    "size": "sai",
+    "skill": "sờ kiu",
+    "slide": "sờ lai",
+    "slider": "sờ lai đơ",
+    "smart": "sờ mát",
+    "smartphone": "sờ mát phôn",
+    "smooth": "sờ mút",
+    "snapshot": "sờ náp soọt",
+    "social": "xô sồ",
+    "socket": "xóc kịt",
+    "software": "xóp que",
+    "solution": "xô lu sần",
+    "sound": "xao",
+    "source": "xoọc",
+    "spa": "sờ pa",
+    "space": "sờ pây",
+    "spam": "sờ pam",
+    "speaker": "sờ pích cơ",
+    "special": "sờ pe sồ",
+    "speed": "sờ pít",
+    "sprint": "sờ pờ rin",
+    "sql": "ét quy eo",
+    "stable": "sờ tây bồ",
+    "stack": "sờ tách",
+    "staff": "sờ táp",
+    "stage": "sờ tây",
+    "standard": "sờ tan đớt",
+    "start": "sờ tát",
+    "startup": "sờ tát ắp",
+    "state": "sờ tây",
+    "status": "sờ ta tớt",
+    "step": "sờ tép",
+    "stock": "sờ tóc",
+    "stop": "sờ tốp",
+    "storage": "sờ to rịt",
+    "store": "sờ to",
+    "story": "sờ to ri",
+    "storytelling": "sờ to ri teo linh",
+    "strategy": "sờ tra tê gi",
+    "stream": "sờ chim",
+    "streaming": "sờ chim minh",
+    "stress": "sờ trét",
+    "string": "sờ trinh",
+    "structure": "sờ trắc chờ",
+    "studio": "sờ tu đi ô",
+    "style": "sờ tai",
+    "submit": "sắp mít",
+    "summary": "xăm mơ ri",
+    "super": "xu pơ",
+    "support": "sắp pọt",
+    "survey": "xơ vây",
+    "switch": "sờ uýt",
+    "sync": "xinh",
+    "system": "xít tầm",
+    "tab": "táp",
+    "table": "tây bồ",
+    "tablet": "táp lẹt",
+    "tag": "tác",
+    "talent": "ta lần",
+    "target": "ta ghẹt",
+    "task": "tát",
+    "team": "tim",
+    "teamwork": "tim guốc",
+    "tech": "tếch",
+    "techcombank": "tếch com băng",
+    "technology": "tếch nô lô gi",
+    "telegram": "tê lê gờ ram",
+    "template": "tem pờ lết",
+    "terminal": "tơ mi nồ",
+    "test": "tét",
+    "testing": "tét tinh",
+    "text": "tếch",
+    "theme": "thim",
+    "thread": "thờ rét",
+    "threads": "thờ rét",
+    "ticket": "tích kịt",
+    "tiktok": "tíc tóc",
+    "time": "tai",
+    "timeline": "tai lai",
+    "timeout": "tai ao",
+    "timer": "tai mơ",
+    "tip": "típ",
+    "tips": "típ",
+    "title": "tai tồ",
+    "token": "tô cần",
+    "tool": "tun",
+    "tools": "tun",
+    "top": "tóp",
+    "topic": "tóp pích",
+    "total": "tô tồ",
+    "touch": "tắt",
+    "tour": "tua",
+    "track": "trách",
+    "tracking": "trách kinh",
+    "trade": "trây",
+    "trader": "trây đơ",
+    "trading": "trây đinh",
+    "traffic": "tra phích",
+    "trailer": "trây lơ",
+    "train": "trên",
+    "trainer": "trên nơ",
+    "training": "trên ninh",
+    "transfer": "tran phơ",
+    "transform": "tran phom",
+    "trend": "tren",
+    "trending": "tren đinh",
+    "trial": "trai ồ",
+    "trigger": "trích gơ",
+    "trust": "trớt",
+    "tunnel": "tăn nồ",
+    "turbo": "tuốc bô",
+    "tutorial": "tiu to ri ồ",
+    "tvc": "ti vi xi",
+    "type": "tai",
+    "ui": "iu ai",
+    "ultra": "un tra",
+    "unit": "iu nịt",
+    "update": "ắp đết",
+    "upgrade": "ắp gờ rết",
+    "upload": "ắp lốt",
+    "url": "iu a eo",
+    "usb": "iu ét bi",
+    "usd": "đô la mỹ",
+    "user": "diu dơ",
+    "ux": "iu ích",
+    "value": "va liu",
+    "vector": "véc tơ",
+    "version": "vơ sần",
+    "vest": "vét",
+    "vibe": "vai",
+    "video": "vi đê ô",
+    "vietcombank": "việt com băng",
+    "vietinbank": "việt tin băng",
+    "view": "viu",
+    "viewer": "viu ơ",
+    "villa": "vi la",
+    "vinamilk": "vi na miu",
+    "vinhomes": "vin hôm",
+    "vip": "víp",
+    "viral": "vai rồ",
+    "virtual": "vơ chuồ",
+    "vision": "vi sần",
+    "visual": "vi duồ",
+    "vlog": "vê lốc",
+    "vlogger": "vê lốc gơ",
+    "voice": "voi",
+    "volume": "vô lum",
+    "voucher": "vao chờ",
+    "vpbank": "vi pi băng",
+    "vr": "vi a",
+    "vtv": "vê tê vê",
+    "vtv1": "vê tê vê một",
+    "htv": "hát tê vê",
+    "htv7": "hát tê vê bảy",
+    "htv9": "hát tê vê chín",
+    "wallet": "gua lẹt",
+    "washington": "oa sinh tơn",
+    "watermark": "gua tơ mác",
+    "web": "guép",
+    "webcam": "guép cam",
+    "webinar": "guép bi na",
+    "website": "guép sai",
+    "wechat": "uy chát",
+    "widget": "uýt giệt",
+    "wifi": "oai phai",
+    "wiki": "uy ki",
+    "wikipedia": "uy ki pi đi a",
+    "william": "uy li am",
+    "window": "uyn đâu",
+    "windows": "uyn đâu",
+    "wireframe": "oai phờ rêm",
+    "work": "guốc",
+    "worker": "guốc cơ",
+    "workflow": "guốc phờ lâu",
+    "working": "guốc kinh",
+    "workshop": "guốc sóp",
+    "workspace": "guốc sờ pây",
+    "world": "guôn",
+    "youtube": "diu túp",
+    "youtuber": "diu túp bơ",
+    "zalo": "da lô",
+    "zero": "di rô",
+    "zone": "dôn",
+    "zoom": "dum",
+}
+
+_CMU_DICT_CACHE = None
+
+
+def get_cmu_dict() -> dict:
+    global _CMU_DICT_CACHE
+    if _CMU_DICT_CACHE is None:
+        try:
+            import cmudict
+            _CMU_DICT_CACHE = cmudict.dict()
+        except Exception:
+            _CMU_DICT_CACHE = {}
+    return _CMU_DICT_CACHE
+
+
+ARPABET_VOWELS = {
+    "AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW"
+}
+ARPABET_VOWEL_MAP = {
+    "AA": "a", "AE": "e", "AH": "ơ", "AO": "o", "AW": "ao", "AY": "ai",
+    "EH": "e", "ER": "ơ", "EY": "ây", "IH": "i", "IY": "i",
+    "OW": "âu", "OY": "oi", "UH": "u", "UW": "u",
+}
+ARPABET_ONSET_MAP = {
+    "B": "b", "CH": "ch", "D": "đ", "DH": "đ", "F": "ph", "G": "g", "HH": "h",
+    "JH": "gi", "K": "c", "L": "l", "M": "m", "N": "n", "NG": "ng", "P": "p",
+    "R": "r", "S": "x", "SH": "s", "T": "t", "TH": "th", "V": "v", "W": "gu",
+    "Y": "di", "Z": "d", "ZH": "gi",
+}
+ARPABET_CODA_MAP = {
+    "M": "m", "N": "n", "NG": "ng", "P": "p", "T": "t", "K": "c",
+    "B": "p", "D": "t", "G": "c", "CH": "ch", "JH": "ch", "F": "p", "V": "p",
+}
+ARPABET_SYLLABLE_FALLBACK = {
+    "B": "bờ", "CH": "chờ", "D": "đờ", "DH": "đờ", "F": "phờ", "G": "gờ", "HH": "hờ",
+    "JH": "giơ", "K": "cờ", "L": "lồ", "M": "mờ", "N": "nờ", "NG": "ngờ", "P": "pờ",
+    "R": "rờ", "S": "xờ", "SH": "sờ", "T": "tờ", "TH": "thờ", "V": "vờ", "W": "gu",
+    "Y": "di", "Z": "dờ", "ZH": "giơ",
+}
+
+
+def arpabet_to_vn(phones: list) -> str:
+    clean_p = [re.sub(r"\d+", "", p) for p in phones]
+    syllables = []
+    i = 0
+    n = len(clean_p)
+    while i < n:
+        onset = []
+        while i < n and clean_p[i] not in ARPABET_VOWELS:
+            onset.append(clean_p[i])
+            i += 1
+        if i >= n:
+            for c in onset:
+                if c in ARPABET_SYLLABLE_FALLBACK and c not in ("R",):
+                    syllables.append(ARPABET_SYLLABLE_FALLBACK[c])
+            break
+        v = clean_p[i]
+        i += 1
+        coda = []
+        while i < n and clean_p[i] not in ARPABET_VOWELS:
+            if i + 1 < n and clean_p[i + 1] in ARPABET_VOWELS:
+                break
+            if i + 2 < n and clean_p[i + 2] in ARPABET_VOWELS and clean_p[i + 1] in ("L", "R", "W", "Y"):
+                break
+            coda.append(clean_p[i])
+            i += 1
+        if len(onset) > 1:
+            for c in onset[:-1]:
+                if c in ARPABET_SYLLABLE_FALLBACK:
+                    syllables.append(ARPABET_SYLLABLE_FALLBACK[c])
+            onset_c = onset[-1]
+        elif len(onset) == 1:
+            onset_c = onset[0]
+        else:
+            onset_c = ""
+        vn_on = ARPABET_ONSET_MAP.get(onset_c, "")
+        vn_v = ARPABET_VOWEL_MAP.get(v, "ơ")
+        if vn_on == "c" and vn_v.startswith(("e", "i", "ê")):
+            vn_on = "k"
+        elif vn_on == "g" and vn_v.startswith(("e", "i", "ê")):
+            vn_on = "gh"
+        elif vn_on == "ng" and vn_v.startswith(("e", "i", "ê")):
+            vn_on = "ngh"
+        elif vn_on == "gu" and vn_v.startswith(("u", "o", "ô", "ơ")):
+            vn_on = "g"
+        elif vn_on == "di" and vn_v.startswith("i"):
+            vn_on = "d"
+        vn_co = ""
+        if coda:
+            c0 = coda[0]
+            if c0 in ARPABET_CODA_MAP and vn_v in ("a", "e", "i", "o", "u", "ơ"):
+                vn_co = ARPABET_CODA_MAP[c0]
+                if vn_co in ("p", "t", "c", "ch"):
+                    acute = {"a": "á", "e": "é", "i": "í", "o": "ó", "u": "ú", "ơ": "ớ"}
+                    vn_v = acute.get(vn_v, vn_v)
+        syllables.append(f"{vn_on}{vn_v}{vn_co}")
+    return " ".join(s for s in syllables if s).strip()
+
+
+def english_word_to_vn_fallback(word: str) -> str:
+    """Rule-based English grapheme-to-Vietnamese syllable converter for words outside CMUdict."""
+    w = word.lower().strip("'-")
+    if not w:
+        return word
+    if w in CURATED_EN_WORDS:
+        return CURATED_EN_WORDS[w]
+    cmu = get_cmu_dict()
+    if w in cmu and cmu[w]:
+        res = arpabet_to_vn(cmu[w][0])
+        if res:
+            return res
+    # Handle common suffixes by splitting stem + suffix
+    for suf, suf_vn in (
+        ("tion", "sần"), ("sion", "sần"), ("ment", "mần"), ("ness", "nít"),
+        ("able", "ơ bồ"), ("ible", "ơ bồ"), ("ing", "inh"), ("ed", "ịt"), ("er", "ơ"), ("ly", "li"),
+    ):
+        if len(w) > len(suf) + 2 and w.endswith(suf):
+            stem = w[: -len(suf)]
+            if stem in CURATED_EN_WORDS:
+                return f"{CURATED_EN_WORDS[stem]} {suf_vn}"
+            if stem in cmu and cmu[stem]:
+                return f"{arpabet_to_vn(cmu[stem][0])} {suf_vn}"
+    # If all uppercase 2-5 letter acronym (e.g. NASA, NATO, HTML, JSON, SaaS)
+    if word.isupper() and 2 <= len(word) <= 5:
+        letter_map = {
+            "A": "ây", "B": "bi", "C": "xi", "D": "đi", "E": "i", "F": "ép", "G": "gi",
+            "H": "ết", "I": "ai", "J": "giây", "K": "cây", "L": "eo", "M": "em", "N": "en",
+            "O": "ô", "P": "pi", "Q": "khiu", "R": "a", "S": "ét", "T": "ti", "U": "iu",
+            "V": "vi", "W": "đắp bồ iu", "X": "ích", "Y": "oai", "Z": "di",
+        }
+        return " ".join(letter_map.get(ch, ch.lower()) for ch in word)
+    return word
+
+
+def is_english_token(word: str) -> bool:
+    """Determines if an ASCII alphabetic token is an English word rather than an unaccented Vietnamese word."""
+    w_clean = word.strip("'-")
+    if not w_clean or not re.match(r"^[A-Za-z]+(?:['-][A-Za-z]+)*$", w_clean):
+        return False
+    low = w_clean.lower()
+    if low in CURATED_EN_WORDS:
+        return True
+    if low in VN_NO_DIACRITIC_WORDS:
+        return False
+    if any(ch in low for ch in ("f", "j", "w", "z")):
+        return True
+    cmu = get_cmu_dict()
+    if low in cmu:
+        return True
+    if len(low) >= 4 and re.search(r"(?:tion|sion|ment|ight|ough|ould|ance|ence|ship|ward|less|ness|able|ible|ology|graph|ware|line|work|book|tech|cloud|data|flow)$", low):
+        return True
+    return False
+
+
+def translate_en_to_vi_text(text: str) -> str:
+    """Translates English paragraphs/articles into natural Vietnamese via Google GTX endpoint with safe fallback."""
+    if not text or not text.strip():
+        return text
+    paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
+    translated_paras = []
+    # Chunk into <= 1600 char batches
+    batch = []
+    batch_len = 0
+
+    def _flush_batch(b_list):
+        if not b_list:
+            return
+        joined = "\n".join(b_list)
+        try:
+            q = urllib.parse.quote(joined)
+            url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=vi&dt=t&q={q}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                data = json.loads(resp.read().decode("utf-8", errors="ignore"))
+                if isinstance(data, list) and data and isinstance(data[0], list):
+                    trans_str = "".join(seg[0] for seg in data[0] if isinstance(seg, list) and seg and seg[0])
+                    if trans_str.strip():
+                        translated_paras.append(trans_str.strip())
+                        return
+        except Exception:
+            pass
+        translated_paras.append(joined)
+
+    for p in paragraphs:
+        if batch_len + len(p) > 1500 and batch:
+            _flush_batch(batch)
+            batch = [p]
+            batch_len = len(p)
+        else:
+            batch.append(p)
+            batch_len += len(p)
+    if batch:
+        _flush_batch(batch)
+    return "\n\n".join(translated_paras)
+
+
+def _transcribe_english_in_context(text: str) -> tuple:
+    """
+    Context-aware Bilingual Token Analyzer & Transcriber:
+    - Unambiguous English words (in CURATED_EN_WORDS, CMUdict outside VN_NO_DIACRITIC_WORDS, stop-final ASCII words, etc.) are always English.
+    - Ambiguous short ASCII words in AMBIGUOUS_EN_VN_MAP (e.g. 'to', 'do', 'go', 'so', 'no', 'he', 'me', 'be', 'my', 'in', 'on', 'an', 'am', 'can', 'man', 'way', 'day')
+      are treated as English when adjacent to an English word or inside a sentence with >= 35% unambiguous English words!
+    """
+    token_iter = list(re.finditer(r"[A-Za-zÀ-ỹ]+(?:['-][A-Za-zÀ-ỹ]+)*", text))
+    if not token_iter:
+        return text, 0, 0, {}
+
+    n_tok = len(token_iter)
+    kinds = []  # "vn", "en", "ambig", "skip"
+    for m in token_iter:
+        w = m.group(0)
+        if w.startswith(("VBEEACT", "VBEETAG")):
+            kinds.append("skip")
+        elif re.search(r"[À-ỹ]", w):
+            kinds.append("vn")
+        elif is_english_token(w):
+            kinds.append("en")
+        elif w.lower() in AMBIGUOUS_EN_VN_MAP:
+            kinds.append("ambig")
+        else:
+            kinds.append("vn")
+
+    unambig_en = sum(1 for k in kinds if k == "en")
+    unambig_vn = sum(1 for k in kinds if k == "vn")
+    mostly_english_doc = (unambig_en > 0) and (unambig_en >= unambig_vn * 0.65)
+
+    # Resolve "ambig" tokens using local window [i-2 .. i+2] and document ratio
+    for i in range(n_tok):
+        if kinds[i] != "ambig":
+            continue
+        if mostly_english_doc:
+            kinds[i] = "en"
+            continue
+        left_en = (i > 0 and kinds[i - 1] == "en") or (i > 1 and kinds[i - 2] == "en" and kinds[i - 1] == "ambig")
+        right_en = (i + 1 < n_tok and kinds[i + 1] == "en") or (i + 2 < n_tok and kinds[i + 2] == "en" and kinds[i + 1] == "ambig")
+        if left_en or right_en:
+            kinds[i] = "en"
+        else:
+            kinds[i] = "vn"
+
+    vn_count = sum(1 for k in kinds if k == "vn")
+    en_count = sum(1 for k in kinds if k == "en")
+    en_samples_map = {}
+
+    out_parts = []
+    last_pos = 0
+    for i, m in enumerate(token_iter):
+        out_parts.append(text[last_pos : m.start()])
+        w = m.group(0)
+        if kinds[i] == "en":
+            low = w.lower()
+            if low in AMBIGUOUS_EN_VN_MAP:
+                vn_phon = AMBIGUOUS_EN_VN_MAP[low]
+            else:
+                vn_phon = english_word_to_vn_fallback(w)
+            if low not in en_samples_map and len(en_samples_map) < 18 and len(low) >= 2:
+                en_samples_map[low] = vn_phon
+            out_parts.append(vn_phon)
+        else:
+            out_parts.append(w)
+        last_pos = m.end()
+    out_parts.append(text[last_pos:])
+    return "".join(out_parts), vn_count, en_count, en_samples_map
+
+
+def analyze_and_adapt_english_vietnamese(text: str, mode: str = "auto_phonetic") -> dict:
+    """
+    Automatically analyzes English vs Vietnamese tokens in any text or extracted news article:
+    - Counts Vietnamese words vs English words (`vn_word_count`, `en_word_count`, `vn_percent`, `en_percent`).
+    - Lists detected English terms and their Vietnamese phonetic pronunciations (`english_samples`).
+    - If `mode == "translate_vi"` (or `mode == "auto_translate"` when `en_percent >= 55`), translates English into fluent Vietnamese.
+    - Converts English words/sentences into smooth Vietnamese syllables (`phonetic_text`) so VieNeu-TTS v3 Turbo reads both languages seamlessly.
+    """
+    if not text or not text.strip():
+        return {
+            "ok": True,
+            "detected_lang": "Tiếng Việt",
+            "vn_word_count": 0,
+            "en_word_count": 0,
+            "vn_percent": 100,
+            "en_percent": 0,
+            "english_samples": [],
+            "clean_display_text": "",
+            "phonetic_text": "",
+            "translated": False,
+        }
+
+    # Protect valid acting tags before scanning words
+    protected = []
+
+    def _save_act(m):
+        full = m.group(0)
+        if VALID_ACTING_TAG_RE.match(full):
+            idx = len(protected)
+            protected.append(full)
+            return f"\x02VBEEACT{idx}\x03"
+        return full
+
+    scan_t = re.sub(r"\[[^\]]+\]", _save_act, text)
+    _, vn_count, en_count, en_samples_map = _transcribe_english_in_context(scan_t)
+
+    total_w = max(1, vn_count + en_count)
+    en_pct = int(round((en_count * 100.0) / total_w))
+    vn_pct = 100 - en_pct
+
+    if en_pct >= 60:
+        detected_lang = "Tiếng Anh (English Article)"
+    elif en_count >= 2 or en_pct >= 5:
+        detected_lang = "Song Ngữ Anh - Việt (Bilingual)"
+    else:
+        detected_lang = "Tiếng Việt (Chuẩn)"
+
+    did_translate = False
+    display_text = text
+    if mode == "translate_vi" or (mode == "auto_translate" and en_pct >= 55):
+        display_text = translate_en_to_vi_text(text)
+        did_translate = True
+
+    # Build phonetic_text by applying curated multi-word English phrases first, then context-aware English tokens
+    work_t = re.sub(r"\[[^\]]+\]", _save_act, display_text)
+    for pat, rep in CURATED_EN_PHRASES:
+        work_t = re.sub(pat, rep, work_t, flags=re.I)
+
+    phonetic_t, _, _, _ = _transcribe_english_in_context(work_t)
+    for idx, val in enumerate(protected):
+        phonetic_t = phonetic_t.replace(f"\x02VBEEACT{idx}\x03", val)
+
+    samples_list = [{"en": k, "vi": v} for k, v in list(en_samples_map.items())[:14]]
+    return {
+        "ok": True,
+        "detected_lang": detected_lang,
+        "vn_word_count": vn_count,
+        "en_word_count": en_count,
+        "vn_percent": vn_pct,
+        "en_percent": en_pct,
+        "english_samples": samples_list,
+        "clean_display_text": display_text,
+        "phonetic_text": phonetic_t,
+        "translated": did_translate,
+    }
+
+
+def extract_article_from_url(url: str, bilingual_mode: str = "auto_phonetic") -> dict:
+    """
+    Extracts clean news/article/blog/book text from any pasted URL:
+    1. Fetches HTML (or PDF/TXT) with browser User-Agent + trafilatura + BeautifulSoup article body selector + r.jina.ai fallback.
+    2. Strips ads, navigation, related-news boxes, photo captions, author bylines, social share buttons, and bookmarks.
+    3. Runs clean_and_reword_book_text() + analyze_and_adapt_english_vietnamese() so English & Vietnamese are both analyzed and ready to read.
+    """
+    target_url = (url or "").strip()
+    md_m = re.search(r"https?://[^\s\)\]\">]+", target_url)
+    if md_m:
+        target_url = md_m.group(0)
+    elif target_url and not target_url.startswith(("http://", "https://")):
+        target_url = "https://" + target_url
+
+    if not target_url or not target_url.startswith(("http://", "https://")):
+        raise ValueError("Vui lòng dán đường link hợp lệ (bắt đầu bằng https:// hoặc http://).")
+
+    parsed_u = urllib.parse.urlparse(target_url)
+    site_name = (parsed_u.netloc or "").replace("www.", "")
+    title = ""
+    raw_article = ""
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+    }
+
+    html_content = ""
+    try:
+        req = urllib.request.Request(target_url, headers=headers)
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            ctype = (resp.headers.get("Content-Type") or "").lower()
+            raw_bytes = resp.read()
+            if "application/pdf" in ctype or target_url.lower().endswith(".pdf"):
+                import base64
+                doc_res = extract_document_text(
+                    filename=os.path.basename(parsed_u.path) or "article.pdf",
+                    content_b64=base64.b64encode(raw_bytes).decode("ascii"),
+                )
+                raw_article = doc_res["cleaned_text"]
+                title = os.path.basename(parsed_u.path) or site_name
+            else:
+                for enc in ("utf-8", "utf-8-sig", "cp1258", "latin-1"):
+                    try:
+                        html_content = raw_bytes.decode(enc)
+                        break
+                    except Exception:
+                        continue
+    except Exception:
+        html_content = ""
+
+    # 1. Try trafilatura first (gold-standard news & article extractor)
+    if html_content and not raw_article:
+        try:
+            import trafilatura
+            meta = trafilatura.extract_metadata(html_content, default_url=target_url)
+            if meta:
+                if getattr(meta, "title", None):
+                    title = str(meta.title).strip()
+                if getattr(meta, "sitename", None):
+                    site_name = str(meta.sitename).strip()
+            extracted_tf = trafilatura.extract(
+                html_content,
+                url=target_url,
+                include_comments=False,
+                include_tables=False,
+                include_images=False,
+                include_links=False,
+                favor_precision=True,
+            )
+            if extracted_tf and len(extracted_tf.strip()) >= 120:
+                raw_article = extracted_tf.strip()
+        except Exception:
+            pass
+
+    # 2. Fallback / Title enrichment with BeautifulSoup4 tailored for VnExpress, DanTri, TuoiTre, ThanhNien, CafeF, BBC, Medium, etc.
+    if html_content and (not raw_article or not title):
+        try:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html_content, "html.parser")
+            if not title:
+                og_t = soup.find("meta", property="og:title") or soup.find("meta", attrs={"name": "title"})
+                if og_t and og_t.get("content"):
+                    title = str(og_t["content"]).strip()
+                elif soup.find("h1"):
+                    title = soup.find("h1").get_text(" ", strip=True)
+                elif soup.title and soup.title.string:
+                    title = str(soup.title.string).strip()
+
+            if not raw_article:
+                for bad_sel in (
+                    "script", "style", "noscript", "header", "footer", "nav", "aside", "form", "iframe", "svg",
+                    "figure", "figcaption", ".related-news", ".box-tin-lien-quan", ".list-news", ".social-share",
+                    ".breadcrumb", ".tags", ".box-comment", ".ads", ".advertisement", "[role='navigation']",
+                ):
+                    for node in soup.select(bad_sel):
+                        node.decompose()
+
+                article_node = None
+                for sel in (
+                    "article.fck_detail", ".fck_detail", ".singular-content", ".detail-content", ".article-content",
+                    ".detail__content", ".content-detail", "[itemprop='articleBody']", "article", "main", "#main-detail",
+                ):
+                    cand = soup.select_one(sel)
+                    if cand and len(cand.get_text(" ", strip=True)) >= 120:
+                        article_node = cand
+                        break
+
+                target_root = article_node or soup.body or soup
+                paras = []
+                sapo = soup.select_one(".description, .sapo, .singular-sapo, .detail-sapo, [itemprop='description']")
+                if sapo:
+                    sapo_txt = sapo.get_text(" ", strip=True)
+                    if len(sapo_txt) >= 25:
+                        paras.append(sapo_txt)
+                for p in target_root.find_all(["p", "h2", "h3", "blockquote"]):
+                    pt = p.get_text(" ", strip=True)
+                    if len(pt) >= 25 and not re.search(r"^(?:Xem thêm|Đọc thêm|Tin liên quan|Ảnh\s*:|Nguồn\s*:|Theo\s+[A-Z])", pt, re.I):
+                        if pt not in paras:
+                            paras.append(pt)
+                if paras:
+                    raw_article = "\n\n".join(paras)
+        except Exception:
+            pass
+
+    # 3. Fallback via r.jina.ai reader if site uses heavy JS or Cloudflare challenge
+    if not raw_article or len(raw_article.strip()) < 80:
+        try:
+            jina_url = f"https://r.jina.ai/{target_url}"
+            req_j = urllib.request.Request(
+                jina_url,
+                headers={"User-Agent": headers["User-Agent"], "X-Return-Format": "text"},
+            )
+            with urllib.request.urlopen(req_j, timeout=14) as resp_j:
+                jina_txt = resp_j.read().decode("utf-8", errors="ignore")
+                lines_j = []
+                for ln in jina_txt.splitlines():
+                    s_ln = ln.strip()
+                    if s_ln.startswith("Title:") and not title:
+                        title = s_ln[len("Title:") :].strip()
+                        continue
+                    if s_ln.startswith(("URL Source:", "Markdown Content:", "Published Time:")):
+                        continue
+                    lines_j.append(s_ln)
+                cand_j = "\n".join(lines_j).strip()
+                if len(cand_j) >= 60:
+                    raw_article = cand_j
+        except Exception:
+            pass
+
+    if not raw_article or not raw_article.strip():
+        raise RuntimeError("Không thể trích xuất nội dung bài viết từ đường link này. Em hãy thử link báo khác hoặc dán trực tiếp văn bản nhé!")
+
+    # Strip trailing web/encyclopedia reference sections (References, External links, See also, Tin liên quan)
+    raw_article = re.split(
+        r"\n\s*(?:References|External links|See also|Further reading|Notes and references|Bibliography|Tin liên quan|Bài viết liên quan|Xem thêm\s*:)\s*\n",
+        raw_article,
+        maxsplit=1,
+        flags=re.I,
+    )[0].strip()
+
+    # Cap massive encyclopedic pages at ~12,000 chars on a clean paragraph boundary so TTS stays snappy
+    if len(raw_article) > 12000:
+        cut_pos = raw_article.rfind("\n", 0, 12000)
+        if cut_pos < 4000:
+            cut_pos = raw_article.rfind(". ", 0, 12000)
+        if cut_pos > 1000:
+            raw_article = raw_article[: cut_pos + 1].strip()
+
+    title = re.sub(r"\s*[-|–—]\s*(?:VnExpress|Dân trí|Tuổi Trẻ|Thanh Niên|VietNamNet|CafeF|Znews|Báo Mới|Wikipedia).*$", "", title or "", flags=re.I).strip()
+    if title and not raw_article.lstrip().startswith(title[:25]):
+        full_raw = f"{title}.\n\n{raw_article}"
+    else:
+        full_raw = raw_article
+
+    book_clean = clean_and_reword_book_text(full_raw)
+    biling = analyze_and_adapt_english_vietnamese(book_clean["text"], mode=bilingual_mode)
+    final_display = clean_and_reword_book_text(biling["clean_display_text"])["text"] if biling["translated"] else book_clean["text"]
+
+    return {
+        "ok": True,
+        "url": target_url,
+        "site_name": site_name,
+        "title": title or f"Bài báo từ {site_name}",
+        "cleaned_text": final_display,
+        "phonetic_preview": biling["phonetic_text"],
+        "removed_junk": book_clean["removed_junk"],
+        "reworded_items": book_clean["reworded_items"],
+        "bilingual": {
+            "detected_lang": biling["detected_lang"],
+            "vn_word_count": biling["vn_word_count"],
+            "en_word_count": biling["en_word_count"],
+            "vn_percent": biling["vn_percent"],
+            "en_percent": biling["en_percent"],
+            "english_samples": biling["english_samples"],
+            "translated": biling["translated"],
+        },
+    }
+
+
 def convert_to_pure_vietnamese(text: str) -> str:
-    """Pure Vietnamese phonetic normalization while preserving all [emotion] and [breaktime] tags."""
+    """Pure Vietnamese & Bilingual English-Vietnamese phonetic normalization while preserving all [emotion] and [breaktime] tags."""
     text = clean_and_reword_book_text(text)["text"]
     t = text.replace("\ufeff", "")
     # Protect inline bracket tags [breaktime=...], [hưng phấn], [nhấn mạnh], [lắng đọng], [tươi vui], [cười], [thở dài], [hắng giọng]
@@ -444,7 +1645,7 @@ def convert_to_pure_vietnamese(text: str) -> str:
     def _save_tag(m):
         idx = len(protected)
         protected.append(m.group(0))
-        return f"__VBEE_TAG_{idx}__"
+        return f"\x02VBEETAG{idx}\x03"
 
     t = re.sub(r"\[[^\]]+\]", _save_tag, t)
 
@@ -507,6 +1708,11 @@ def convert_to_pure_vietnamese(text: str) -> str:
     t = re.sub(r"\bCEO\b", "xi i ô", t, flags=re.I)
     t = re.sub(r"\bGDP\b", "gi đi pi", t, flags=re.I)
     t = re.sub(r"\bUSD\b", "đô la Mỹ", t, flags=re.I)
+
+    # Apply Curated English Phrases + CMUdict/G2P Bilingual English-to-Vietnamese syllable transcription
+    for pat, rep in CURATED_EN_PHRASES:
+        t = re.sub(pat, rep, t, flags=re.I)
+
     # Convert decimal numbers (e.g. 3.8 -> 3 chấm 8, 4.0 -> 4 chấm 0) so periods inside numbers never split sentences!
     t = re.sub(r"(\d+)\.(\d+)", r"\1 chấm \2", t)
     # Convert numbered list items (e.g. "1. ", "2. ") so they don't split into 1-word sentences
@@ -514,15 +1720,19 @@ def convert_to_pure_vietnamese(text: str) -> str:
     # Convert file extensions / tech dots (e.g. llama.cpp -> llama chấm cpp)
     t = re.sub(r"([a-zA-Z0-9]+)\.([a-zA-Z]{2,5})\b", r"\1 chấm \2", t)
     t = re.sub(r"(\d+)\s*-\s*(\d+)", r"\1 đến \2", t)
+
+    t, _, _, _ = _transcribe_english_in_context(t)
+
     # Strip decorative separator lines (===, ---, ***) and non-spoken emojis/kaomoji so TTS never babbles on empty symbols
     t = re.sub(r"[=_*~-]{3,}", " ", t)
     t = re.sub(r"[:=]-?\)+", " ", t)
-    t = re.sub(r"[^\w\s,.!?;:…'\"()/\-À-ỹ]", " ", t)
+    t = re.sub(r"[^\w\s,.!?;:…'\"()/\-À-ỹ\x02\x03]", " ", t)
     # Normalize em-dash / en-dash into natural comma pause so G2P never stumbles
     t = re.sub(r"\s*[—–]\s*", ", ", t)
 
     for idx, val in enumerate(protected):
-        t = t.replace(f"__VBEE_TAG_{idx}__", val)
+        t = t.replace(f"\x02VBEETAG{idx}\x03", val)
+    t = re.sub(r"_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03", " ", t, flags=re.I)
     return t
 
 
@@ -612,8 +1822,7 @@ def auto_ai_prosody_format(text: str, preset: str = "auto_human", include_nhan_d
     """
     Bộ Luật Toán Học Giọng Người Thật (Human Prosody & Emotional Rhythm Constitution):
     1. Tự động lọc sạch Bookmark, mục lục, số trang, ký tự thừa và wordings lại câu văn chuẩn sách nói.
-    2. Phân tích từng câu để gắn nhãn nhịp điệu thật: [vui], [buồn], [nhấn ý hay], [nhận định] [nhấn khoản cuối].
-    3. Không tự ý thêm câu ngoài sách trừ khi người dùng bật include_nhan_dinh.
+    2. Phân tích nhịp điệu Anh - Việt và cảm xúc câu văn trong nền mà KHÔNG nhét câu 'Nhận định lại...' giả tạo hay mã kỹ thuật vào ô chữ.
     """
     raw = re.sub(
         r"\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\]\s*",
@@ -621,59 +1830,31 @@ def auto_ai_prosody_format(text: str, preset: str = "auto_human", include_nhan_d
         text,
         flags=re.I,
     )
+    raw = re.sub(r"_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03", " ", raw, flags=re.I)
     raw = re.sub(r"(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)", "", raw, flags=re.I)
-    # Strip previously appended AI Nhận định if re-running so it never duplicates
-    raw = re.sub(r"\n*(?:Nhận định (?:chung|lại)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*$", "", raw.strip(), flags=re.I).strip()
+    # Strip any previously appended synthetic AI Nhận định
+    raw = re.sub(
+        r"\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:chung|lại)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*",
+        "",
+        raw.strip(),
+        flags=re.I,
+    ).strip()
     book_res = clean_and_reword_book_text(raw)
     raw = book_res["text"]
 
+    biling = analyze_and_adapt_english_vietnamese(raw, mode="auto_phonetic")
     analysis = generate_ai_nhan_dinh(raw)
     analysis["removed_junk"] = book_res["removed_junk"]
     analysis["reworded_items"] = book_res["reworded_items"]
-    if preset == "clean" or not raw:
-        return {"formatted_text": raw, "analysis": analysis}
-
-    cfg = {
-        "auto_human": {"para_b": "0.55s", "default_tag": "[nhấn ý hay]"},
-        "human_rewrite": {"para_b": "0.55s", "default_tag": "[nhấn ý hay]"},
-        "tvc_energetic": {"para_b": "0.45s", "default_tag": "[vui]"},
-        "tvc_luxury": {"para_b": "0.60s", "default_tag": "[lắng đọng]"},
-        "news_vtv_htv": {"para_b": "0.50s", "default_tag": "[nhấn ý hay]"},
-        "story_healing": {"para_b": "0.65s", "default_tag": "[buồn]"},
-    }.get(preset, {"para_b": "0.55s", "default_tag": "[nhấn ý hay]"})
-
-    paragraphs = [p.strip() for p in re.split(r"\n+", raw) if p.strip()]
-    formatted_paras = []
-    for p_idx, para in enumerate(paragraphs):
-        sents = [s.strip() for s in re.split(r"(?<=[.!?…])\s+", para) if s.strip()]
-        tagged_sents = []
-        for s_idx, s in enumerate(sents):
-            s_clean = re.sub(r"\s*,\s*", ", ", s)
-            s_clean = re.sub(r"\s*;\s*", "; ", s_clean)
-            s_clean = re.sub(r"\s*:\s*", ": ", s_clean)
-            emo = detect_sentence_emotion(s_clean)
-            if emo == "sad":
-                tag = "[buồn]"
-            elif emo == "happy":
-                tag = "[vui]"
-            elif emo == "insight":
-                tag = "[nhận định] [nhấn khoản cuối]"
-            else:
-                if s_idx == len(sents) - 1 and p_idx == len(paragraphs) - 1 and not include_nhan_dinh:
-                    tag = "[nhận định] [nhấn khoản cuối]"
-                elif ":" in s_clean or s_idx == 0:
-                    tag = cfg["default_tag"]
-                else:
-                    tag = ""
-            tagged_sents.append(f"{tag} {s_clean}".strip())
-        formatted_paras.append(" ".join(tagged_sents))
-
-    if include_nhan_dinh and analysis.get("closing_nhan_dinh"):
-        formatted_paras.append(f"[nhận định] [nhấn khoản cuối] {analysis['closing_nhan_dinh']}")
-        analysis["counts"]["insight"] = analysis["counts"].get("insight", 0) + 1
-
-    out_text = f"\n[breaktime={cfg['para_b']}]\n".join(formatted_paras)
-    return {"formatted_text": out_text, "analysis": analysis}
+    analysis["bilingual"] = {
+        "detected_lang": biling["detected_lang"],
+        "vn_word_count": biling["vn_word_count"],
+        "en_word_count": biling["en_word_count"],
+        "vn_percent": biling["vn_percent"],
+        "en_percent": biling["en_percent"],
+        "english_samples": biling["english_samples"],
+    }
+    return {"formatted_text": raw, "analysis": analysis}
 
 
 # ── 44 COPYRIGHT-SAFE STUDIO VOICES CATALOG ─────────────────────────────────
@@ -1789,6 +2970,7 @@ def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
         return " "
 
     sent_clean = re.sub(r"\s*\[([^\]]+)\]\s*", _keep_native_emotion_cues, sent_raw)
+    sent_clean = re.sub(r"_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03", " ", sent_clean, flags=re.I)
     sent_clean = re.sub(r"\s+([,.;!?])", r"\1", sent_clean)
     sent_clean = re.sub(r"[ \t]+", " ", sent_clean).strip()
     # Must contain at least one spoken letter or digit (excluding emotion tags)
@@ -1822,13 +3004,20 @@ def synthesize_vbee_audio(
     tts = get_tts_engine()
     sr = tts.sample_rate
 
-    # 1. Remove any previously injected canned phrases
+    # 1. Remove any previously injected canned phrases, placeholder leaks, or synthetic 'Nhận định lại...' lines
     working_text = re.sub(
         r"(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)",
         "",
         text.strip(),
         flags=re.I,
     )
+    working_text = re.sub(r"_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03", " ", working_text, flags=re.I)
+    working_text = re.sub(
+        r"\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*",
+        "",
+        working_text,
+        flags=re.I,
+    ).strip()
 
     # 2. Law 1 (Cross-Clause Attention & F0 Continuity):
     def _coalesce_short_breaks(m):
@@ -2450,6 +3639,26 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
                 self._send_json(res)
             except Exception as exc:
                 self._send_json({"ok": False, "error": str(exc)}, status=500)
+            return
+
+        if path == "/api/extract_url":
+            url = str(body.get("url", "")).strip()
+            bilingual_mode = str(body.get("bilingual_mode", "auto_phonetic")).strip()
+            try:
+                res = extract_article_from_url(url=url, bilingual_mode=bilingual_mode)
+                self._send_json(res)
+            except Exception as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
+            return
+
+        if path == "/api/analyze_bilingual":
+            text = str(body.get("text", "")).strip()
+            mode = str(body.get("mode", "auto_phonetic")).strip()
+            try:
+                res = analyze_and_adapt_english_vietnamese(text=text, mode=mode)
+                self._send_json(res)
+            except Exception as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=400)
             return
 
         if path == "/api/auto_prosody":

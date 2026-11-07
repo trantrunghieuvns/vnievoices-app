@@ -1006,6 +1006,89 @@
       display: flex;
     }
 
+    /* Paste Link Bar & Bilingual English-Vietnamese Analysis Banner */
+    .paste-link-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      padding: 11px 14px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #eff6ff 0%, #f0fdfa 55%, #fefce8 100%);
+      border: 2.5px solid #0284c7;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.12);
+    }
+    .paste-link-label {
+      font-size: 13.5px;
+      font-weight: 900;
+      color: #0369a1;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .paste-url-input {
+      flex: 1;
+      min-width: 240px;
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 2px solid #38bdf8;
+      background: #ffffff;
+      color: #0f172a;
+      font-size: 13.5px;
+      font-weight: 700;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .paste-url-input:focus {
+      border-color: #0284c7;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
+    }
+    .btn-extract-url {
+      background: linear-gradient(135deg, #0284c7 0%, #0d9488 100%) !important;
+      color: #ffffff !important;
+      border: 2px solid #0369a1 !important;
+      padding: 9px 16px !important;
+      border-radius: 12px !important;
+      font-size: 13px !important;
+      font-weight: 900 !important;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);
+      transition: transform 0.12s, filter 0.12s;
+    }
+    .btn-extract-url:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+    }
+    .bilingual-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #eff6ff 0%, #f0f9ff 50%, #ecfdf5 100%);
+      border: 2px solid #0ea5e9;
+      color: #0c4a6e;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .bilingual-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #ffffff;
+      border: 1.5px solid #38bdf8;
+      color: #0369a1;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
     /* Persistent Background Session & Completion Notification Banner (Survives F5 / Reload even at 1%) */
     .bg-session-banner {
       display: none;
@@ -1093,6 +1176,19 @@
         </div>
       </div>
 
+      <!-- Paste Link Mode: Auto-Extract Web Articles / News + Automatic English & Vietnamese Analysis -->
+      <div class="paste-link-bar" id="pasteLinkSection">
+        <label for="pasteUrlInput" class="paste-link-label">🔗 Dán Link Báo / Web:</label>
+        <input type="url" id="pasteUrlInput" class="paste-url-input" placeholder="Dán link báo VnExpress, Dân Trí, Tuổi Trẻ, Wikipedia, BBC, Medium... (hoặc dán thẳng link vào ô chữ) để tự trích xuất &amp; đọc!" autocorrect="off" autocapitalize="off" spellcheck="false">
+        <button type="button" class="btn-extract-url" id="btnExtractUrlNow" title="Tự động trích xuất bài báo, xoá quảng cáo/phần thừa, phân tích Anh - Việt và đọc ngay">📰 Trích Xuất &amp; Đọc Báo Ngay</button>
+        <button type="button" class="sample-pill" id="btnAnalyzeBilingualNow" style="background:#e0f2fe !important;border-color:#0284c7 !important;color:#0369a1 !important;" title="Tự phân tích từ Tiếng Anh &amp; Tiếng Việt trong văn bản để đọc chuẩn phát âm cả 2 ngôn ngữ">🗣️ Tự Phân Tích Anh &amp; Việt</button>
+        <button type="button" class="sample-pill" id="btnTranslateEnToViNow" style="background:#fef3c7 !important;border-color:#f59e0b !important;color:#92400e !important;" title="Dịch toàn bộ câu/bài báo Tiếng Anh sang Tiếng Việt mượt mà trước khi đọc">🇻🇳 Dịch Anh ➔ Việt</button>
+        <label for="autoReadOnUrlCheckbox" style="font-size:12.5px;font-weight:900;color:#0f766e;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+          <input type="checkbox" id="autoReadOnUrlCheckbox" checked>
+          <span>⚡ Dán link là tự đọc luôn</span>
+        </label>
+      </div>
+
       <!-- Import TXT / PDF + AI Clean Book + 1-Click Fun Sample Stories -->
       <div class="samples-row">
         <input type="file" id="importTxtInput" accept=".txt,.md,.srt,.csv,text/plain" class="visually-hidden">
@@ -1109,11 +1205,19 @@
         <button type="button" class="sample-pill" data-tpl="truong_giang">🤣 Hài Trường Giang</button>
         <button type="button" class="sample-pill" data-tpl="ngoc_ngan_ghost">👻 Truyện Ma Bác Ngạn</button>
         <button type="button" class="sample-pill" data-tpl="kinh_kich_epic">⚔️ Anh Hùng Cổ Trang</button>
-        <button type="button" class="sample-pill" data-tpl="kth23_claude">🤖 Bản Tin AI Tài Chính</button>
+        <button type="button" class="sample-pill" data-tpl="kth23_claude">🤖 Bản Tin Song Ngữ Anh-Việt</button>
         <button type="button" class="sample-pill" data-tpl="story">🥺 Truyện Cảm Động</button>
         <button type="button" class="sample-pill" data-tpl="htv_news">🌴 Điểm Tin Sài Gòn</button>
         <button type="button" class="sample-pill" data-tpl="vtv_news">🌸 Bản Tin Hà Nội</button>
         <button type="button" class="sample-pill" data-tpl="tvc_sale">🔥 Quảng Cáo Siêu Sale</button>
+      </div>
+
+      <!-- Bilingual English & Vietnamese Live Analysis Banner -->
+      <div id="bilingualStatusBanner" class="bilingual-banner" role="status" aria-live="polite">
+        <div id="bilingualStatusText" style="flex:1;line-height:1.5;">
+          🌐 <b>Tự Phân Tích Anh &amp; Việt:</b> AI tự động nhận diện từ Tiếng Anh &amp; Tiếng Việt trong bài để đọc chuẩn phát âm cả 2 ngôn ngữ!
+        </div>
+        <div id="bilingualSampleChips" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
       </div>
 
       <!-- Book Sanitization & Re-wording Live Report Banner -->
@@ -1124,7 +1228,7 @@
 
       <!-- Clean, High-Contrast White Textbox -->
       <label for="ttsInput" class="visually-hidden">Nội dung văn bản</label>
-      <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V), gõ chữ, hoặc kéo thả file .TXT / .PDF vào đây... AI sẽ tự động xoá Bookmark, số trang, mục lục, phần thừa và wordings lại toàn bộ câu văn chuẩn sách nói trước khi đọc!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
+      <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V) văn bản, dán thẳng đường link báo chí (https://...), hoặc kéo thả file .TXT / .PDF vào đây... AI tự trích xuất bài báo, xoá Bookmark/phần thừa, tự phân tích Anh &amp; Việt và đọc ngay!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
 
       <!-- Magic AI Auto-Thinking Status Bar (Distinct Studio Emerald-Teal & Warm Amber Theme!) -->
       <div class="magic-ai-bar" id="aiAssessmentBox">
@@ -1136,22 +1240,14 @@
             <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:900;color:#065f46;background:#d1fae5;border:1.5px solid #10b981;padding:4px 11px;border-radius:999px;">✨ Tự động lọc Bookmark &amp; diễn cảm</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <label style="font-size:12.5px;font-weight:800;color:#065f46;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Tự động xoá Bookmark, Mục lục, Số trang, chú thích rác và viết lại câu văn chuẩn sách nói">
+            <label for="autoBookCleanCheckbox" style="font-size:12.5px;font-weight:800;color:#065f46;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Tự động xoá Bookmark, Mục lục, Số trang, chú thích rác và viết lại câu văn chuẩn sách nói">
               <input type="checkbox" id="autoBookCleanCheckbox" checked>
               <span>📖 Tự xoá Bookmark/phần thừa &amp; wordings lại chuẩn sách</span>
-            </label>
-            <label style="font-size:12.5px;font-weight:800;color:#0f766e;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Chỉ bật khi em muốn AI tự sáng tác thêm 1 câu kết Nhận định ở cuối bài">
-              <input type="checkbox" id="includeNhanDinhCheckbox">
-              <span>💡 Tự thêm câu kết Nhận Định</span>
-            </label>
-            <label style="font-size:12.5px;font-weight:800;color:#b45309;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Bật nếu muốn nhìn thấy các thẻ [cười], [vui], [buồn] trực tiếp trong ô chữ">
-              <input type="checkbox" id="autoPasteInjectCheckbox">
-              <span>🔧 Hiện thẻ kỹ thuật trong ô chữ</span>
             </label>
           </div>
         </div>
         <div id="aiAssessmentText" style="font-size:13.5px;color:#0f172a;font-weight:700;line-height:1.5;">
-          💡 Chỉ cần <b>Dán chữ (Paste)</b> hoặc gõ vào ô trên — không cần bấm nút nào — AI tự động chọn đúng vai diễn trong <b>108 Phong Cách</b> để giọng đọc có hồn như diễn viên thật!
+          💡 Chỉ cần <b>Dán chữ (Paste)</b> hoặc <b>Dán Link Báo</b> vào ô trên — AI tự động chọn đúng vai diễn trong <b>108 Phong Cách</b> và phân tích <b>Anh - Việt</b> để giọng đọc có hồn như diễn viên thật!
         </div>
       </div>
 
@@ -1163,7 +1259,6 @@
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <button type="button" class="btn-secondary-kid" id="btnPreviewVoice" title="Chỉ nghe thử 8 giây mẫu giọng của nhân vật">🔊 Nghe thử mẫu giọng (8s)</button>
-          <button type="button" class="btn-secondary-kid" id="btnAutoFormatNow">✨ Hiện thẻ diễn xuất</button>
           <!-- Inline Companion Button that appears next to ĐỌC NGAY while reading -->
           <button type="button" class="companion-loading-btn" id="btnInlineLoadingCompanion">
             <span>⏳</span>
@@ -2850,10 +2945,6 @@
             selectedPersonaId = btn.getAttribute("data-pid");
             renderPersonaBrowser();
             updateAiThinkingDisplay(ttsInput.value);
-            if (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) {
-              ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
-              updateCharCount();
-            }
             if (instantRegenCheckbox && instantRegenCheckbox.checked) {
               triggerTtsSynthesis();
             }
@@ -2872,6 +2963,14 @@
       const autoBookCleanCheckbox = document.getElementById("autoBookCleanCheckbox");
       const bookCleanStatusBanner = document.getElementById("bookCleanStatusBanner");
       const bookCleanStatusText = document.getElementById("bookCleanStatusText");
+      const pasteUrlInput = document.getElementById("pasteUrlInput");
+      const btnExtractUrlNow = document.getElementById("btnExtractUrlNow");
+      const btnAnalyzeBilingualNow = document.getElementById("btnAnalyzeBilingualNow");
+      const btnTranslateEnToViNow = document.getElementById("btnTranslateEnToViNow");
+      const autoReadOnUrlCheckbox = document.getElementById("autoReadOnUrlCheckbox");
+      const bilingualStatusBanner = document.getElementById("bilingualStatusBanner");
+      const bilingualStatusText = document.getElementById("bilingualStatusText");
+      const bilingualSampleChips = document.getElementById("bilingualSampleChips");
 
       const ROMAN_CLIENT_MAP = {
         I: "1", II: "2", III: "3", IV: "4", V: "5",
@@ -2884,6 +2983,161 @@
 
       const VALID_ACTING_TAG_CLIENT_RE = /^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$/i;
 
+      // Client-side Bilingual English & Vietnamese Phonetic Dictionary + Analyzer
+      const CLIENT_VN_OPEN_SYLLABLES = new Set([
+        "a","ai","am","an","anh","ao","au","ay","ba","bai","ban","bang","bao","bau","bay","be","ben","benh","bi","bia","bien","bieu","binh","bo","boi","bom","bon","bong","bu","bua","bui","bun","bung","buoi","buon","buong","buu",
+        "ca","cai","cam","can","canh","cao","cau","cay","cha","chai","cham","chan","chang","chao","chau","chay","che","chen","cheo","chi","chia","chiem","chien","chieu","chim","chin","chinh","cho","choi","chom","chon","chong","chu","chua","chui","chum","chung","chuoi","chuom","chuon","chuong","chuyen","co","coi","com","con","cong","cu","cua","cui","cum","cung","cuoi","cuon","cuong","cuu",
+        "da","dai","dam","dan","dang","danh","dao","dau","day","de","dem","den","deo","di","dia","diem","dien","dieu","dinh","do","doa","doan","doanh","doi","dom","don","dong","du","dua","dui","dum","dun","dung","duoi","duong","e","em","en","eo",
+        "ga","gai","gam","gan","gang","ganh","gao","gau","gay","ghe","ghem","ghen","gheo","ghi","ghim","gia","giai","giam","gian","giang","gianh","giao","giau","giay","gie","gieng","gieu","gin","gio","gioi","gion","giong","giu","giua","giuong","go","goi","gom","gon","gong","gu","gui","gum","gung","guom","guong",
+        "ha","hai","ham","han","hang","hanh","hao","hau","hay","he","hem","hen","heo","hi","hia","hien","hieu","hinh","hiu","ho","hoa","hoai","hoan","hoang","hoanh","hoi","hom","hon","hong","hu","hua","hui","hum","hung","huong","huou","huu","huy","huyen","huynh","i","im","in","inh","iu",
+        "ke","kem","ken","kenh","keo","keu","kha","khai","kham","khan","khang","khanh","khao","khau","khay","khe","khem","khen","kheo","kheu","khi","khia","khiem","khien","khieu","khinh","khiu","kho","khoa","khoai","khoan","khoang","khoanh","khoe","khoi","khom","khon","khong","khu","khua","khui","khum","khung","khuon","khuong","khuu","khuy","khuya","khuyen","khuynh","ki","kia","kiem","kien","kieu","kim","kin","kinh",
+        "la","lai","lam","lan","lang","lanh","lao","lau","lay","le","lem","len","lenh","leo","leu","li","lia","liem","lien","lieu","lim","linh","liu","lo","loa","loai","loan","loang","loe","loi","lom","lon","long","lu","lua","luan","lui","lum","lun","lung","luoi","luom","luon","luong","luu","luyen",
+        "ma","mai","mam","man","mang","manh","mao","mau","may","me","mem","men","menh","meo","meu","mi","mia","mieng","mien","mieu","min","minh","miu","mo","moi","mom","mon","mong","mu","mua","mui","mum","mun","mung","muoi","muon","muong","muu","my",
+        "na","nai","nam","nan","nang","nanh","nao","nau","nay","ne","nem","nen","nenh","neo","neu","nga","ngai","ngam","ngan","ngang","nganh","ngao","ngau","ngay","nghe","nghen","ngheng","ngheo","ngheu","nghi","nghia","nghiem","nghien","nghieu","nghin","nghiu","ngo","ngoa","ngoai","ngoan","ngoang","ngoe","ngoi","ngom","ngon","ngong","ngu","ngua","ngui","ngum","ngun","ngung","nguoi","nguong","nguu","nguy","nguyen",
+        "nha","nhai","nham","nhan","nhang","nhanh","nhao","nhau","nhay","nhe","nhem","nhen","nheo","nhi","nhia","nhiem","nhien","nhieu","nhim","nhin","nhinh","nhiu","nho","nhoa","nhoai","nhoan","nhoang","nhoe","nhoi","nhom","nhon","nhong","nhu","nhua","nhui","nhum","nhun","nhung","nhuoi","nhuom","nhuon","nhuong","nhuy","ni","nia","niem","nien","nieu","nim","ninh","niu","no","noi","nom","non","nong","nu","nua","nui","num","nung","nuoi","nuong","nuu",
+        "o","oa","oai","oan","oang","oanh","oe","oi","om","on","ong","pha","phai","pham","phan","phang","phanh","phao","phau","phay","phe","phen","pheo","phi","phia","phiem","phien","phieu","phim","phin","phinh","phiu","pho","phoi","phom","phon","phong","phu","phua","phui","phun","phung","phuong","qua","quai","quam","quan","quang","quanh","quao","quau","quay","que","quen","queo","qui","quoi","quon","quy","quyen","quynh",
+        "ra","rai","ram","ran","rang","ranh","rao","rau","ray","re","rem","ren","reng","reo","reu","ri","ria","rieng","rieu","rim","rinh","riu","ro","roa","roai","roan","roang","roi","rom","ron","rong","ru","rua","rui","rum","run","rung","ruoi","ruom","ruon","ruong",
+        "sa","sai","sam","san","sang","sanh","sao","sau","say","se","sem","sen","seo","si","sia","siem","sien","sieu","sim","sinh","siu","so","soa","soai","soan","soang","soi","som","son","song","su","sua","sui","sum","sun","sung","suoi","suon","suong","suu","suy","suyen",
+        "ta","tai","tam","tan","tang","tanh","tao","tau","tay","te","tem","ten","tenh","teo","teu","tha","thai","tham","than","thang","thanh","thao","thau","thay","the","them","then","thenh","theo","theu","thi","thia","thiem","thien","thieu","thim","thin","thinh","thiu","tho","thoa","thoai","thoan","thoang","thoi","thom","thon","thong","thu","thua","thuan","thui","thum","thun","thung","thuoi","thuom","thuon","thuong","thuy","thuyen","ti","tia","tiem","tien","tieu","tim","tin","tinh","tiu","to","toa","toai","toan","toang","toe","toi","tom","ton","tong","tra","trai","tram","tran","trang","tranh","trao","trau","tray","tre","trem","tren","treo","treu","tri","tria","triem","trien","trieu","trinh","triu","tro","troi","trom","tron","trong","tru","trua","trui","trum","trun","trung","truoi","truon","truong","truyen","truy","tu","tua","tuan","tui","tum","tun","tung","tuoi","tuom","tuon","tuong","tuu","tuy","tuyen","tuyn",
+        "u","ua","uan","uang","ui","um","un","ung","uoi","uom","uon","uong","uu","uy","uyen","va","vai","vam","van","vang","vanh","vao","vau","vay","ve","vem","ven","venh","veo","veu","vi","via","viem","vien","vieu","vim","vin","vinh","viu","vo","voi","vom","von","vong","vu","vua","vui","vum","vun","vung","vuoi","vuon","vuong",
+        "xa","xai","xam","xan","xang","xanh","xao","xau","xay","xe","xem","xen","xeng","xeo","xeu","xi","xia","xiem","xien","xieu","xim","xin","xinh","xiu","xo","xoa","xoai","xoan","xoang","xoe","xoi","xom","xon","xong","xu","xua","xuan","xui","xum","xun","xung","xuoi","xuom","xuong","xuy","xuyen","y","ia","iem","ien","ieu","im","in","inh","iu","ya","yen","yeu"
+      ]);
+
+      const CLIENT_EN_PHONETIC_MAP = {
+        "ai": "ây ai", "api": "ây pi ai", "app": "áp", "apps": "áp", "apple": "áp pồ", "amazon": "a ma don",
+        "anthropic": "an thờ rô pích", "algorithm": "an gô ri đầm", "analytics": "a na li tích", "architecture": "ác ki tếch chờ",
+        "artificial": "a ti phi sồ", "intelligence": "in teo li dần", "automation": "o tô mây sần", "backend": "bách en",
+        "benchmark": "ben mác", "bitcoin": "bít coi", "blockchain": "bờ lốc chên", "brand": "bờ ren", "business": "bít nít",
+        "campaign": "cam pên", "capone": "ca pôn", "carnegie": "ca nê ghi", "ceo": "xi i ô", "chatgpt": "chát gi pi ti",
+        "chicago": "si ca gô", "claude": "cờ lốt", "client": "cờ lai ần", "cloud": "cờ lao", "computing": "com piu tinh",
+        "code": "cốt", "coding": "cốt đinh", "concept": "con xép", "content": "con ten", "creator": "cờ ri ây tờ",
+        "crowley": "cờ rao li", "crypto": "cờ ríp tô", "dashboard": "đát bo", "data": "đây ta", "database": "đây ta bây",
+        "deadline": "đét lai", "deep": "đíp", "learning": "lơ ninh", "demo": "đề mô", "deploy": "đì pờ loi",
+        "deployment": "đì pờ loi mần", "design": "đì zai", "developer": "đì ve lốp pơ", "digital": "đi gi tồ",
+        "download": "đao lốt", "email": "i mêu", "engine": "en gin", "engineer": "en gi nia", "facebook": "phây búc",
+        "feature": "phi chờ", "feedback": "phít bách", "file": "phai", "finance": "phai nen", "fintech": "phin tếch",
+        "focus": "phô cớt", "format": "pho mát", "founder": "phao đơ", "framework": "phờ rêm guốc", "franklin": "phờ răng cờ lin",
+        "frontend": "phờ răn en", "function": "phăng sần", "game": "ghêm", "gdp": "gi đi pi", "gemini": "giê mi nai",
+        "github": "ghít hấp", "global": "gờ lô bồ", "google": "gu gồ", "gpu": "gi pi iu", "growth": "gờ râu",
+        "hardware": "hát que", "highlight": "hai lai", "hotline": "hót lai", "hybrid": "hai bờ rít", "idea": "ai đia",
+        "impact": "im pách", "import": "im pọt", "index": "in đếch", "innovation": "in nô vây sần", "insight": "in sai",
+        "interface": "in tơ phây", "internet": "in tơ nét", "invest": "in vét", "investor": "in vét tơ", "iphone": "ai phôn",
+        "javascript": "gia va sờ cờ ríp", "key": "ki", "keyword": "ki guốc", "koc": "ây ô xi", "kol": "ây ô eo",
+        "kpi": "cây pi ai", "laptop": "láp tóp", "layout": "lây ao", "leader": "lít đơ", "lincoln": "lin côn",
+        "link": "linh", "livestream": "lai chim", "local": "lô cồ", "logic": "lô gíc", "logo": "lô gô", "luxury": "lắc xơ ri",
+        "machine": "mờ sin", "management": "ma nít mần", "manager": "ma nít giơ", "market": "ma kịt", "marketing": "ma két tinh",
+        "master": "mát tơ", "media": "mi đi a", "meeting": "mít tinh", "memory": "me mô ri", "mentor": "men tơ",
+        "meta": "mê ta", "microsoft": "mai cờ rô xóp", "middle": "mít đồ", "mindset": "mai xét", "mobile": "mô bai",
+        "mode": "mốt", "model": "mô đồ", "models": "mô đồ", "modern": "mô đần", "money": "măn ni", "monitor": "mô ni tơ",
+        "network": "nét guốc", "news": "niu", "nvidia": "en vi đi a", "office": "óp phít", "offline": "óp lai",
+        "online": "on lai", "open": "ô pần", "openai": "ô pần ây ai", "optimize": "óp ti mai", "option": "óp sần",
+        "order": "o đơ", "output": "ao pút", "partner": "pát nơ", "password": "pát guốc", "payment": "pây mần",
+        "pdf": "pi đi ép", "performance": "pơ pho mần", "personal": "pơ sơ nồ", "pipeline": "pai lai", "platform": "pờ lát phom",
+        "plugin": "pờ lắc in", "podcast": "pót cát", "policy": "po li xi", "post": "pốt", "power": "pao ơ",
+        "premium": "pờ ri mi um", "preset": "pờ ri xét", "preview": "pờ ri viu", "price": "pờ rai", "pro": "pờ rô",
+        "process": "pờ rô xét", "product": "pờ rô đắc", "production": "pờ rô đắc sần", "profile": "pờ rô phai",
+        "program": "pờ rô gờ ram", "project": "pờ rô giếch", "prompt": "pờ rom", "python": "pai thon", "quality": "qua li ti",
+        "quiet": "khoai ợt", "firing": "phai ơ ring", "radio": "ra đi ô", "react": "ri ách", "realtime": "riu tai",
+        "record": "rì coọc", "reload": "rì lốt", "remote": "rì mốt", "render": "ren đơ", "report": "rì pọt",
+        "request": "rì quét", "research": "rì xớt", "reset": "rì xét", "review": "ri viu", "reword": "rì guốc",
+        "rewordings": "rì guốc đinh", "wordings": "guốc đinh", "bookmarks": "búc mác", "bookmark": "búc mác",
+        "roadmap": "rốt máp", "robot": "rô bốt", "rockefeller": "rốc phe lơ", "roosevelt": "ru dơ ven",
+        "sale": "sêu", "sales": "sêu", "scale": "sờ kêu", "scan": "sờ can", "schedule": "sờ ke điu", "schwab": "sờ oáp",
+        "screen": "sờ cờ rin", "script": "sờ cờ ríp", "search": "xớt", "security": "xì kiu ri ti", "server": "xơ vơ",
+        "service": "xơ vịt", "session": "xét sần", "set": "xét", "setting": "xét tinh", "setup": "xét ắp", "share": "se",
+        "shop": "sóp", "shopee": "sóp pi", "show": "sô", "signal": "xích nồ", "skill": "sờ kiu", "slide": "sờ lai",
+        "smart": "sờ mát", "smartphone": "sờ mát phôn", "social": "xô sồ", "software": "xóp que", "solution": "xô lu sần",
+        "sound": "xao", "source": "xoọc", "spa": "sờ pa", "space": "sờ pây", "speed": "sờ pít", "standard": "sờ tan đớt",
+        "start": "sờ tát", "startup": "sờ tát ắp", "status": "sờ ta tớt", "step": "sờ tép", "stock": "sờ tóc",
+        "stop": "sờ tốp", "store": "sờ to", "story": "sờ to ri", "strategy": "sờ tra tê gi", "stream": "sờ chim",
+        "stress": "sờ trét", "studio": "sờ tu đi ô", "style": "sờ tai", "Summary": "xăm mơ ri", "super": "xu pơ",
+        "support": "sắp pọt", "sync": "xinh", "system": "xít tầm", "systems": "xít tầm", "tab": "táp", "tag": "tác",
+        "talent": "ta lần", "target": "ta ghẹt", "task": "tát", "tasks": "tát", "team": "tim", "teamwork": "tim guốc",
+        "tech": "tếch", "techcombank": "tếch com băng", "technology": "tếch nô lô gi", "template": "tem pờ lết",
+        "test": "tét", "text": "tếch", "thread": "thờ rét", "tiktok": "tíc tóc", "time": "tai", "timeline": "tai lai",
+        "tip": "típ", "tips": "típ", "title": "tai tồ", "token": "tô cần", "tool": "tun", "tools": "tun", "top": "tóp",
+        "topic": "tóp pích", "total": "tô tồ", "track": "trách", "trade": "trây", "trading": "trây đinh", "traffic": "tra phích",
+        "train": "trên", "training": "trên ninh", "trend": "tren", "trending": "tren đinh", "turbo": "tuốc bô", "tvc": "ti vi xi",
+        "ui": "iu ai", "update": "ắp đết", "upgrade": "ắp gờ rết", "upload": "ắp lốt", "url": "iu a eo", "usd": "đô la mỹ",
+        "user": "diu dơ", "ux": "iu ích", "value": "va liu", "vector": "véc tơ", "version": "vơ sần", "vest": "vét",
+        "video": "vi đê ô", "vietcombank": "việt com băng", "vietinbank": "việt tin băng", "view": "viu", "villa": "vi la",
+        "vinamilk": "vi na miu", "vinhomes": "vin hôm", "vip": "víp", "viral": "vai rồ", "vision": "vi sần", "visual": "vi duồ",
+        "vlog": "vê lốc", "voice": "voi", "volume": "vô lum", "voucher": "vao chờ", "vpbank": "vi pi băng", "vtv": "vê tê vê",
+        "vtv1": "vê tê vê một", "htv": "hát tê vê", "washington": "oa sinh tơn", "watermark": "gua tơ mác", "web": "guép",
+        "website": "guép sai", "wifi": "oai phai", "wikipedia": "uy ki pi đi a", "window": "uyn đâu", "windows": "uyn đâu",
+        "work": "guốc", "workflow": "guốc phờ lâu", "working": "guốc kinh", "workshop": "guốc sóp", "world": "guôn",
+        "youtube": "diu túp", "zalo": "da lô", "zero": "di rô", "zone": "dôn", "zoom": "dum",
+        "the": "đơ", "and": "en", "for": "pho", "with": "guýt", "from": "phờ rom", "that": "đát", "this": "đít",
+        "have": "hép", "has": "hét", "had": "hét", "not": "nót", "but": "bất", "what": "guát", "all": "ôn",
+        "were": "guơ", "when": "guen", "your": "do", "can": "ken", "said": "xét", "there": "đe", "each": "ít",
+        "which": "guých", "she": "si", "how": "hao", "their": "đe", "will": "guyn", "other": "a đơ", "about": "ơ bao",
+        "out": "ao", "many": "me ni", "then": "đen", "them": "đem", "these": "đi", "some": "xăm", "her": "hơ",
+        "would": "gút", "make": "mếch", "like": "lai", "into": "in tu", "look": "lúc", "more": "mo", "write": "rai",
+        "number": "năm bơ", "people": "pi pồ", "first": "phớt", "water": "gua tơ", "been": "bin", "call": "côn"
+      };
+
+      function analyzeBilingualClient(rawText) {
+        const cleanScan = (rawText || "")
+          .replace(/\[[^\]]*\]/g, " ")
+          .replace(/_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03/gi, " ");
+        const matches = cleanScan.match(/[A-Za-zÀ-ỹ]+(?:['-][A-Za-zÀ-ỹ]+)*/gu) || [];
+        let vnCount = 0;
+        let enCount = 0;
+        const sampleMap = new Map();
+
+        for (const tok of matches) {
+          if (/[À-ỹ]/u.test(tok)) {
+            vnCount++;
+            continue;
+          }
+          const low = tok.toLowerCase().replace(/^['-]+|['-]+$/g, "");
+          if (!low) continue;
+          const isStopFinalAscii = /(?:p|t|c|ch|k|d|g|b|v|z|f|j|w|sh|th|st|nd|rd|ld|nk|mp|ct|pt|ft|xt)$/i.test(low);
+          const isEnSuffix = low.length >= 4 && /(?:tion|sion|ment|ight|ough|ould|ance|ence|ship|ward|less|ness|able|ible|ology|graph|ware|line|work|book|tech|cloud|data|flow|ing|ed|ly)$/i.test(low);
+          if (CLIENT_EN_PHONETIC_MAP[low] || (!CLIENT_VN_OPEN_SYLLABLES.has(low) && (isStopFinalAscii || isEnSuffix || /[fjwz]/i.test(low) || low.length >= 5))) {
+            enCount++;
+            if (!sampleMap.has(low) && sampleMap.size < 10 && low.length >= 2) {
+              sampleMap.set(low, CLIENT_EN_PHONETIC_MAP[low] || tok);
+            }
+          } else {
+            vnCount++;
+          }
+        }
+
+        const total = Math.max(1, vnCount + enCount);
+        const enPct = Math.round((enCount * 100) / total);
+        const vnPct = 100 - enPct;
+        let detectedLang = "Tiếng Việt (Chuẩn)";
+        if (enPct >= 60) detectedLang = "Tiếng Anh (English Article)";
+        else if (enCount >= 1 || enPct >= 4) detectedLang = "Song Ngữ Anh - Việt (Bilingual)";
+
+        const samples = [];
+        sampleMap.forEach((vi, en) => samples.push({ en, vi }));
+        return {
+          detected_lang: detectedLang,
+          vn_word_count: vnCount,
+          en_word_count: enCount,
+          vn_percent: vnPct,
+          en_percent: enPct,
+          english_samples: samples
+        };
+      }
+
+      function renderBilingualStatusBanner(bilingObj, sourceNote) {
+        if (!bilingualStatusBanner || !bilingualStatusText || !bilingualSampleChips) return;
+        const b = bilingObj || analyzeBilingualClient(ttsInput.value);
+        const srcPrefix = sourceNote ? `<span style="color:#0f766e;">[${sourceNote}]</span> ` : "";
+        if (b.en_word_count > 0) {
+          bilingualStatusText.innerHTML = `🌐 ${srcPrefix}<b>Tự Phân Tích Anh &amp; Việt (${b.detected_lang}):</b> Phát hiện <b>${b.vn_word_count} từ Tiếng Việt (${b.vn_percent}%)</b> &amp; <b>${b.en_word_count} từ Tiếng Anh (${b.en_percent}%)</b> — AI tự động phiên âm chuẩn cả 2 ngôn ngữ khi đọc!`;
+          bilingualSampleChips.innerHTML = (b.english_samples || []).slice(0, 7).map(item =>
+            `<span class="bilingual-chip" title="Từ Tiếng Anh '${item.en}' sẽ được đọc mượt là '${item.vi}'">🇬🇧 <b>${item.en}</b> ➔ 🗣️ ${item.vi}</span>`
+          ).join("");
+        } else {
+          bilingualStatusText.innerHTML = `🌐 ${srcPrefix}<b>Tự Phân Tích Anh &amp; Việt (${b.detected_lang}):</b> <b>${b.vn_word_count} từ Tiếng Việt (100%)</b> — Nếu em dán thêm từ Tiếng Anh hoặc bài báo quốc tế, AI sẽ tự động phân tích và đọc mượt cả Anh lẫn Việt!`;
+          bilingualSampleChips.innerHTML = `<span class="bilingual-chip">🇻🇳 100% Tiếng Việt Chuẩn</span>`;
+        }
+      }
+
       function cleanAndRewordBookTextClient(rawInput) {
         if (!rawInput || !rawInput.trim()) {
           return { text: "", removedJunk: 0, rewordedItems: 0 };
@@ -2892,8 +3146,14 @@
         let removedJunk = 0;
         let rewordedItems = 0;
 
-        // Strip previously appended synthetic AI Nhận định if present
-        t = t.replace(/\n*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*$/gi, () => {
+        // Strip any leaked internal placeholder tokens (VBEE_ACT_TAG / VBEE_TAG)
+        t = t.replace(/_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03/gi, () => {
+          removedJunk++;
+          return " ";
+        });
+
+        // Strip any previously appended synthetic AI 'Nhận định lại...' lines (even when preceded by [nhận định] [nhấn khoản cuối])
+        t = t.replace(/\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*/gi, () => {
           removedJunk++;
           return "";
         });
@@ -2906,11 +3166,12 @@
           return lb;
         });
 
+        // Use \x02VBEEACT...\x03 (zero underscores!) so markdown __ bold stripping NEVER corrupts the token!
         t = t.replace(/\[[^\]]*\]/g, (fullTag) => {
           if (VALID_ACTING_TAG_CLIENT_RE.test(fullTag)) {
             const idx = protectedTags.length;
             protectedTags.push(fullTag);
-            return `__VBEE_ACT_TAG_${idx}__`;
+            return `\x02VBEEACT${idx}\x03`;
           }
           removedJunk++;
           return " ";
@@ -2931,7 +3192,7 @@
         const lineFreq = {};
         for (const ln of rawLines) {
           const sLn = ln.trim();
-          if (sLn.length >= 1 && sLn.length <= 85 && !/^(__VBEE_ACT_TAG_|[-–—“"])/.test(sLn)) {
+          if (sLn.length >= 1 && sLn.length <= 85 && !/^(\x02VBEEACT|[-–—“"])/.test(sLn)) {
             const k = sLn.toLowerCase();
             lineFreq[k] = (lineFreq[k] || 0) + 1;
           }
@@ -3047,7 +3308,7 @@
           }
           if (curPara.length) {
             let pStr = curPara.join(" ");
-            if (!/[.!?…”"]$/.test(pStr) && !/__VBEE_ACT_TAG_\d+__$/.test(pStr)) {
+            if (!/[.!?…”"]$/.test(pStr) && !/\x02VBEEACT\d+\x03$/.test(pStr)) {
               pStr += ".";
             }
             reflowedParas.push(pStr);
@@ -3151,8 +3412,9 @@
         t = t.replace(/\n{3,}/g, "\n\n").trim();
 
         protectedTags.forEach((val, idx) => {
-          t = t.replace(`__VBEE_ACT_TAG_${idx}__`, val);
+          t = t.replace(`\x02VBEEACT${idx}\x03`, val);
         });
+        t = t.replace(/_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03/gi, " ");
 
         return { text: t.trim(), removedJunk, rewordedItems };
       }
@@ -3168,16 +3430,27 @@
         }
       }
 
-      // Updates the friendly AI Thinking status bar WITHOUT cluttering the user's clean text with bracket tags!
+      // Updates the friendly AI Thinking status bar & Bilingual Analyzer WITHOUT cluttering the user's clean text with bracket tags!
       function updateAiThinkingDisplay(rawText) {
+        renderBilingualStatusBanner(null, "");
         const compiled = formatTextWithAiProsody(rawText, currentPreset || "human_rewrite");
         return compiled;
       }
 
+      function stripAllTechnicalTagsForDisplay(text) {
+        if (!text) return "";
+        return text
+          .replace(/_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03/gi, " ")
+          .replace(/\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*/gi, "")
+          .replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ")
+          .replace(/[ \t]+/g, " ")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      }
+
       function formatTextWithAiProsody(text, preset) {
-        let raw = (text || "").replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|trường giang|nguyễn ngọc ngạn|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ");
+        let raw = stripAllTechnicalTagsForDisplay(text || "");
         raw = raw.replace(/(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)/gi, "");
-        raw = raw.replace(/\s*Nhận định (?:lại|chung),[^.\n]+\.?\s*$/i, "").trim();
         if (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked) {
           raw = cleanAndRewordBookTextClient(raw).text;
         } else {
@@ -3240,20 +3513,13 @@
           return taggedSents.join(" ");
         });
 
-        const { nhanDinhSentence, commentary } = buildAiNhanDinhClient(raw, persona);
-        const shouldAppendNhanDinh = Boolean(includeNhanDinhCheckbox && includeNhanDinhCheckbox.checked);
-        if (shouldAppendNhanDinh && nhanDinhSentence) {
-          countInsight++;
-          outParas.push(`[nhận định] [nhấn khoản cuối] ${nhanDinhSentence}`);
-        }
+        const { commentary } = buildAiNhanDinhClient(raw, persona);
 
         if (aiEmotionStatsBadge) {
-          aiEmotionStatsBadge.textContent = `✨ Diễn xuất: ${countDramatic + countHappy + countSad} câu · 📖 Đã lọc sạch Bookmark`;
+          aiEmotionStatsBadge.textContent = `✨ Diễn xuất: ${countDramatic + countHappy + countSad} câu · 📖 Chuẩn Sách & Báo`;
         }
         if (aiAssessmentText) {
-          aiAssessmentText.innerHTML = shouldAppendNhanDinh
-            ? `${commentary} <span style="color:#0369a1;font-weight:800;">💡 Câu kết AI tự thêm:</span> <i>"${nhanDinhSentence}"</i>`
-            : `${commentary} <span style="color:#047857;font-weight:800;">📖 Chế độ Đọc Chuẩn Sách:</span> AI đã tự xoá Bookmark/phần thừa, wordings lại câu văn và chỉ đọc đúng nội dung sách.`;
+          aiAssessmentText.innerHTML = `${commentary} <span style="color:#047857;font-weight:800;">📖 Đọc Đúng Nguyên Bản 100%:</span> AI tự xoá Bookmark/phần thừa, tự phân tích Anh - Việt và tuyệt đối không tự thêm câu thừa ngoài văn bản.`;
         }
 
         const paraB = (persona && persona.paraBreak) || "0.48s";
@@ -3262,9 +3528,10 @@
 
       function saveDraftToLocalStorage() {
         try {
+          const cleanDraftText = stripAllTechnicalTagsForDisplay(ttsInput.value || "");
           const draft = {
             title: recordTitle.value || "",
-            text: ttsInput.value || "",
+            text: cleanDraftText,
             voiceId: activeVoice ? activeVoice.id : "",
             speed: speedSlider.value,
             pitch: pitchSlider.value,
@@ -3282,7 +3549,7 @@
           if (!raw) return false;
           const d = JSON.parse(raw);
           if (d && typeof d.text === "string" && d.text.trim()) {
-            ttsInput.value = d.text;
+            ttsInput.value = stripAllTechnicalTagsForDisplay(d.text);
           }
           if (d && d.title) recordTitle.value = d.title;
           if (d && d.speed) {
@@ -3299,6 +3566,199 @@
         } catch (_) {
           return false;
         }
+      }
+
+      // Paste Link Mode: Extract Web Article / News / Online Book & Auto-Analyze English + Vietnamese
+      async function extractArticleFromUrl(rawUrl, options) {
+        const hint = document.getElementById("statusHint");
+        const opts = options || {};
+        let targetUrl = (rawUrl || (pasteUrlInput ? pasteUrlInput.value : "") || "").trim();
+        const urlMatch = targetUrl.match(/https?:\/\/[^\s)\]">]+/i);
+        if (urlMatch) {
+          targetUrl = urlMatch[0];
+        } else if (targetUrl && !/^https?:\/\//i.test(targetUrl) && /^[a-z0-9.-]+\.[a-z]{2,}\/.+/i.test(targetUrl)) {
+          targetUrl = "https://" + targetUrl;
+        }
+
+        if (!targetUrl || !/^https?:\/\//i.test(targetUrl)) {
+          hint.textContent = "⚠️ Em hãy dán một đường link báo chí hoặc trang web hợp lệ (bắt đầu bằng https://) vào ô Link nhé!";
+          if (pasteUrlInput) pasteUrlInput.focus();
+          return;
+        }
+
+        if (pasteUrlInput) pasteUrlInput.value = targetUrl;
+        if (btnExtractUrlNow) {
+          btnExtractUrlNow.disabled = true;
+          btnExtractUrlNow.textContent = "⏳ Đang trích xuất báo...";
+        }
+        hint.textContent = `⏳ AI đang trích xuất nội dung báo chí & phân tích Anh - Việt từ: ${targetUrl}...`;
+
+        try {
+          if (!apiBaseUrl) await discoverCompanyServer();
+          let data = null;
+          try {
+            const resp = await fetch((apiBaseUrl || "") + "/api/extract_url", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                url: targetUrl,
+                bilingual_mode: opts.bilingualMode || "auto_phonetic"
+              })
+            });
+            data = await resp.json();
+          } catch (_) {
+            data = null;
+          }
+
+          // Fallback via r.jina.ai in browser if Cloud endpoint is unreachable
+          if (!data || !data.ok || !data.cleaned_text) {
+            const jinaResp = await fetch("https://r.jina.ai/" + targetUrl, {
+              headers: { "X-Return-Format": "text" }
+            });
+            if (!jinaResp.ok) {
+              throw new Error((data && data.error) || "Không thể trích xuất trang web này");
+            }
+            const rawJina = await jinaResp.text();
+            let extractedTitle = "";
+            const bodyLines = [];
+            for (const ln of rawJina.split(/\r?\n/)) {
+              const s = ln.trim();
+              if (s.startsWith("Title:") && !extractedTitle) {
+                extractedTitle = s.slice(6).trim();
+                continue;
+              }
+              if (/^(?:URL Source:|Markdown Content:|Published Time:)/i.test(s)) continue;
+              bodyLines.push(s);
+            }
+            const cleaned = cleanAndRewordBookTextClient(bodyLines.join("\n"));
+            const biling = analyzeBilingualClient(cleaned.text);
+            data = {
+              ok: true,
+              url: targetUrl,
+              site_name: (new URL(targetUrl)).hostname.replace(/^www\./, ""),
+              title: extractedTitle || "Bài báo trích xuất từ Link",
+              cleaned_text: cleaned.text,
+              removed_junk: cleaned.removedJunk,
+              reworded_items: cleaned.rewordedItems,
+              bilingual: biling
+            };
+          }
+
+          if (data.title) recordTitle.value = data.title;
+          selectedPersonaId = "AUTO";
+          const cleanArticle = stripAllTechnicalTagsForDisplay(data.cleaned_text);
+          ttsInput.value = cleanArticle;
+          updateCharCount();
+          updateAiThinkingDisplay(cleanArticle);
+          saveDraftToLocalStorage();
+          showBookCleanBanner(data.removed_junk || 0, data.reworded_items || 0, `Đã Trích Xuất Báo (${data.site_name || "Web"})`);
+          renderBilingualStatusBanner(data.bilingual, `Link: ${data.site_name || "Báo chí"}`);
+
+          const shouldReadNow = opts.forceRead || (autoReadOnUrlCheckbox && autoReadOnUrlCheckbox.checked);
+          if (shouldReadNow) {
+            hint.textContent = `✅ Đã trích xuất "${data.title}" (${cleanArticle.length} chữ) & phân tích Anh - Việt! Đang đọc ngay...`;
+            triggerTtsSynthesis();
+          } else {
+            hint.textContent = `✅ Đã trích xuất bài báo "${data.title}" (${cleanArticle.length} chữ) và phân tích Anh - Việt! Bấm ĐỌC NGAY để nghe!`;
+          }
+        } catch (err) {
+          hint.textContent = "⚠️ Không thể trích xuất link này: " + err.message;
+        } finally {
+          if (btnExtractUrlNow) {
+            btnExtractUrlNow.disabled = false;
+            btnExtractUrlNow.textContent = "📰 Trích Xuất & Đọc Báo Ngay";
+          }
+        }
+      }
+
+      if (btnExtractUrlNow) {
+        btnExtractUrlNow.addEventListener("click", () => {
+          extractArticleFromUrl(pasteUrlInput ? pasteUrlInput.value : "", { forceRead: Boolean(autoReadOnUrlCheckbox && autoReadOnUrlCheckbox.checked) });
+        });
+      }
+
+      if (pasteUrlInput) {
+        // Follow modern-web-guidance (forms): check e.isComposing before treating Enter as submit
+        pasteUrlInput.addEventListener("keydown", (e) => {
+          if (e.isComposing) return;
+          if (e.key === "Enter") {
+            e.preventDefault();
+            extractArticleFromUrl(pasteUrlInput.value, { forceRead: Boolean(autoReadOnUrlCheckbox && autoReadOnUrlCheckbox.checked) });
+          }
+        });
+        pasteUrlInput.addEventListener("paste", () => {
+          setTimeout(() => {
+            const v = (pasteUrlInput.value || "").trim();
+            if (/^https?:\/\/\S+$/i.test(v)) {
+              extractArticleFromUrl(v, { forceRead: Boolean(autoReadOnUrlCheckbox && autoReadOnUrlCheckbox.checked) });
+            }
+          }, 40);
+        });
+      }
+
+      if (btnAnalyzeBilingualNow) {
+        btnAnalyzeBilingualNow.addEventListener("click", async () => {
+          const hint = document.getElementById("statusHint");
+          const curText = stripAllTechnicalTagsForDisplay(ttsInput.value || "");
+          if (!curText) {
+            hint.textContent = "⚠️ Em hãy nhập văn bản hoặc dán link báo trước khi phân tích Anh - Việt nhé!";
+            return;
+          }
+          hint.textContent = "⏳ AI đang phân tích tỷ lệ Tiếng Anh & Tiếng Việt và chuẩn hóa phiên âm...";
+          try {
+            if (!apiBaseUrl) await discoverCompanyServer();
+            const r = await fetch((apiBaseUrl || "") + "/api/analyze_bilingual", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: curText, mode: "auto_phonetic" })
+            });
+            const d = await r.json();
+            if (d && d.ok) {
+              renderBilingualStatusBanner(d, "Đã Phân Tích Anh - Việt");
+              hint.textContent = `✅ Đã phân tích: ${d.vn_word_count} từ Tiếng Việt (${d.vn_percent}%) & ${d.en_word_count} từ Tiếng Anh (${d.en_percent}%) — Khi đọc AI sẽ phát âm chuẩn cả 2 ngôn ngữ!`;
+              return;
+            }
+          } catch (_) {}
+          const localB = analyzeBilingualClient(curText);
+          renderBilingualStatusBanner(localB, "Đã Phân Tích Anh - Việt");
+          hint.textContent = `✅ Đã phân tích: ${localB.vn_word_count} từ Tiếng Việt (${localB.vn_percent}%) & ${localB.en_word_count} từ Tiếng Anh (${localB.en_percent}%)!`;
+        });
+      }
+
+      if (btnTranslateEnToViNow) {
+        btnTranslateEnToViNow.addEventListener("click", async () => {
+          const hint = document.getElementById("statusHint");
+          const curText = stripAllTechnicalTagsForDisplay(ttsInput.value || "");
+          if (!curText) {
+            hint.textContent = "⚠️ Em hãy nhập văn bản Tiếng Anh hoặc dán link báo quốc tế trước khi dịch nhé!";
+            return;
+          }
+          btnTranslateEnToViNow.disabled = true;
+          hint.textContent = "⏳ AI đang dịch văn bản Tiếng Anh sang Tiếng Việt mượt mà...";
+          try {
+            if (!apiBaseUrl) await discoverCompanyServer();
+            const r = await fetch((apiBaseUrl || "") + "/api/analyze_bilingual", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: curText, mode: "translate_vi" })
+            });
+            const d = await r.json();
+            if (d && d.ok && d.clean_display_text) {
+              const cleanedVi = cleanAndRewordBookTextClient(d.clean_display_text);
+              ttsInput.value = cleanedVi.text;
+              updateCharCount();
+              updateAiThinkingDisplay(cleanedVi.text);
+              saveDraftToLocalStorage();
+              renderBilingualStatusBanner(analyzeBilingualClient(cleanedVi.text), "Đã Dịch Anh ➔ Việt");
+              hint.textContent = "✅ Đã dịch Tiếng Anh sang Tiếng Việt chuẩn sách nói! Bấm ĐỌC NGAY để nghe!";
+              return;
+            }
+          } catch (err) {
+            hint.textContent = "⚠️ Lỗi khi dịch Anh ➔ Việt: " + err.message;
+          } finally {
+            btnTranslateEnToViNow.disabled = false;
+          }
+        });
       }
 
       // Import TXT & PDF File Extraction + Auto Book Clean & Rewording
@@ -3399,8 +3859,9 @@
             : cleanAndRewordBookTextClient(rawExtracted);
 
           selectedPersonaId = "AUTO";
-          const formatted = formatTextWithAiProsody(res.text, currentPreset || "human_rewrite");
-          ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : res.text;
+          const cleanDisplay = stripAllTechnicalTagsForDisplay(res.text);
+          ttsInput.value = cleanDisplay;
+          updateAiThinkingDisplay(cleanDisplay);
           updateCharCount();
           saveDraftToLocalStorage();
           showBookCleanBanner(res.removedJunk, res.rewordedItems, isPdf ? `Đã Import PDF (${pageCount} trang - ${file.name})` : `Đã Import TXT (${file.name})`);
@@ -3437,30 +3898,37 @@
 
       document.getElementById("btnCleanBookNow").addEventListener("click", () => {
         const res = cleanAndRewordBookTextClient(ttsInput.value);
-        const formatted = formatTextWithAiProsody(res.text, currentPreset || "human_rewrite");
-        ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : res.text;
+        const cleanDisplay = stripAllTechnicalTagsForDisplay(res.text);
+        ttsInput.value = cleanDisplay;
+        updateAiThinkingDisplay(cleanDisplay);
         updateCharCount();
         saveDraftToLocalStorage();
         showBookCleanBanner(res.removedJunk, res.rewordedItems, "AI Biên Tập Sách");
         document.getElementById("statusHint").textContent = `🧹 Đã xoá ${res.removedJunk} Bookmark/phần thừa & wordings lại ${res.rewordedItems} cụm từ chuẩn sách nói!`;
       });
 
-      // Zero-Click Auto-Clean & Auto-Thinking on Paste & Typing!
+      // Zero-Click Auto-Clean, Auto-Extract Link & Auto-Bilingual Analysis on Paste & Typing!
       let typingTimer = null;
       ttsInput.addEventListener("paste", () => {
         setTimeout(() => {
+          const rawPasted = (ttsInput.value || "").trim();
+          // If the user pasted a single http(s):// link directly into #ttsInput, auto-extract the web article!
+          if (/^https?:\/\/[^\s]+$/i.test(rawPasted)) {
+            extractArticleFromUrl(rawPasted, { forceRead: Boolean(autoReadOnUrlCheckbox && autoReadOnUrlCheckbox.checked) });
+            return;
+          }
           selectedPersonaId = "AUTO";
-          let baseText = ttsInput.value;
+          let baseText = stripAllTechnicalTagsForDisplay(ttsInput.value);
           if (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked) {
             const res = cleanAndRewordBookTextClient(baseText);
-            baseText = res.text;
+            baseText = stripAllTechnicalTagsForDisplay(res.text);
             showBookCleanBanner(res.removedJunk, res.rewordedItems, "Tự Động Khi Dán (Paste)");
           }
-          const formatted = formatTextWithAiProsody(baseText, currentPreset || "human_rewrite");
-          ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : baseText;
+          ttsInput.value = baseText;
+          updateAiThinkingDisplay(baseText);
           updateCharCount();
           saveDraftToLocalStorage();
-          document.getElementById("statusHint").textContent = "⚡ Đã dán chữ, tự xoá Bookmark/phần thừa & wordings lại chuẩn sách — Bấm ĐỌC NGAY để nghe!";
+          document.getElementById("statusHint").textContent = "⚡ Đã dán chữ, tự xoá Bookmark/phần thừa & tự phân tích Anh - Việt — Bấm ĐỌC NGAY để nghe!";
         }, 25);
       });
 
@@ -3473,23 +3941,13 @@
       });
       recordTitle.addEventListener("input", saveDraftToLocalStorage);
 
-      autoPasteInjectCheckbox.addEventListener("change", () => {
-        if (autoPasteInjectCheckbox.checked) {
-          ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
-        } else {
-          ttsInput.value = formatTextWithAiProsody(ttsInput.value, "clean");
-          updateAiThinkingDisplay(ttsInput.value);
-        }
-        updateCharCount();
-      });
-
       document.querySelectorAll(".btn-preset").forEach(btn => {
         btn.addEventListener("click", () => {
           document.querySelectorAll(".btn-preset").forEach(b => b.classList.remove("active"));
           btn.classList.add("active");
           const preset = btn.getAttribute("data-preset");
           if (preset === "clean") {
-            ttsInput.value = formatTextWithAiProsody(ttsInput.value, "clean");
+            ttsInput.value = stripAllTechnicalTagsForDisplay(ttsInput.value);
             updateAiThinkingDisplay(ttsInput.value);
             updateCharCount();
             return;
@@ -3502,19 +3960,9 @@
           else if (preset === "chinh_kich") selectedPersonaId = "P037";
           else if (preset === "kinh_kich") selectedPersonaId = "P061";
           renderPersonaBrowser();
-          const formatted = formatTextWithAiProsody(ttsInput.value, preset);
-          if (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) {
-            ttsInput.value = formatted;
-          }
+          updateAiThinkingDisplay(ttsInput.value);
           updateCharCount();
         });
-      });
-
-      document.getElementById("btnAutoFormatNow").addEventListener("click", () => {
-        autoPasteInjectCheckbox.checked = true;
-        ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
-        updateCharCount();
-        document.getElementById("statusHint").textContent = "✨ Đã hiện các thẻ diễn xuất AI trong ô chữ!";
       });
 
       document.querySelectorAll("[data-insert]").forEach(btn => {
@@ -3537,8 +3985,8 @@
           currentPreset = tpl.preset || "human_rewrite";
           selectedPersonaId = tpl.personaId || "AUTO";
           renderPersonaBrowser();
-          const formatted = formatTextWithAiProsody(tpl.text, currentPreset);
-          ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : tpl.text;
+          ttsInput.value = stripAllTechnicalTagsForDisplay(tpl.text);
+          updateAiThinkingDisplay(ttsInput.value);
           updateCharCount();
           const found = voicesList.find(v => v.id === tpl.voice);
           if (found) selectVoice(found, { autoRegenerate: true });
@@ -4112,13 +4560,15 @@
         // Strip all bookmarks, page numbers, TOC lines, non-book junk and re-word before reading!
         if (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked) {
           const bookRes = cleanAndRewordBookTextClient(cleanRaw);
-          cleanRaw = bookRes.text;
-          if (!autoPasteInjectCheckbox || !autoPasteInjectCheckbox.checked) {
-            ttsInput.value = cleanRaw;
-          }
+          cleanRaw = stripAllTechnicalTagsForDisplay(bookRes.text);
+          ttsInput.value = cleanRaw;
           showBookCleanBanner(bookRes.removedJunk, bookRes.rewordedItems, "Tự Động Chuẩn Hoá Trước Khi Đọc");
           updateCharCount();
+        } else {
+          cleanRaw = stripAllTechnicalTagsForDisplay(cleanRaw);
+          ttsInput.value = cleanRaw;
         }
+        analyzeBilingualClient(cleanRaw, { autoAdapt: false });
         saveDraftToLocalStorage();
 
         // Compile acting triggers invisibly in the background so the user's text stays clean!
@@ -4285,6 +4735,7 @@
       }
       selectVoice(initialVoice, { autoRegenerate: false, skipSaveDraft: true });
       updateAiThinkingDisplay(ttsInput.value);
+      analyzeBilingualClient(ttsInput.value, { autoAdapt: false });
       updateCharCount();
       renderHistory([]);
       resumeBackgroundJobsOnLoad();
