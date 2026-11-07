@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+vbee_tunnel.exe
+vbee_studio_netlify_drop.zip
+active_vbee_tunnel.json
+generated_audio/*.wav
+generated_audio/vbee_179397*.mp3
+generated_audio/vbee_179398*.mp3
+voices_ref/*.webm
+voices_ref/archived_*.mp3
+netlify_site/previews/_archived_duplicates/
+.env

@@ -1,0 +1,41 @@
+name: Deploy Vbee Studio 100% Cloud (Firebase Hosting + Cloud Run Compute)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy-cloud:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud & Firebase
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy Compute Backend (VieNeu-TTS-v3-turbo 48kHz) to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: vbee-tts-compute
+          region: asia-southeast1
+          source: .
+          flags: >-
+            --allow-unauthenticated
+            --memory=8Gi
+            --cpu=4
+            --port=8890
+            --timeout=300
+            --min-instances=0
+            --max-instances=3
+
+      - name: Deploy Frontend to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.GCP_SA_KEY }}
+          channelId: live
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}

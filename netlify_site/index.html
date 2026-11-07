@@ -1,0 +1,2823 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vbee AI Voice Studio — 40 Giọng Nữ TVC/HTV/VTV1 & 3 Giọng Nam Chuẩn Phòng Thu (48kHz)</title>
+  <style>
+    :root {
+      --vbee-yellow: #f59e0b;
+      --vbee-yellow-hover: #d97706;
+      --vbee-yellow-light: #fef3c7;
+      --vbee-dark: #181a20;
+      --vbee-sidebar: #111318;
+      --vbee-bg: #f4f6f9;
+      --vbee-card: #ffffff;
+      --vbee-text: #1e293b;
+      --vbee-muted: #64748b;
+      --vbee-border: #e2e8f0;
+      --vbee-green: #10b981;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: var(--vbee-bg);
+      color: var(--vbee-text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .studio-shell {
+      display: flex;
+      flex: 1;
+      min-height: calc(100vh - 76px);
+    }
+
+    .vbee-sidebar {
+      width: 260px;
+      background: var(--vbee-sidebar);
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      border-right: 1px solid #262932;
+    }
+
+    .brand-box {
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #23262f;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+      color: #111318;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+
+    .nav-list {
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      color: #94a3b8;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: none;
+      background: transparent;
+      text-align: left;
+      width: 100%;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #f8fafc;
+    }
+
+    .nav-item.active {
+      background: rgba(245, 158, 11, 0.16);
+      color: #fbbf24;
+      border-left: 3px solid #fbbf24;
+    }
+
+    .server-status-box {
+      margin: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: #1b1e26;
+      border: 1px solid #2d323e;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .srv-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      margin-right: 6px;
+    }
+
+    .studio-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .studio-topbar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--vbee-border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .studio-page-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0;
+    }
+
+    .badge-pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: var(--vbee-yellow-light);
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .badge-green {
+      background: #d1fae5;
+      color: #065f46;
+      border-color: #a7f3d0;
+    }
+
+    .badge-blue {
+      background: #e0f2fe;
+      color: #0369a1;
+      border-color: #bae6fd;
+    }
+
+    .studio-container {
+      max-width: 1260px;
+      width: 100%;
+      margin: 18px auto 100px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Toolbar Card */
+    .toolbar-card {
+      background: var(--vbee-card);
+      border: 1px solid var(--vbee-border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+    }
+
+    .selected-voice-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      background: #fffbeb;
+      border: 1.5px solid #f59e0b;
+      cursor: pointer;
+      min-width: 270px;
+    }
+
+    .voice-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 15px;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .voice-avatar::after {
+      content: "✓";
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #10b981;
+      color: #fff;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #fff;
+    }
+
+    .sv-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .sv-name {
+      font-weight: 800;
+      font-size: 14px;
+      color: #0f172a;
+    }
+
+    .sv-meta {
+      font-size: 11.5px;
+      color: #64748b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 240px;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ctrl-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--vbee-border);
+      font-size: 12.5px;
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      appearance: none;
+      margin: 0;
+      width: 96px;
+      height: 1.25rem;
+      background: transparent;
+      cursor: pointer;
+      --_track-height: 0.35rem;
+      --_thumb-size: 1.05rem;
+      --_fill-color: #f59e0b;
+      --_track-color: #cbd5e1;
+      --_progress: calc((var(--control-value, 0) - var(--attr-min, 0)) / (var(--attr-max, 100) - var(--attr-min, 0)) * 100%);
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: var(--_track-height);
+      border-radius: 999px;
+      background: linear-gradient(to right, var(--_fill-color) 0%, var(--_fill-color) var(--_progress), var(--_track-color) var(--_progress), var(--_track-color) 100%);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: var(--_track-height);
+      border-radius: 999px;
+      background: linear-gradient(to right, var(--_fill-color) 0%, var(--_fill-color) var(--_progress), var(--_track-color) var(--_progress), var(--_track-color) 100%);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: var(--_thumb-size);
+      height: var(--_thumb-size);
+      margin-top: calc((var(--_track-height) - var(--_thumb-size)) / 2);
+      border-radius: 50%;
+      background: #d97706;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Auto AI Prosody Director Bar */
+    .auto-ai-card {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border: 1.5px solid #f59e0b;
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);
+    }
+
+    .auto-ai-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .auto-ai-toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #92400e;
+      cursor: pointer;
+    }
+
+    .auto-ai-toggle-label input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #d97706;
+      cursor: pointer;
+    }
+
+    .preset-buttons-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-preset {
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: 1px solid #f59e0b;
+      background: #ffffff;
+      color: #92400e;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-preset:hover, .btn-preset.active {
+      background: #f59e0b;
+      color: #111318;
+      box-shadow: 0 2px 8px rgba(245, 158, 11, 0.28);
+    }
+
+    .btn-preset.clean-btn {
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+
+    .tag-btn {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+
+    .tag-btn:hover {
+      border-color: var(--vbee-yellow);
+      background: var(--vbee-yellow-light);
+      color: #92400e;
+    }
+
+    /* Main Text Editor Card */
+    .editor-card {
+      background: var(--vbee-card);
+      border: 1px solid var(--vbee-border);
+      border-radius: 14px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .editor-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--vbee-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #fcfcfd;
+      flex-wrap: wrap;
+    }
+
+    .title-input {
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      padding: 6px 10px;
+      border-radius: 8px;
+      width: 340px;
+      max-width: 100%;
+    }
+
+    .title-input:focus {
+      outline: none;
+      border-color: var(--vbee-yellow);
+      background: #fff;
+    }
+
+    .sample-scripts-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .sample-pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .sample-pill:hover {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .tts-textarea {
+      width: 100%;
+      min-height: 210px;
+      field-sizing: content;
+      border: none;
+      padding: 18px 20px;
+      font-size: 15.5px;
+      line-height: 1.75;
+      color: #0f172a;
+      resize: vertical;
+      outline: none;
+    }
+
+    .editor-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--vbee-border);
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .char-counter {
+      font-size: 13px;
+      color: var(--vbee-muted);
+      font-weight: 600;
+    }
+
+    .action-btns {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-listen-sample {
+      padding: 11px 16px;
+      border-radius: 10px;
+      border: 1.5px solid #cbd5e1;
+      background: #ffffff;
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-synthesize {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #111318;
+      font-weight: 800;
+      font-size: 14.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+      transition: transform 0.12s, box-shadow 0.12s;
+    }
+
+    .btn-synthesize:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(217, 119, 6, 0.45);
+    }
+
+    .btn-synthesize:disabled {
+      opacity: 0.65;
+      cursor: wait;
+    }
+
+    .spinner {
+      animation: rotate 2s linear infinite;
+      width: 18px;
+      height: 18px;
+      display: none;
+    }
+
+    .spinner .path {
+      stroke: #111318;
+      stroke-linecap: round;
+      animation: dash 1.5s ease-in-out infinite;
+    }
+
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes dash {
+      0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+      50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+      100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+    }
+
+    /* Voice Catalog Section */
+    .catalog-card {
+      background: var(--vbee-card);
+      border: 1px solid var(--vbee-border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+
+    .catalog-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .gender-main-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .gender-tab-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 13px 18px;
+      border-radius: 12px;
+      border: 2px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .gender-tab-btn:hover {
+      border-color: #f59e0b;
+      background: #fffbeb;
+    }
+
+    .gender-tab-btn.active {
+      background: linear-gradient(135deg, #181a20 0%, #262932 100%);
+      color: #fbbf24;
+      border-color: #f59e0b;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.22);
+    }
+
+    .voice-drawer-panel {
+      border: 1.5px solid #fde68a;
+      border-radius: 12px;
+      background: #fffdf9;
+      padding: 14px;
+      margin-top: 6px;
+    }
+
+    .voice-drawer-panel.collapsed {
+      display: none;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-tab {
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--vbee-border);
+      background: #ffffff;
+      color: #475569;
+      cursor: pointer;
+    }
+
+    .filter-tab.active {
+      background: #f59e0b;
+      color: #111827;
+      border-color: #d97706;
+    }
+
+    .search-voice-input {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      font-size: 12.5px;
+      min-width: 250px;
+      outline: none;
+    }
+
+    .search-voice-input:focus {
+      border-color: var(--vbee-yellow);
+    }
+
+    .voice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+      gap: 10px;
+      max-height: 390px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .voice-card {
+      border: 1.5px solid var(--vbee-border);
+      border-radius: 12px;
+      padding: 13px;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      content-visibility: auto;
+      contain-intrinsic-size: auto 9.5rem;
+    }
+
+    .voice-card:hover {
+      border-color: #fbbf24;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.12);
+    }
+
+    .voice-card.selected {
+      border-color: #f59e0b;
+      background: #fffbeb;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.18);
+    }
+
+    .vc-top {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .vc-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .vc-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .vc-name {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .vc-meta {
+      font-size: 11.5px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .vc-badge {
+      padding: 3px 7px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 800;
+      background: #1e293b;
+      color: #fbbf24;
+      white-space: nowrap;
+    }
+
+    .vc-desc {
+      font-size: 11.5px;
+      color: #475569;
+      line-height: 1.4;
+    }
+
+    .vc-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 2px;
+    }
+
+    .btn-sample {
+      padding: 5px 10px;
+      border-radius: 7px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #1e293b;
+      cursor: pointer;
+    }
+
+    .btn-sample:hover {
+      background: #f1f5f9;
+    }
+
+    /* History Table */
+    .history-card {
+      background: var(--vbee-card);
+      border: 1px solid var(--vbee-border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+
+    .vbee-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .vbee-table th,
+    .vbee-table td {
+      padding: 12px 10px;
+      text-align: left;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .vbee-table th {
+      color: #64748b;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      background: #f8fafc;
+    }
+
+    .status-done {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 11.5px;
+      font-weight: 700;
+    }
+
+    .btn-dl {
+      padding: 6px 11px;
+      border-radius: 7px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 700;
+      font-size: 12px;
+      text-decoration: none;
+      border: 1px solid #bfdbfe;
+    }
+
+    /* Bottom Sticky Audio Player */
+    .sticky-player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #181a20;
+      color: #ffffff;
+      border-top: 2px solid var(--vbee-yellow);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 100;
+      box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .player-meta {
+      min-width: 200px;
+      max-width: 320px;
+    }
+
+    .player-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--vbee-yellow);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-voice {
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+
+    .player-audio {
+      flex: 1;
+      height: 38px;
+      max-width: 620px;
+    }
+
+    @media (max-width: 900px) {
+      .vbee-sidebar {
+        display: none;
+      }
+      .studio-container {
+        padding: 0 12px;
+      }
+      .sticky-player {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 10px 14px;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="studio-shell">
+    <!-- Left Sidebar -->
+    <aside class="vbee-sidebar">
+      <div class="brand-box">
+        <div class="brand-logo">V</div>
+        <div>
+          <div class="brand-title">Vbee AIVoice</div>
+          <div class="brand-sub">64 GIỌNG TINH TUYỂN · VUI/BUỒN</div>
+        </div>
+      </div>
+
+      <div class="nav-list">
+        <button type="button" class="nav-item active" id="navTts">
+          <span>🎙️</span>
+          <span>Chuyển văn bản (TTS)</span>
+        </button>
+        <button type="button" class="nav-item" id="navAutoAi">
+          <span>🤖</span>
+          <span>AI Viết Lại & Emotion Motions</span>
+        </button>
+        <button type="button" class="nav-item" id="navVoices">
+          <span>🌟</span>
+          <span>Kho 64 Giọng Tinh Tuyển (0% Trùng)</span>
+        </button>
+        <button type="button" class="nav-item" id="navClone">
+          <span>🧬</span>
+          <span>AI Học Giọng TVC Mới</span>
+        </button>
+        <button type="button" class="nav-item" id="navHistory">
+          <span>📂</span>
+          <span>Danh sách bản ghi</span>
+        </button>
+      </div>
+
+      <div class="server-status-box">
+        <div><span class="srv-dot" id="srvDot"></span><strong id="srvHostLabel">Máy Công Ty: HCM-TK-HIEU-PC</strong></div>
+        <div style="color:#94a3b8;margin-top:4px;">Engine: VieNeu-TTS v3 Turbo 48kHz + Auto AI Prosody</div>
+        <div style="color:#fbbf24;margin-top:4px;font-size:11px;word-break:break-all;" id="srvUrlLabel">Đang kết nối Server...</div>
+        <button type="button" id="btnSetServer" style="margin-top:8px;width:100%;padding:6px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:11px;cursor:pointer;">⚙️ Cấu hình IP / Tunnel Server</button>
+      </div>
+    </aside>
+
+    <!-- Main Studio Content -->
+    <main class="studio-main">
+      <header class="studio-topbar">
+        <div class="topbar-left">
+          <h1 class="studio-page-title">Chuyển văn bản thành giọng nói (64 Giọng Tinh Tuyển Không Trùng · Nhịp Điệu Vui/Buồn · AI Khoản Nhận Định)</h1>
+          <span class="badge-pill">✨ 64 Giọng Tinh Tuyển (Đã Dọn Sạch 100% Giọng Trùng · kth23 Pure Vocal)</span>
+          <span class="badge-pill badge-green">⚡ Nhấp Chọn Giọng → Regenerate Ngay</span>
+          <span class="badge-pill badge-blue">🧠 Nhịp Điệu Lúc Vui · Lúc Buồn · AI Khoản Nhận Định Cuối Bài</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <a href="/previews/truyen_luc_canh_tham_full_clean.mp3" download="Truyen_Luc_Canh_Tham_Clean_NoWatermark.mp3" class="btn-dl">⬇️ Tải File Truyện Gốc (Đã Xóa Watermark)</a>
+        </div>
+      </header>
+
+      <div class="studio-container">
+        <!-- 1. Voice & Prosody Toolbar -->
+        <div class="toolbar-card">
+          <div class="selected-voice-pill" id="btnFocusVoices" title="Bấm để chọn trong 144 giọng đọc truyền cảm (Nhấp chọn giọng sẽ Regenerate ngay)">
+            <div class="voice-avatar" id="activeAvatar" style="background:#e11d48;">TT</div>
+            <div class="sv-info">
+              <span class="sv-name" id="activeVoiceName">Thùy Trang (BTV HTV9)</span>
+              <span class="sv-meta" id="activeVoiceMeta">Nữ · Miền Nam · BTV Thời sự HTV9 Nam Bộ</span>
+            </div>
+            <span style="margin-left:auto;color:#d97706;font-size:12px;font-weight:800;">Đổi giọng ▾</span>
+          </div>
+
+          <div class="controls-group">
+            <label class="ctrl-item" for="speedSlider">
+              <span>Tốc độ (0.5x–4.9x):</span>
+              <input type="range" id="speedSlider" min="0.5" max="4.9" step="0.05" value="1.0" aria-valuetext="1.0x">
+              <span id="speedVal" style="min-width:42px;color:#d97706;font-weight:800;">1.0x</span>
+            </label>
+            <div class="ctrl-item" style="gap:4px;">
+              <button type="button" class="tag-btn speed-quick-btn" data-spd="1.0">1.0x</button>
+              <button type="button" class="tag-btn speed-quick-btn" data-spd="1.25">1.25x</button>
+              <button type="button" class="tag-btn speed-quick-btn" data-spd="1.5">1.5x</button>
+              <button type="button" class="tag-btn speed-quick-btn" data-spd="2.0">2.0x</button>
+              <button type="button" class="tag-btn speed-quick-btn" data-spd="3.0">3.0x</button>
+              <button type="button" class="tag-btn speed-quick-btn" data-spd="4.9" style="background:#fef3c7;border-color:#f59e0b;color:#b45309;font-weight:800;">🚀 4.9x</button>
+            </div>
+
+            <label class="ctrl-item" for="pitchSlider">
+              <span>Cao độ:</span>
+              <input type="range" id="pitchSlider" min="-4" max="4" step="0.5" value="0" aria-valuetext="0 st">
+              <span id="pitchVal" style="min-width:36px;color:#d97706;">0 st</span>
+            </label>
+
+            <div class="ctrl-item">
+              <span>Emotion Motions:</span>
+              <button type="button" class="tag-btn" data-insert="[vui]" style="background:#fef3c7;border-color:#f59e0b;color:#b45309;font-weight:800;" title="Nhịp điệu lúc vui: Tươi sáng, nảy chữ, năng lượng tích cực">😊 [vui]</button>
+              <button type="button" class="tag-btn" data-insert="[buồn]" style="background:#ede9fe;border-color:#8b5cf6;color:#5b21b6;font-weight:800;" title="Nhịp điệu lúc buồn: Trầm lắng, ngân sâu, chùng giọng cuối câu">🥺 [buồn]</button>
+              <button type="button" class="tag-btn" data-insert="[nhận định]" style="background:#e0f2fe;border-color:#0284c7;color:#0369a1;font-weight:800;" title="Nhịp điệu khoản nhận định: Đĩnh đạc, sâu sắc, nhấn từ khóa đắt giá">🧠 [nhận định]</button>
+              <button type="button" class="tag-btn" data-insert="[nhấn ý hay]" title="Nhấn tăng mạnh những ý hay ho">💥 [nhấn ý hay]</button>
+              <button type="button" class="tag-btn" data-insert="[nhấn khoản cuối]" title="Nhấn điểm con người ở khoản cuối câu">🎯 [nhấn khoản cuối]</button>
+              <button type="button" class="tag-btn" data-insert="[lấy hơi]" title="Tiếng hít lấy hơi người thật">🌬️ [lấy hơi]</button>
+              <button type="button" class="tag-btn" data-insert="[hưng phấn]">🔥 [hưng phấn]</button>
+              <button type="button" class="tag-btn" data-insert="[lắng đọng]">🌙 [lắng đọng]</button>
+              <button type="button" class="tag-btn" data-insert="[breaktime=0.35s]">+ 0.35s</button>
+              <button type="button" class="tag-btn" data-insert="[breaktime=0.55s]">+ 0.55s</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Auto AI Prosody, Emotional Rhythm (Vui/Buồn) & AI Khoản Nhận Định Card -->
+        <div class="auto-ai-card" id="autoAiSection">
+          <div class="auto-ai-top">
+            <label class="auto-ai-toggle-label" for="autoAiCheckbox">
+              <input type="checkbox" id="autoAiCheckbox" checked>
+              <span>🤖 Chế Độ AI Phân Tích Nhịp Điệu Thật Lúc Vui [vui] · Lúc Buồn [buồn] · Nhấn Ý Hay & Điểm Rơi Khoản Cuối</span>
+            </label>
+            <label class="auto-ai-toggle-label" for="includeNhanDinhCheckbox" style="background:#e0f2fe;padding:4px 10px;border-radius:999px;border:1px solid #7dd3fc;color:#0369a1;font-size:12px;">
+              <input type="checkbox" id="includeNhanDinhCheckbox" checked>
+              <span>🧠 Tự động thêm "Khoản Nhận Định" đúc kết cuối bài khi bấm AI viết lại</span>
+            </label>
+            <label class="auto-ai-toggle-label" for="instantRegenCheckbox" style="background:#ecfdf5;padding:4px 10px;border-radius:999px;border:1px solid #6ee7b7;color:#065f46;font-size:12px;">
+              <input type="checkbox" id="instantRegenCheckbox" checked>
+              <span>⚡ Nhấp chọn giọng → Lập tức Regenerate ngay</span>
+            </label>
+            <span style="font-size:12px;color:#065f46;font-weight:700;" id="autoAiStatusBadge">✓ Đang bật: Nhịp Vui/Buồn thật + Khoản Nhận Định AI</span>
+          </div>
+          <div class="preset-buttons-row">
+            <span style="font-size:12px;font-weight:800;color:#78350f;">Presets AI Regenerate Text + Nhận Định:</span>
+            <button type="button" class="btn-preset active" data-preset="human_rewrite">🗣️ AI Viết Lại Theo Nhịp Đọc Người Thật (Vui · Buồn · Khoản Nhận Định Cuối)</button>
+            <button type="button" class="btn-preset" data-preset="auto_human">✨ Auto AI Tự Nhiên (Nhấn Ý Hay & Khoản Nhận Định)</button>
+            <button type="button" class="btn-preset" data-preset="tvc_energetic">🔥 TVC Hào Hứng & Bùng Nổ</button>
+            <button type="button" class="btn-preset" data-preset="tvc_luxury">💎 TVC Sang Trọng & Bất Động Sản</button>
+            <button type="button" class="btn-preset" data-preset="news_vtv_htv">📺 Bản Tin Công Nghệ & Tài Chính</button>
+            <button type="button" class="btn-preset" data-preset="story_healing">🌙 Kể Chuyện Nhân Vật kth23 (Vui · Buồn · Chiêm Nghiệm)</button>
+            <button type="button" class="btn-preset clean-btn" data-preset="clean">🧹 Xóa Thẻ (Về Văn Bản Gốc)</button>
+          </div>
+          <div id="aiAssessmentBox" style="margin-top:12px;padding:12px 16px;background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:1px solid #f59e0b;border-radius:10px;font-size:13px;color:#78350f;line-height:1.55;">
+            <div style="font-weight:800;color:#92400e;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>🧠 KHOẢN NHẬN ĐỊNH CỦA AI VỀ KỊCH BẢN &amp; NHỊP ĐIỆU ĐỌC (LÚC VUI · LÚC BUỒN · NHẬN ĐỊNH CUỐI):</span>
+              <span id="aiEmotionStatsBadge" style="background:#fde68a;color:#92400e;padding:2px 10px;border-radius:999px;font-size:11.5px;">🎭 Sẵn sàng phân tích nhịp Vui / Buồn / Nhận Định</span>
+            </div>
+            <div id="aiAssessmentText">💡 Khi bạn bấm <b>"🗣️ Chuẩn Hóa Luật Đọc Người Thật"</b> hoặc chọn bất kỳ <b>Preset AI Regenerate Text</b> bên trên, AI sẽ tự động phân tích từng câu thuộc nhịp <b>[vui]</b> (nảy sáng, tươi tắn), <b>[buồn]</b> (trầm lắng, ngân sâu, nghỉ nhịp sâu) hay <b>[nhận định]</b> (đĩnh đạc, nhấn từ khóa đắt giá) và tự động bổ sung <b>Khoản Nhận Định đúc kết</b> ở cuối văn bản!</div>
+          </div>
+        </div>
+
+        <!-- 3. Text Editor Card -->
+        <form class="editor-card" id="ttsForm">
+          <div class="editor-header">
+            <label for="recordTitle" style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:12px;font-weight:700;color:#64748b;">TIÊU ĐỀ:</span>
+              <input type="text" id="recordTitle" class="title-input" value="TVC Quảng Cáo & Bản Tin Truyền Hình (48kHz)">
+            </label>
+            <div class="sample-scripts-bar">
+              <span style="font-size:12px;color:#64748b;font-weight:600;">Kịch bản mẫu:</span>
+              <button type="button" class="sample-pill" data-tpl="kth23_claude" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;font-weight:800;">🎭 kth23: Bản Tin Claude AI Tài Chính (Đủ Nhịp Vui · Buồn · Nhận Định)</button>
+              <button type="button" class="sample-pill" data-tpl="story">📖 Truyện Bi Kịch &amp; Cao Trào (Nhịp Buồn · Nhận Định)</button>
+              <button type="button" class="sample-pill" data-tpl="htv_news">📺 Bản Tin HTV9 Miền Nam</button>
+              <button type="button" class="sample-pill" data-tpl="vtv_news">🏛️ Bản Tin VTV1 Miền Bắc</button>
+              <button type="button" class="sample-pill" data-tpl="tvc_luxury">💎 TVC Bất Động Sản &amp; Spa</button>
+              <button type="button" class="sample-pill" data-tpl="tvc_sale">🔥 TVC Siêu Thị Khuyến Mãi</button>
+            </div>
+          </div>
+
+          <label for="ttsInput" style="display:none;">Nội dung văn bản chuyển đổi</label>
+          <textarea id="ttsInput" class="tts-textarea" placeholder="Nhập hoặc dán văn bản cần chuyển thành giọng nói... AI sẽ tự động ngắt nhịp nguyên câu, tròn vành rõ chữ và nhấn điểm rơi khoản cuối như người thật!">[lắng đọng] [nhấn khoản cuối] Cúp máy, tôi đứng dựa vào tường, nhìn số dư hơn một triệu đồng trong tài khoản. Tám mươi triệu phải đóng ngay ngày mai. Hai trăm bảy mươi bảy triệu là tổng khoản viện phí gia đình còn phải xoay sở. Tôi biết tìm đâu ra số tiền ấy bây giờ? Nước mắt không kìm được mà rơi xuống.
+[breaktime=0.55s]
+[nhấn khoản cuối] "Cô định đứng đây khóc đến bao giờ?" Một giọng đàn ông bất ngờ vang lên phía sau. Tôi giật mình quay lại, người đàn ông trước mặt mặc vest đen, dáng người cao ráo, gương mặt rất đẹp nhưng ánh mắt lại có phần lạnh nhạt.</textarea>
+
+          <div class="editor-footer">
+            <div class="char-counter">
+              Số ký tự: <strong id="charCount">0</strong> / 10,000 ký tự • <span id="statusHint" style="color:#10b981;">⚡ Nhấp vào bất kỳ giọng nào bên dưới để Regenerate ngay lập tức!</span>
+            </div>
+            <div class="action-btns">
+              <button type="button" class="btn-listen-sample" id="btnAutoFormatNow" title="AI tự động chuẩn hóa nhịp đọc nguyên câu & nhấn khoản cuối theo Bộ 6 Luật Giọng Người Thật (12XHCjcngz4)">
+                <span>🗣️ Chuẩn Hóa Luật Đọc Người Thật</span>
+              </button>
+              <button type="button" class="btn-listen-sample" id="btnPreviewVoice">
+                <span>🔊 Nghe thử giọng mẫu</span>
+              </button>
+              <button type="submit" class="btn-synthesize" id="btnSubmitTts">
+                <svg class="spinner" id="ttsSpinner" viewBox="0 0 50 50" role="status" aria-label="Loading">
+                  <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                </svg>
+                <span id="btnSubmitIcon">⚡</span>
+                <span id="btnSubmitLabel">Chuyển văn bản</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <!-- 4. 654+ Voice Models Grid (TVC Tab, Podcast Tab, Nữ Tab, Nam Tab) -->
+        <section class="catalog-card" id="voiceCatalogSection">
+          <div class="catalog-top">
+            <div>
+              <h2 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">🌟 Kho 64 Giọng Đọc Tinh Tuyển Không Trùng (kth23 Pure Vocal • TVC VietinBank Premium • Nghệ Sĩ Trầm Hương 12XHCjcngz4 • 16 Giọng Studio)</h2>
+              <p style="margin:4px 0 0 0;font-size:12.5px;color:#64748b;">⚡ <b>Đã dọn sạch 100% giọng trùng lặp!</b> Mỗi giọng sở hữu 1 cặp <code>(speaker_emb, codes)</code> nguyên bản đồng nhất, 0% tiếng "bíp bịp bụp bụp", có nhịp điệu thật lúc <b>[vui]</b>, lúc <b>[buồn]</b> và <b>[nhận định]</b> cuối bài.</p>
+            </div>
+            <input type="search" id="voiceSearchInput" class="search-voice-input" placeholder="🔍 Tìm trong 64 giọng tinh tuyển: kth23, VietinBank, Hồ Biểu Chánh, Minh Khôi, Thùy Trang...">
+          </div>
+
+          <!-- 4 Main Expandable Tabs: TVC Quảng Cáo | Podcast & Kể Chuyện | Giọng Nữ | Giọng Nam -->
+          <div class="gender-main-tabs" style="grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));">
+            <button type="button" class="gender-tab-btn active" id="tabMainTvc" data-main-tab="tvc">
+              <div>
+                <div class="gender-tab-title" id="titleTabTvc">📢 Tab TVC Quảng Cáo (520+)</div>
+                <div class="gender-tab-sub">VietinBank Premium · 500 TVC YouTube/FB · VTV/HTV</div>
+              </div>
+              <span class="tab-arrow" id="arrowTvc">▾ Đang xổ ra</span>
+            </button>
+            <button type="button" class="gender-tab-btn" id="tabMainPodcast" data-main-tab="podcast">
+              <div>
+                <div class="gender-tab-title" id="titleTabPodcast">🎙️ Tab Podcast & Kể Chuyện (126+)</div>
+                <div class="gender-tab-sub">Trầm Hương 12XHCjcngz4 · Sách Nói · Chữa Lành · Đêm Khuya</div>
+              </div>
+              <span class="tab-arrow" id="arrowPodcast">▸ Bấm để xổ ra</span>
+            </button>
+            <button type="button" class="gender-tab-btn" id="tabGenderFemale" data-main-tab="Nữ">
+              <div>
+                <div class="gender-tab-title" id="titleTabFemale">👩 Tab Giọng Nữ (461+)</div>
+                <div class="gender-tab-sub">Nữ TVC & Podcast · Miền Nam & Miền Bắc</div>
+              </div>
+              <span class="tab-arrow" id="arrowFemale">▸ Bấm để xổ ra</span>
+            </button>
+            <button type="button" class="gender-tab-btn" id="tabGenderMale" data-main-tab="Nam">
+              <div>
+                <div class="gender-tab-title" id="titleTabMale">👨 Tab Giọng Nam (185+)</div>
+                <div class="gender-tab-sub">Nam TVC & Podcast · Trầm Ấm & Hào Sảng</div>
+              </div>
+              <span class="tab-arrow" id="arrowMale">▸ Bấm để xổ ra</span>
+            </button>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+            <button type="button" class="btn-sample" id="btnToggleDrawer" style="padding:5px 14px;font-weight:800;border-radius:10px;">🔼 Thu gọn bảng giọng</button>
+          </div>
+
+          <div class="voice-drawer-panel" id="voiceDrawerPanel">
+            <div class="filter-tabs" id="subFilterRow" style="margin-bottom:12px;">
+              <button type="button" class="filter-tab active" data-sub="all">Tất cả trong Tab đang mở</button>
+              <button type="button" class="filter-tab" data-sub="tvc">📢 TVC Quảng Cáo</button>
+              <button type="button" class="filter-tab" data-sub="podcast">🎙️ Podcast & Kể Chuyện</button>
+              <button type="button" class="filter-tab" data-sub="Nữ">👩 Chỉ Giọng Nữ</button>
+              <button type="button" class="filter-tab" data-sub="Nam">👨 Chỉ Giọng Nam</button>
+              <button type="button" class="filter-tab" data-sub="Miền Nam">🌴 Miền Nam</button>
+              <button type="button" class="filter-tab" data-sub="Miền Bắc">🌸 Miền Bắc</button>
+            </div>
+            <div class="voice-grid" id="voiceGrid"></div>
+          </div>
+        </section>
+
+        <!-- 5. Instant AI Voice Cloning Box -->
+        <section class="catalog-card" id="cloneSection" style="background:linear-gradient(135deg,#fffbeb 0%,#ffffff 100%);border-color:#fde68a;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <h3 style="margin:0;font-size:15px;font-weight:800;color:#92400e;">🧬 AI Học & Tái Tạo Thêm Giọng TVC Quảng Cáo Mới (Zero-Shot 48kHz)</h3>
+              <p style="margin:4px 0 0 0;font-size:12.5px;color:#78350f;">Nhập từ khóa hoặc dán link YouTube của bất kỳ TVC quảng cáo nào — Server Công Ty sẽ tự tách giọng sạch và tạo Model mới trong 10 giây.</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+            <label for="cloneNameInput" style="display:none;">Tên giọng mới</label>
+            <input type="text" id="cloneNameInput" placeholder="Tên Giọng mới (VD: Nữ TVC Trà Xanh — Thảo Nguyên)" style="flex:1;min-width:220px;padding:10px 14px;border-radius:9px;border:1px solid #cbd5e1;font-size:13.5px;">
+            <label for="cloneQueryInput" style="display:none;">Từ khóa hoặc Link YouTube</label>
+            <input type="text" id="cloneQueryInput" placeholder="Từ khóa hoặc Link YouTube TVC (VD: lồng tiếng tvc quảng cáo mỹ phẩm nữ miền nam)" style="flex:2;min-width:260px;padding:10px 14px;border-radius:9px;border:1px solid #cbd5e1;font-size:13.5px;">
+            <label for="cloneRegionSelect" style="display:none;">Vùng miền</label>
+            <select id="cloneRegionSelect" style="padding:10px 14px;border-radius:9px;border:1px solid #cbd5e1;font-size:13.5px;background:#fff;">
+              <option value="female|Miền Nam">Nữ · Miền Nam (HTV / TVC)</option>
+              <option value="female|Miền Bắc">Nữ · Miền Bắc (VTV1 / TVC)</option>
+              <option value="male|Miền Nam">Nam · Miền Nam (TVC)</option>
+              <option value="male|Miền Bắc">Nam · Miền Bắc (TVC)</option>
+            </select>
+            <button type="button" id="btnCloneNow" class="btn-synthesize" style="padding:10px 18px;font-size:13px;">+ Học & Tạo Model Ngay</button>
+          </div>
+          <div id="cloneStatusMsg" style="margin-top:8px;font-size:12.5px;font-weight:600;color:#b45309;"></div>
+        </section>
+
+        <!-- 6. Conversion History Table -->
+        <section class="history-card" id="historySection">
+          <h3 style="margin:0 0 12px 0;font-size:15px;font-weight:800;color:#0f172a;">📂 Danh sách bản ghi (Lịch sử chuyển đổi)</h3>
+          <div style="overflow-x:auto;">
+            <table class="vbee-table">
+              <thead>
+                <tr>
+                  <th>Tiêu đề bản ghi</th>
+                  <th>Giọng đọc (Model)</th>
+                  <th>Ký tự</th>
+                  <th>Thời lượng</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="historyTbody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Bottom Sticky Audio Player -->
+  <div class="sticky-player">
+    <div class="player-meta">
+      <div class="player-title" id="playerTitle">Truyện Ngôn Tình: Lục Cảnh Thâm & Tô Vãn (Đã Xóa Watermark Vbee)</div>
+      <div class="player-voice" id="playerVoice">Giọng đọc: Ngọc Huyền 2.0 (Mẫu Gốc)</div>
+    </div>
+    <audio id="mainAudioPlayer" class="player-audio" controls preload="metadata" src="/previews/truyen_luc_canh_tham_full_clean.mp3"></audio>
+    <div style="display:flex;gap:8px;">
+      <a id="playerDownloadBtn" href="/previews/truyen_luc_canh_tham_full_clean.mp3?dl=1" download class="btn-synthesize" style="padding:8px 14px;font-size:12.5px;text-decoration:none;">⬇️ Tải xuống MP3</a>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const DEFAULT_VOICES = [
+        {
+                "id": "Vbee Ngọc Huyền 2.0 (Giọng Mẫu Gốc)",
+                "name": "Ngọc Huyền 2.0 (Mẫu Gốc)",
+                "category": "vbee_original",
+                "badge": "GIỌNG MẪU GỐC",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Đọc truyện ngôn tình · Truyền cảm chuẩn 1:1 file mẫu đính kèm",
+                "avatar_color": "#f59e0b",
+                "preview": "/previews/vbee_ngoc_huyen_goc.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "kth23",
+                "name": "Nghệ Sĩ kth23 (Kể Chuyện & Podcast Truyền Cảm)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "NGHỆ SĨ KTH23",
+                "region": "Miền Nam",
+                "gender": "Nam",
+                "style": "Giọng kể chuyện & phân tích đời sống truyền cảm, có nhịp điệu thật lúc vui, lúc buồn và khoản nhận định sâu sắc",
+                "avatar_color": "#d97706",
+                "preview": "/previews/clone_kth23.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "TVC VietinBank Premium — Sống Trọn Tinh Hoa (Nam Trầm Uy Lực)",
+                "name": "TVC VietinBank Premium — Sống Trọn Tinh Hoa",
+                "category": "male_tvc",
+                "use_case": "tvc",
+                "badge": "TVC VIETINBANK PREMIUM",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Giọng Nam Trầm Uy Lực từ TVC VietinBank Premium (RIPVdickaAw) · Sang trọng, tròn vành rõ chữ",
+                "avatar_color": "#0284c7",
+                "preview": "/previews/tvc_vietinbank_premium.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast & Kể Chuyện — Nghệ Sĩ Trầm Hương (Cay Đắng Mùi Đời · Hồ Biểu Chánh)",
+                "name": "Nghệ Sĩ Trầm Hương — Cay Đắng Mùi Đời (Hồ Biểu Chánh)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "TUYỆT PHẨM 12XHCjcngz4",
+                "region": "Miền Nam",
+                "gender": "Nam",
+                "style": "Giọng đọc truyện Hồ Biểu Chánh kinh điển (12XHCjcngz4) · Tròn vành rõ chữ, giàu nhịp thở và chiều sâu nhân văn",
+                "avatar_color": "#9333ea",
+                "preview": "/previews/podcast_tram_huong_12x.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Duy Thanh Nguyen",
+                "name": "Duy Thanh Nguyễn (Bình Luận Tài Chính & Vĩ Mô)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "PODCAST TÀI CHÍNH",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Phân tích kinh tế vĩ mô, tài chính cá nhân, công nghệ AI & nhận định chuyên sâu",
+                "avatar_color": "#0d9488",
+                "preview": "/previews/clone_duy_thanh_nguyen.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Nữ VTV1 & TVC Bắc 01 — Thanh Mai",
+                "name": "Thanh Mai (VTV1 & TVC)",
+                "category": "female_north",
+                "badge": "BTV VTV1",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "BTV Thời sự VTV1 chuẩn Hà Nội · Đĩnh đạc, tròn vành rõ chữ, uy tín",
+                "avatar_color": "#0284c7",
+                "preview": "/previews/north_f_01.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 02 — Phương Thảo",
+                "name": "Phương Thảo (TVC Luxury)",
+                "category": "female_north",
+                "badge": "TVC BẤT ĐỘNG SẢN",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Bất động sản & Nghỉ dưỡng cao cấp · Sang trọng, sâu lắng, đẳng cấp",
+                "avatar_color": "#d97706",
+                "preview": "/previews/north_f_02.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 03 — Minh Châu",
+                "name": "Minh Châu (TVC Ngân Hàng)",
+                "category": "female_north",
+                "badge": "TVC TÀI CHÍNH",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Ngân hàng & Tài chính Bảo hiểm · Tin cậy, ấm áp, thuyết phục",
+                "avatar_color": "#0d9488",
+                "preview": "/previews/north_f_03.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 04 — Lan Hương",
+                "name": "Lan Hương (TVC Dược Phẩm)",
+                "category": "female_north",
+                "badge": "TVC Y TẾ",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Dược phẩm & Chăm sóc sức khỏe · Ân cần, rõ ràng, chuẩn chuyên gia",
+                "avatar_color": "#10b981",
+                "preview": "/previews/north_f_04.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 05 — Thu Hà",
+                "name": "Thu Hà (TVC Mỹ Phẩm)",
+                "category": "female_north",
+                "badge": "TVC BEAUTY",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Mỹ phẩm & Làm đẹp Luxury · Trong trẻo, mềm mại, cuốn hút phái đẹp",
+                "avatar_color": "#ec4899",
+                "preview": "/previews/north_f_05.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 06 — Khánh Linh",
+                "name": "Khánh Linh (TVC Sale)",
+                "category": "female_north",
+                "badge": "TVC KHUYẾN MÃI",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Khuyến mãi & Thương mại điện tử · Tươi trẻ, năng lượng, bắt tai",
+                "avatar_color": "#f43f5e",
+                "preview": "/previews/north_f_06.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ VTV1 Bắc 07 — Bích Ngọc",
+                "name": "Bích Ngọc (BTV Kinh Tế)",
+                "category": "female_north",
+                "badge": "BTV VTV1",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "BTV Tài chính Kinh doanh VTV1 · Sắc sảo, hiện đại, nhịp đọc gãy gọn",
+                "avatar_color": "#2563eb",
+                "preview": "/previews/north_f_07.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 08 — Quỳnh Hoa",
+                "name": "Quỳnh Hoa (TVC Gia Đình)",
+                "category": "female_north",
+                "badge": "TVC GIA ĐÌNH",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Gia đình & Thực phẩm dinh dưỡng · Đằm thắm, dịu dàng, ấm cúng",
+                "avatar_color": "#ea580c",
+                "preview": "/previews/north_f_08.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ Truyện Bắc 09 — Hồng Nhung",
+                "name": "Hồng Nhung (Đọc Truyện)",
+                "category": "female_north",
+                "badge": "TRUYỆN ĐÊM KHUYA",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Đọc truyện đêm khuya & Ngôn tình · Truyền cảm, lắng đọng, chạm trái tim",
+                "avatar_color": "#9333ea",
+                "preview": "/previews/north_f_09.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ TVC Bắc 10 — Thùy Dương",
+                "name": "Thùy Dương (TVC Giáo Dục)",
+                "category": "female_north",
+                "badge": "E-LEARNING",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Giáo dục & E-Learning Quốc tế · Thân thiện, truyền cảm hứng học tập",
+                "avatar_color": "#0891b2",
+                "preview": "/previews/north_f_10.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 11 — Bảo Quyên",
+                "name": "Bảo Quyên (TVC Hàng Không)",
+                "category": "female_north",
+                "badge": "TVC DU LỊCH",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Hàng không & Du lịch văn hóa · Thanh lịch, nhẹ nhàng, sang trọng",
+                "avatar_color": "#0284c7",
+                "preview": "/previews/north_f_11.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 12 — Diệu Linh",
+                "name": "Diệu Linh (TVC Review)",
+                "category": "female_north",
+                "badge": "TVC REVIEW",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Review sản phẩm & Quảng cáo số · Tự nhiên, cuốn hút, nhịp hiện đại",
+                "avatar_color": "#e11d48",
+                "preview": "/previews/north_f_12.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ Audiobook Bắc 13 — Mai Phương",
+                "name": "Mai Phương (Audiobook)",
+                "category": "female_north",
+                "badge": "SÁCH NÓI",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Sách nói Audiobook & Kỹ năng sống · Trầm ấm, thông thái, nghe lâu không mỏi",
+                "avatar_color": "#4f46e5",
+                "preview": "/previews/north_f_13.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ TVC Bắc 14 — Hà My",
+                "name": "Hà My (TVC Thời Trang)",
+                "category": "female_north",
+                "badge": "TVC GENZ",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Thời trang & Phong cách sống · Trẻ trung, sành điệu, giàu sức sống",
+                "avatar_color": "#db2777",
+                "preview": "/previews/north_f_14.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ VTV1 Bắc 15 — Tuyết Ngân",
+                "name": "Tuyết Ngân (Ký Sự VTV1)",
+                "category": "female_north",
+                "badge": "KÝ SỰ VTV1",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Phim tài liệu & Ký sự truyền hình VTV1 · Sâu sắc, truyền cảm, giàu chất văn học",
+                "avatar_color": "#1d4ed8",
+                "preview": "/previews/north_f_15.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ Podcast Bắc 16 — Thanh Tâm",
+                "name": "Thanh Tâm (Podcast Healing)",
+                "category": "female_north",
+                "badge": "CHỮA LÀNH",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Podcast Chữa lành & Tâm sự · Nhẹ nhàng, thủ thỉ, xoa dịu tâm hồn",
+                "avatar_color": "#7c3aed",
+                "preview": "/previews/north_f_16.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ TVC Bắc 17 — Ngọc Ánh",
+                "name": "Ngọc Ánh (TVC Mẹ & Bé)",
+                "category": "female_north",
+                "badge": "TVC MẸ & BÉ",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Mẹ & Bé / Sữa công thức · Ngọt ngào, trìu mến, giàu tình mẫu tử",
+                "avatar_color": "#f59e0b",
+                "preview": "/previews/north_f_17.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 18 — Hoài Thương",
+                "name": "Hoài Thương (TVC Công Nghệ)",
+                "category": "female_north",
+                "badge": "TVC TECH",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Ô tô & Công nghệ tương lai · Hiện đại, dứt khoát, đẳng cấp",
+                "avatar_color": "#0369a1",
+                "preview": "/previews/north_f_18.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 19 — Kim Oanh",
+                "name": "Kim Oanh (TVC Tết Đoàn Viên)",
+                "category": "female_north",
+                "badge": "TVC TẾT",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "TVC Tết & Sum vầy đoàn viên · Xúc động, ấm áp, gợi nhớ quê hương",
+                "avatar_color": "#dc2626",
+                "preview": "/previews/north_f_19.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Bắc 20 — Vân Anh",
+                "name": "Vân Anh (CSKH & Tổng Đài)",
+                "category": "female_north",
+                "badge": "HOTLINE AI",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Tổng đài AI & Trợ lý doanh nghiệp · Chuẩn mực, lễ phép, thân thiện 24/7",
+                "avatar_color": "#059669",
+                "preview": "/previews/north_f_20.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ HTV & TVC Nam 01 — Thùy Trang",
+                "name": "Thùy Trang (BTV HTV9)",
+                "category": "female_south",
+                "badge": "BTV HTV NAM BỘ",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "BTV Thời sự HTV9 Nam Bộ · Ngọt ngào, chuẩn mực, hiền hòa đặc trưng đài HTV",
+                "avatar_color": "#e11d48",
+                "preview": "/previews/south_f_01.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ HTV Nam 02 — Ngọc Hân",
+                "name": "Ngọc Hân (MC HTV7)",
+                "category": "female_south",
+                "badge": "MC HTV7",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "MC Chuyện trưa 12h & Văn nghệ HTV7 · Duyên dáng, gần gũi, giàu cảm xúc",
+                "avatar_color": "#f43f5e",
+                "preview": "/previews/south_f_02.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 03 — Mỹ Tiên",
+                "name": "Mỹ Tiên (TVC Gia Đình)",
+                "category": "female_south",
+                "badge": "TVC GIA ĐÌNH",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Gia đình & Ẩm thực Nam Bộ · Ấm áp, tươi vui, đậm tình miền Nam",
+                "avatar_color": "#ea580c",
+                "preview": "/previews/south_f_03.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 04 — Phương Trinh",
+                "name": "Phương Trinh (TVC Spa)",
+                "category": "female_south",
+                "badge": "TVC SPA & BEAUTY",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Thẩm mỹ viện & Spa Sài Gòn · Mượt mà, sang trọng, êm dịu cuốn hút",
+                "avatar_color": "#db2777",
+                "preview": "/previews/south_f_04.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 05 — Khánh Ngân",
+                "name": "Khánh Ngân (TVC Siêu Thị)",
+                "category": "female_south",
+                "badge": "TVC KHUYẾN MÃI",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Siêu thị & Khuyến mãi sôi động · Hào hứng, tiết tấu nhanh, bắt tai",
+                "avatar_color": "#ef4444",
+                "preview": "/previews/south_f_05.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 06 — Bảo Trân",
+                "name": "Bảo Trân (TVC BĐS Nam Bộ)",
+                "category": "female_south",
+                "badge": "TVC BẤT ĐỘNG SẢN",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Bất động sản & Đô thị sinh thái · Tinh tế, thanh thoát, truyền cảm hứng",
+                "avatar_color": "#d97706",
+                "preview": "/previews/south_f_06.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ HTV Nam 07 — Thanh Thảo",
+                "name": "Thanh Thảo (MC Miền Tây HTV)",
+                "category": "female_south",
+                "badge": "HTV MIỀN TÂY",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "MC Nhịp cầu nhà nông & Ký sự miền Tây HTV · Mộc mạc, chân thành, ngọt ngào",
+                "avatar_color": "#10b981",
+                "preview": "/previews/south_f_07.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 08 — Nhã Phương",
+                "name": "Nhã Phương (TVC Sữa & Bé)",
+                "category": "female_south",
+                "badge": "TVC DINH DƯỠNG",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Sữa & Dinh dưỡng trẻ em · Trong trẻo, âu yếm, tràn đầy năng lượng",
+                "avatar_color": "#f59e0b",
+                "preview": "/previews/south_f_08.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ Podcast Nam 09 — Tường Vy",
+                "name": "Tường Vy (Podcast Sài Gòn)",
+                "category": "female_south",
+                "badge": "PODCAST HEALING",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Podcast Tâm sự tình yêu & Chữa lành · Sâu lắng, thơ mộng, thủ thỉ đêm khuya",
+                "avatar_color": "#a855f7",
+                "preview": "/previews/south_f_09.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ TVC Nam 10 — Minh Thư",
+                "name": "Minh Thư (TVC Ngân Hàng Số)",
+                "category": "female_south",
+                "badge": "TVC FINTECH",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Ngân hàng số & Ví điện tử · Hiện đại, thông minh, nhịp trẻ trung",
+                "avatar_color": "#0284c7",
+                "preview": "/previews/south_f_10.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 11 — Hoàng Yến",
+                "name": "Hoàng Yến (TVC Dược Phẩm)",
+                "category": "female_south",
+                "badge": "TVC SỨC KHỎE",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Dược phẩm & Thảo dược thiên nhiên · Điềm đạm, tin cậy, nhẹ nhàng",
+                "avatar_color": "#0d9488",
+                "preview": "/previews/south_f_11.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ Truyện Nam 12 — Cẩm Ly",
+                "name": "Cẩm Ly (Đọc Truyện Nam Bộ)",
+                "category": "female_south",
+                "badge": "TRUYỆN MIỀN NAM",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Đọc truyện ngôn tình & Tiểu thuyết miền Nam · Ngọt ngào, sâu lắng, truyền cảm",
+                "avatar_color": "#9333ea",
+                "preview": "/previews/south_f_12.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ TVC Nam 13 — Diễm My",
+                "name": "Diễm My (TVC Mỹ Phẩm)",
+                "category": "female_south",
+                "badge": "TVC COSMETICS",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Mỹ phẩm & Chăm sóc da · Trẻ trung, sang chảnh, cuốn hút tự nhiên",
+                "avatar_color": "#ec4899",
+                "preview": "/previews/south_f_13.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 14 — Trúc Đào",
+                "name": "Trúc Đào (TVC Giải Khát)",
+                "category": "female_south",
+                "badge": "TVC SẢNG KHOÁI",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Nước giải khát & Mùa hè sảng khoái · Sôi nổi, tươi mát, bùng nổ",
+                "avatar_color": "#06b6d4",
+                "preview": "/previews/south_f_14.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ HTV Nam 15 — Kim Ngân",
+                "name": "Kim Ngân (Bản Tin Kinh Tế HTV)",
+                "category": "female_south",
+                "badge": "BTV KINH TẾ HTV",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "BTV Bản tin Kinh tế & Tiêu dùng HTV · Rõ ràng, mạch lạc, chuyên nghiệp",
+                "avatar_color": "#2563eb",
+                "preview": "/previews/south_f_15.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ Review Nam 16 — Ái Nhi",
+                "name": "Ái Nhi (Review Ẩm Thực)",
+                "category": "female_south",
+                "badge": "TVC ẨM THỰC",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Review Ẩm thực & Du lịch Sài Gòn · Tự nhiên, hào hứng, kể chuyện cuốn hút",
+                "avatar_color": "#f97316",
+                "preview": "/previews/south_f_16.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ Sách Nói Nam 17 — Huệ Mẫn",
+                "name": "Huệ Mẫn (Sách Nói Chữa Lành)",
+                "category": "female_south",
+                "badge": "AUDIOBOOK",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Sách nói & Tâm linh chữa lành miền Nam · Từ hòa, an nhiên, tĩnh tại",
+                "avatar_color": "#6366f1",
+                "preview": "/previews/south_f_17.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Nữ TVC Nam 18 — Quỳnh Như",
+                "name": "Quỳnh Như (TVC Tết Phương Nam)",
+                "category": "female_south",
+                "badge": "TVC TẾT NAM BỘ",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Tết đoàn viên & Quà tặng phương Nam · Đầm ấm, rộn ràng, chan chứa yêu thương",
+                "avatar_color": "#dc2626",
+                "preview": "/previews/south_f_18.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 19 — Thiên Kim",
+                "name": "Thiên Kim (TVC Trang Sức)",
+                "category": "female_south",
+                "badge": "TVC LUXURY",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "TVC Trang sức & Thời trang cao cấp · Quý phái, kiêu sa, nhấn nhá tinh tế",
+                "avatar_color": "#ca8a04",
+                "preview": "/previews/south_f_19.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nữ TVC Nam 20 — Ngọc Bích",
+                "name": "Ngọc Bích (Hotline Thương Hiệu)",
+                "category": "female_south",
+                "badge": "CSKH MIỀN NAM",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Chăm sóc khách hàng & Hotline thương hiệu · Dịu dàng, lịch sự, thiện cảm",
+                "avatar_color": "#059669",
+                "preview": "/previews/south_f_20.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nam TVC Miền Nam — Minh Khôi",
+                "name": "Minh Khôi (Nam TVC & HTV)",
+                "category": "male_tvc",
+                "badge": "NAM TVC MIỀN NAM",
+                "region": "Miền Nam",
+                "gender": "Nam",
+                "style": "Trầm ấm · Đời thường · Nhân văn chuẩn truyền hình HTV & TVC Gia đình / Bảo hiểm",
+                "avatar_color": "#10b981",
+                "preview": "/previews/male_tvc_minh_khoi.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nam TVC Miền Bắc — Hoàng Quân",
+                "name": "Hoàng Quân (Nam TVC & VTV1)",
+                "category": "male_tvc",
+                "badge": "NAM TVC MIỀN BẮC",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Lịch lãm · Hào sảng · Thuyết minh VTV1, TVC Ô tô, Ngân hàng & Bất động sản",
+                "avatar_color": "#0284c7",
+                "preview": "/previews/male_tvc_hoang_quan.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "tvc"
+        },
+        {
+                "id": "Nam TVC Sôi Động — Tuấn Kiệt",
+                "name": "Tuấn Kiệt (Nam TVC Sôi Động)",
+                "category": "male_tvc",
+                "badge": "NAM TVC ĐA NĂNG",
+                "region": "Miền Nam / Bắc",
+                "gender": "Nam",
+                "style": "Năng lượng · Nhấn nhá truyền lửa · TVC Khuyến mãi, Sự kiện & Kể chuyện đêm khuya",
+                "avatar_color": "#f59e0b",
+                "preview": "/previews/male_tvc_tuan_kiet.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0,
+                "use_case": "podcast"
+        },
+        {
+                "id": "Podcast Nam Bộ — Thái Sơn",
+                "name": "Thái Sơn (Kể Chuyện Đêm Khuya Nam Bộ)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "STUDIO 48KHZ",
+                "region": "Miền Nam",
+                "gender": "Nam",
+                "style": "Kể chuyện đêm khuya & Tản văn Nam Bộ · Trầm ấm, sâu lắng, nhịp thở tự nhiên",
+                "avatar_color": "#7c3aed",
+                "preview": "/previews/male_tvc_minh_khoi.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "BTV Điểm Tin Nam Bộ — Minh Triết",
+                "name": "Minh Triết (Điểm Tin & Nhận Định Công Nghệ)",
+                "category": "male_tvc",
+                "use_case": "tvc",
+                "badge": "BTV TIN TỨC",
+                "region": "Miền Nam",
+                "gender": "Nam",
+                "style": "Điểm tin công nghệ, tài chính & TVC Doanh nghiệp Miền Nam · Rõ chữ, hiện đại",
+                "avatar_color": "#0284c7",
+                "preview": "/previews/male_tvc_tuan_kiet.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Sách Nói Nam Bộ — Đức Trí",
+                "name": "Đức Trí (Sách Nói & Triết Lý Sống)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "AUDIOBOOK PRO",
+                "region": "Miền Nam",
+                "gender": "Nam",
+                "style": "Đọc sách nói kỹ năng, lịch sử & hồi ký · Điềm đạm, chững chạc, truyền cảm",
+                "avatar_color": "#059669",
+                "preview": "/previews/mc_quyen_linh.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "TVC Thương Hiệu Bắc — Hải Đăng",
+                "name": "Hải Đăng (TVC Ô Tô & Công Nghệ 5G)",
+                "category": "male_tvc",
+                "use_case": "tvc",
+                "badge": "TVC CÔNG NGHỆ",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "TVC Ô tô điện, Viễn thông 5G & Tập đoàn Công nghệ · Khỏe khoắn, quyết đoán",
+                "avatar_color": "#2563eb",
+                "preview": "/previews/male_tvc_hoang_quan.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast Hà Nội — Thiện Minh",
+                "name": "Thiện Minh (Podcast Văn Hóa & Lịch Sử)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "PODCAST BẮC",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Kể chuyện lịch sử, văn hóa Hà Nội & phê bình văn học · Trầm tĩnh, giàu chất thơ",
+                "avatar_color": "#9333ea",
+                "preview": "/previews/mc_nguyen_ngoc_ngan.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "TVC Bất Động Sản Bắc — Phạm Tuyên",
+                "name": "Phạm Tuyên (TVC Bất Động Sản Di Sản)",
+                "category": "male_tvc",
+                "use_case": "tvc",
+                "badge": "TVC LUXURY",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "TVC Bất động sản hạng sang, Ngân hàng Private Banking & Du thuyền · Uy nghi, sang trọng",
+                "avatar_color": "#b45309",
+                "preview": "/previews/mc_lai_van_sam.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "TVC Doanh Nghiệp Bắc — Xuân Vĩnh",
+                "name": "Xuân Vĩnh (Phim Tự Giới Thiệu Tập Đoàn)",
+                "category": "male_tvc",
+                "use_case": "tvc",
+                "badge": "TVC CORPORATE",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Phim doanh nghiệp, Báo cáo thường niên & Lễ kỷ niệm · Hào sảng, chuẩn mực",
+                "avatar_color": "#0d9488",
+                "preview": "/previews/mc_thanh_bach.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast Chữa Lành Bắc — Thanh Bình",
+                "name": "Thanh Bình (Radio Tâm Sự Đêm Khuya)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "RADIO CHỮA LÀNH",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Radio tâm sự, chữa lành tâm hồn & đọc thư thính giả · Ấm áp, thấu cảm",
+                "avatar_color": "#6366f1",
+                "preview": "/previews/mc_tran_thanh.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "TVC Khuyến Mãi & Sự Kiện — Quốc Tuấn",
+                "name": "Quốc Tuấn (TVC Mega Sale & Lễ Hội)",
+                "category": "male_tvc",
+                "use_case": "tvc",
+                "badge": "TVC SÔI ĐỘNG",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "TVC Siêu thị Điện máy, Thương mại điện tử & Bia Lễ hội · Năng lượng, bắt tai",
+                "avatar_color": "#e11d48",
+                "preview": "/previews/male_tvc_tuan_kiet.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Kể Chuyện Miền Trung — Quang Sơn",
+                "name": "Quang Sơn (Giọng Nam Miền Trung Chân Chất)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "MIỀN TRUNG",
+                "region": "Miền Trung",
+                "gender": "Nam",
+                "style": "Giọng Nam Miền Trung mộc mạc · Kể chuyện quê hương, ký sự du lịch & văn hóa",
+                "avatar_color": "#d97706",
+                "preview": "/previews/male_tvc_minh_khoi.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast Huế & Miền Trung — Ngọc Trân",
+                "name": "Ngọc Trân (Nữ Miền Trung Dịu Dàng)",
+                "category": "female_south",
+                "use_case": "podcast",
+                "badge": "NỮ MIỀN TRUNG",
+                "region": "Miền Trung",
+                "gender": "Nữ",
+                "style": "Giọng Nữ Miền Trung ngọt ngào · Tản văn, du lịch di sản cố đô & kể chuyện",
+                "avatar_color": "#ec4899",
+                "preview": "/previews/mc_ky_duyen.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast Sách Nói Bắc — Đoan Trang",
+                "name": "Đoan Trang (Podcast Văn Học & Nghệ Thuật)",
+                "category": "female_north",
+                "use_case": "podcast",
+                "badge": "PODCAST VĂN HỌC",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Đọc tiểu thuyết, tản văn Hà Nội & bình luận nghệ thuật · Tinh tế, truyền cảm",
+                "avatar_color": "#8b5cf6",
+                "preview": "/previews/mc_thao_van.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast Tâm Lý Nam Bộ — Thục Đoan",
+                "name": "Thục Đoan (Podcast Tâm Lý & Gia Đình)",
+                "category": "female_south",
+                "use_case": "podcast",
+                "badge": "PODCAST TÂM LÝ",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Trò chuyện tâm lý, nuôi dạy con & hạnh phúc gia đình · Dịu dàng, gần gũi",
+                "avatar_color": "#10b981",
+                "preview": "/previews/mc_lieu_ha_trinh.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Truyện Ngắn Nam Bộ — Mỹ Duyên",
+                "name": "Mỹ Duyên (Đọc Truyện Ngắn Miền Tây)",
+                "category": "female_south",
+                "use_case": "podcast",
+                "badge": "TRUYỆN MIỀN NAM",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Đọc truyện ngắn Nam Bộ & ký sự miền sông nước · Ngọt ngào, giàu cảm xúc",
+                "avatar_color": "#f43f5e",
+                "preview": "/previews/btv_hoai_anh.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Podcast Phong Cách Sống — Thùy Minh",
+                "name": "Thùy Minh (Host Talkshow & Lifestyle)",
+                "category": "female_north",
+                "use_case": "podcast",
+                "badge": "TALKSHOW HOST",
+                "region": "Miền Bắc",
+                "gender": "Nữ",
+                "style": "Host Podcast hiện đại, sắc sảo · Bình luận xu hướng, văn hóa đại chúng & sáng tạo",
+                "avatar_color": "#0ea5e9",
+                "preview": "/previews/mc_thuy_minh.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        },
+        {
+                "id": "Vlog & Review Đời Sống — Giang Ơi",
+                "name": "Giang Ơi (Storytelling & Kỹ Năng Sống)",
+                "category": "female_south",
+                "use_case": "podcast",
+                "badge": "CREATOR VOICE",
+                "region": "Miền Nam",
+                "gender": "Nữ",
+                "style": "Chia sẻ quan điểm sống, tài chính cá nhân & phát triển bản thân · Tự nhiên, thông minh",
+                "avatar_color": "#f59e0b",
+                "preview": "/previews/kol_giang_oi.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 1.0
+        }
+];
+
+      const TEMPLATES = {
+        kth23_claude: {
+          title: "Bản Tin AI & Tài Chính Cá Nhân — Nhân Vật kth23 (Đủ Nhịp Vui · Buồn · Nhận Định)",
+          voice: "kth23",
+          preset: "human_rewrite",
+          text: "Anthropic mở rộng sang lĩnh vực Personal Finance. Với hệ thống bộ nhớ mới của Claude, giờ đây bạn không cần phải nhớ tiền nong của mình đang nằm ở đâu hay mở 5-6 app khác nhau để kiểm tra nữa. Chỉ cần hỏi một câu, Claude có thể làm phần còn lại giúp bạn. Trước đây, việc lưu thông tin trong Claude khá hạn chế nên mỗi lần hỏi chuyện tài chính bạn thường phải nhắc lại từ đầu. Giờ thì bạn có thể tạo một database tài chính cá nhân có cấu trúc rõ ràng, và Claude sẽ dựa vào đó để theo dõi và hỗ trợ bạn lâu dài."
+        },
+        htv_news: {
+          title: "Bản Tin Thời Sự HTV9 Nam Bộ — BTV Thùy Trang",
+          voice: "Nữ HTV & TVC Nam 01 — Thùy Trang",
+          preset: "news_vtv_htv",
+          text: "Kính chào quý khán giả đang theo dõi chương trình Thời sự của Đài Truyền hình Thành phố Hồ Chí Minh. Trong bản tin hôm nay, các hoạt động giao thương nông sản công nghệ cao và lễ hội văn hóa du lịch đường sông đang thu hút hàng trăm ngàn lượt du khách trong và ngoài nước."
+        },
+        vtv_news: {
+          title: "Bản Tin Thời Sự 19h VTV1 — BTV Thanh Mai",
+          voice: "Nữ VTV1 & TVC Bắc 01 — Thanh Mai",
+          preset: "news_vtv_htv",
+          text: "Kính chào quý vị và các bạn đang theo dõi bản tin Thời sự Đài Truyền hình Việt Nam. Kinh tế vĩ mô quý này ghi nhận bước tăng trưởng đột phá nhờ đẩy mạnh chuyển đổi số, hạ tầng giao thông trọng điểm và xuất khẩu xanh bền vững."
+        },
+        tvc_luxury: {
+          title: "TVC Bất Động Sản & Nghỉ Dưỡng Sinh Thái",
+          voice: "Nữ TVC Bắc 02 — Phương Thảo",
+          preset: "tvc_luxury",
+          text: "Đánh thức mọi giác quan giữa miền xanh thuần khiết ven sông, nơi kiến trúc đương đại giao hòa cùng thiên nhiên tuyệt mỹ. Mỗi khoảnh khắc trở về nhà chính là một kỳ nghỉ dưỡng thượng lưu đẳng cấp dành riêng cho gia đình bạn."
+        },
+        tvc_sale: {
+          title: "TVC Siêu Hội Khuyến Mãi Cuối Tuần",
+          voice: "Nữ TVC Nam 05 — Khánh Ngân",
+          preset: "tvc_energetic",
+          text: "Đại tiệc siêu khuyến mãi lớn nhất mùa hè đã chính thức bùng nổ trên toàn hệ thống siêu thị! Giảm giá sốc lên đến năm mươi phần trăm cùng hàng ngàn quà tặng miễn phí, nhanh tay trải nghiệm ngay hôm nay kẻo lỡ!"
+        },
+        story: {
+          title: "Truyện: Lục Cảnh Thâm & Tô Vãn (Đủ Nhịp Buồn · Cao Trào · Nhận Định)",
+          voice: "kth23",
+          preset: "story_healing",
+          text: "Cúp máy, tôi đứng dựa vào tường, nhìn số dư hơn một triệu đồng trong tài khoản. Tám mươi triệu phải đóng ngay ngày mai. Hai trăm bảy mươi bảy triệu là tổng khoản viện phí gia đình còn phải xoay sở. Tôi biết tìm đâu ra số tiền ấy bây giờ? Nước mắt không kìm được mà rơi xuống.\n\"Cô định đứng đây khóc đến bao giờ?\" Một giọng đàn ông bất ngờ vang lên phía sau. Tôi giật mình quay lại, người đàn ông trước mặt mặc vest đen, dáng người cao ráo, gương mặt rất đẹp nhưng ánh mắt lại có phần lạnh nhạt."
+        }
+      };
+
+      let voicesList = DEFAULT_VOICES.slice();
+      let activeVoice = voicesList[0];
+      let currentMainTab = "tvc";
+      let currentSubFilter = "all";
+      let drawerOpen = true;
+      let currentPreset = "human_rewrite";
+      let apiBaseUrl = "";
+      let activeTtsController = null;
+
+      const speedSlider = document.getElementById("speedSlider");
+      const pitchSlider = document.getElementById("pitchSlider");
+      const ttsInput = document.getElementById("ttsInput");
+      const recordTitle = document.getElementById("recordTitle");
+      const charCount = document.getElementById("charCount");
+      const mainPlayer = document.getElementById("mainAudioPlayer");
+      const autoAiCheckbox = document.getElementById("autoAiCheckbox");
+      const instantRegenCheckbox = document.getElementById("instantRegenCheckbox");
+      const autoAiStatusBadge = document.getElementById("autoAiStatusBadge");
+      const voiceSearchInput = document.getElementById("voiceSearchInput");
+
+      function syncSliderCss(slider) {
+        slider.style.setProperty("--attr-min", slider.min || 0);
+        slider.style.setProperty("--attr-max", slider.max || 100);
+        slider.style.setProperty("--control-value", slider.value);
+      }
+
+      function applySpeedValue(val, regenerateIfInstant) {
+        const num = Math.max(0.5, Math.min(4.9, Number(val) || 1.0));
+        speedSlider.value = String(num);
+        syncSliderCss(speedSlider);
+        const formatted = num.toFixed(2).replace(/\.00$/, ".0") + "x";
+        document.getElementById("speedVal").textContent = formatted;
+        speedSlider.setAttribute("aria-valuetext", formatted);
+        if (regenerateIfInstant && instantRegenCheckbox && instantRegenCheckbox.checked) {
+          triggerTtsSynthesis();
+        }
+      }
+
+      speedSlider.addEventListener("input", () => {
+        applySpeedValue(speedSlider.value, false);
+      });
+      speedSlider.addEventListener("change", () => {
+        if (instantRegenCheckbox && instantRegenCheckbox.checked) {
+          triggerTtsSynthesis();
+        }
+      });
+
+      document.querySelectorAll(".speed-quick-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          applySpeedValue(btn.getAttribute("data-spd"), true);
+        });
+      });
+
+      pitchSlider.addEventListener("input", () => {
+        syncSliderCss(pitchSlider);
+        const v = Number(pitchSlider.value);
+        const lbl = (v > 0 ? "+" : "") + v + " st";
+        document.getElementById("pitchVal").textContent = lbl;
+        pitchSlider.setAttribute("aria-valuetext", lbl);
+      });
+      syncSliderCss(speedSlider);
+      syncSliderCss(pitchSlider);
+
+      function updateCharCount() {
+        charCount.textContent = (ttsInput.value || "").length.toLocaleString();
+      }
+      ttsInput.addEventListener("input", updateCharCount);
+      updateCharCount();
+
+      const includeNhanDinhCheckbox = document.getElementById("includeNhanDinhCheckbox");
+      const aiAssessmentText = document.getElementById("aiAssessmentText");
+      const aiEmotionStatsBadge = document.getElementById("aiEmotionStatsBadge");
+
+      autoAiCheckbox.addEventListener("change", () => {
+        autoAiStatusBadge.textContent = autoAiCheckbox.checked
+          ? "✓ Đang bật: Nhịp Vui/Buồn thật + Khoản Nhận Định AI"
+          : "⏸ Đang tắt Auto AI (Chỉ đọc theo dấu câu thường)";
+        autoAiStatusBadge.style.color = autoAiCheckbox.checked ? "#065f46" : "#64748b";
+      });
+
+      const SAD_WORDS_RE = /(khóc|nước mắt|buồn|đau|cô đơn|tuyệt vọng|mệt mỏi|hạn chế|khó khăn|xoay sở|viện phí|mất|nghẹn|xót xa|lạnh nhạt|bi kịch|cay đắng|tủi|nhắc lại từ đầu|lo lắng|áp lực|nợ|thiếu|chật vật)/i;
+      const HAPPY_WORDS_RE = /(vui|hạnh phúc|tuyệt vời|mở rộng|hỗ trợ|rõ ràng|lâu dài|dễ dàng|chỉ cần hỏi|phần còn lại giúp bạn|tươi|nụ cười|bùng nổ|thành công|đột phá|khuyến mãi|miễn phí|quà tặng|tự hào|thuận tiện|nhanh chóng|hào hứng|sảng khoái|không cần phải nhớ)/i;
+      const INSIGHT_WORDS_RE = /(nhận định|tóm lại|nhìn chung|đáng chú ý|có thể thấy|bài học|ý nghĩa|tương lai|chiến lược|cốt lõi|quan trọng nhất|đánh dấu bước ngoặt|mở ra hướng đi)/i;
+
+      function detectSentenceEmotionClient(sent) {
+        const s = (sent || "").trim();
+        if (INSIGHT_WORDS_RE.test(s)) return "insight";
+        const sadHits = (s.match(new RegExp(SAD_WORDS_RE.source, "gi")) || []).length;
+        const happyHits = (s.match(new RegExp(HAPPY_WORDS_RE.source, "gi")) || []).length;
+        if (sadHits > happyHits && sadHits > 0) return "sad";
+        if (happyHits > sadHits && happyHits > 0) return "happy";
+        return "neutral";
+      }
+
+      function buildAiNhanDinhClient(rawText) {
+        const clean = (rawText || "").replace(/\s*\[[^\]]+\]\s*/g, " ").trim();
+        const low = clean.toLowerCase();
+        let nhanDinhSentence = "";
+        let commentary = "";
+
+        if (/(claude|anthropic|personal finance|database|trí tuệ nhân tạo|công nghệ|dữ liệu|bộ nhớ mới)/i.test(low)) {
+          nhanDinhSentence = "Nhận định lại, bước tiến này biến trợ lý trí tuệ nhân tạo thành một người quản gia tài chính thực thụ, giúp con người giải phóng khỏi áp lực ghi nhớ số liệu vụn vặt mỗi ngày.";
+          commentary = "📊 <b>Phân tích kịch bản Công Nghệ & Tài Chính:</b> Mở đầu ở nhịp <b>[vui]</b> tươi sáng khi giới thiệu tính năng mới giải phóng người dùng khỏi 5-6 app → Chùng xuống nhịp <b>[buồn]</b> trầm lắng ở câu nhắc về hạn chế phải nhập lại từ đầu trước đây → Bừng sáng trở lại khi tạo được database dài hạn, và khép lại bằng <b>[nhận định]</b> đĩnh đạc, sâu sắc.";
+        } else if (/(khóc|nước mắt|viện phí|cúp máy|lạnh nhạt|đau|buồn|số dư|cô đơn)/i.test(low)) {
+          nhanDinhSentence = "Nhận định lại, chính trong khoảnh khắc tuyệt vọng và cô độc nhất của số phận, sự xuất hiện bất ngờ ấy đã mở ra một bước ngoặt không thể đoán trước cho cả câu chuyện.";
+          commentary = "🎭 <b>Phân tích kịch bản Tự Sự & Bi Kịch:</b> Các câu đầu mang nhịp <b>[buồn]</b> (hạ tốc độ 0.93x, ngân sâu câu hỏi tu từ và giọt nước mắt) → Chuyển sang nhịp <b>[nhấn ý hay]</b> kịch tính khi nhân vật bí ẩn cất tiếng → Kết thúc bằng <b>[nhận định]</b> chiêm nghiệm lắng đọng.";
+        } else if (/(khuyến mãi|giảm giá|siêu thị|bất động sản|thương hiệu|gia đình|ngân hàng|tvc)/i.test(low)) {
+          nhanDinhSentence = "Nhận định chung, thông điệp cốt lõi ở đây không chỉ nằm ở ưu đãi hay tiện ích trước mắt, mà là cam kết đồng hành bền vững và nâng tầm chất lượng sống cho mỗi khách hàng.";
+          commentary = "📢 <b>Phân tích kịch bản TVC & Thương Hiệu:</b> Nhịp đọc <b>[vui]</b> giàu năng lượng tích cực ở các câu lợi ích sản phẩm, kết hợp <b>[nhận định]</b> đĩnh đạc ở câu chốt nhằm tạo độ tin cậy cao cho thương hiệu.";
+        } else {
+          nhanDinhSentence = "Nhận định lại, điểm đắt giá nhất của câu chuyện nằm ở sự chuyển dịch cảm xúc chân thực, giúp người nghe vừa thấu cảm từng chi tiết vừa đọng lại suy ngẫm sâu sắc ở đoạn kết.";
+          commentary = "🎙️ <b>Phân tích kịch bản Đa Cảm Xúc:</b> AI đã tự động gắn nhãn nhịp <b>[vui]</b> (nảy sáng), <b>[buồn]</b> (trầm lắng) theo ngữ cảnh từng câu và bổ sung <b>[nhận định]</b> đúc kết ở cuối bài.";
+        }
+        return { nhanDinhSentence, commentary };
+      }
+
+      // Client-side AI Human Script Regenerator & Emotional Rhythm + Khoản Nhận Định Director
+      function formatTextWithAiProsody(text, preset) {
+        let raw = (text || "").replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán)\]\s*/gi, " ");
+        raw = raw.replace(/(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)/gi, "");
+        // Strip previous auto-appended Nhận định sentence so clicking multiple times never duplicates it
+        raw = raw.replace(/\s*Nhận định (?:lại|chung),[^.\n]+\.?\s*$/i, "").trim();
+        raw = raw.replace(/[ \t]+/g, " ").trim();
+        if (preset === "clean" || !raw) {
+          if (aiAssessmentText) {
+            aiAssessmentText.innerHTML = "🧹 Đã đưa văn bản về nguyên gốc (không gắn thẻ nhịp điệu và không thêm Khoản Nhận Định).";
+          }
+          if (aiEmotionStatsBadge) {
+            aiEmotionStatsBadge.textContent = "🧹 Văn bản gốc";
+          }
+          return raw;
+        }
+
+        const cfgMap = {
+          auto_human: { para_b: "0.52s" },
+          human_rewrite: { para_b: "0.55s" },
+          tvc_energetic: { para_b: "0.42s" },
+          tvc_luxury: { para_b: "0.62s" },
+          news_vtv_htv: { para_b: "0.48s" },
+          story_healing: { para_b: "0.65s" }
+        };
+        const cfg = cfgMap[preset] || cfgMap.human_rewrite;
+
+        let countHappy = 0, countSad = 0, countInsight = 0, countNeutral = 0;
+        const paras = raw.split(/\n+/).map(p => p.trim()).filter(Boolean);
+        const outParas = paras.map((para, pIdx) => {
+          const pClean = para
+            .replace(/\s*,\s*/g, ", ")
+            .replace(/\s*;\s*/g, "; ")
+            .replace(/\s*\.\s*/g, ". ")
+            .trim();
+          const sents = pClean.split(/(?<=[.!?…])\s+/).map(s => s.trim()).filter(Boolean);
+          const taggedSents = sents.map((s, sIdx) => {
+            const emo = detectSentenceEmotionClient(s);
+            let tag = "[nhấn ý hay]";
+            if (emo === "sad") {
+              countSad++;
+              tag = "[buồn]";
+            } else if (emo === "happy") {
+              countHappy++;
+              tag = "[vui]";
+            } else if (emo === "insight") {
+              countInsight++;
+              tag = "[nhận định]";
+            } else {
+              countNeutral++;
+              tag = (sIdx === sents.length - 1) ? "[nhấn khoản cuối]" : "[nhấn ý hay]";
+            }
+            if (sIdx === sents.length - 1 && tag !== "[nhấn khoản cuối]") {
+              tag = tag + " [nhấn khoản cuối]";
+            }
+            return `${tag} ${s}`;
+          });
+          return taggedSents.join(" ");
+        });
+
+        const { nhanDinhSentence, commentary } = buildAiNhanDinhClient(raw);
+        const shouldAppendNhanDinh = !includeNhanDinhCheckbox || includeNhanDinhCheckbox.checked;
+        if (shouldAppendNhanDinh && nhanDinhSentence) {
+          countInsight++;
+          outParas.push(`[nhận định] [nhấn khoản cuối] ${nhanDinhSentence}`);
+        }
+
+        if (aiEmotionStatsBadge) {
+          aiEmotionStatsBadge.textContent = `😊 Vui: ${countHappy} câu · 🥺 Buồn: ${countSad} câu · 💥 Nhấn ý: ${countNeutral} câu · 🧠 Nhận định: ${countInsight} câu`;
+        }
+        if (aiAssessmentText) {
+          aiAssessmentText.innerHTML = `${commentary}<br><span style="color:#0369a1;font-weight:700;">💡 Câu Khoản Nhận Định đúc kết cuối bài:</span> <i>"${nhanDinhSentence}"</i>`;
+        }
+
+        return outParas.join(`\n[breaktime=${cfg.para_b}]\n`);
+      }
+
+      document.querySelectorAll(".btn-preset").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".btn-preset").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const preset = btn.getAttribute("data-preset");
+          if (preset !== "clean") currentPreset = preset;
+          ttsInput.value = formatTextWithAiProsody(ttsInput.value, preset);
+          updateCharCount();
+          document.getElementById("statusHint").textContent = preset === "clean"
+            ? "🧹 Đã xóa toàn bộ thẻ ngắt nghỉ về văn bản gốc."
+            : "🧠 AI đã gắn nhịp điệu thật Lúc Vui [vui], Lúc Buồn [buồn] và thêm Khoản Nhận Định cuối bài!";
+        });
+      });
+
+      document.getElementById("btnAutoFormatNow").addEventListener("click", () => {
+        ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
+        updateCharCount();
+        document.getElementById("statusHint").textContent = "🧠 AI đã phân tích nhịp điệu Lúc Vui [vui], Lúc Buồn [buồn] & thêm Khoản Nhận Định cuối kịch bản!";
+      });
+
+      // Insert breaktime / emotion tags at cursor
+      document.querySelectorAll("[data-insert]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const tag = btn.getAttribute("data-insert");
+          const start = ttsInput.selectionStart || ttsInput.value.length;
+          const end = ttsInput.selectionEnd || ttsInput.value.length;
+          const v = ttsInput.value;
+          ttsInput.value = v.slice(0, start) + " " + tag + " " + v.slice(end);
+          updateCharCount();
+          ttsInput.focus();
+        });
+      });
+
+      // Template pills
+      document.querySelectorAll("[data-tpl]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const tpl = TEMPLATES[btn.getAttribute("data-tpl")];
+          if (!tpl) return;
+          recordTitle.value = tpl.title;
+          currentPreset = tpl.preset || "human_rewrite";
+          document.querySelectorAll(".btn-preset").forEach(b => {
+            b.classList.toggle("active", b.getAttribute("data-preset") === currentPreset);
+          });
+          ttsInput.value = formatTextWithAiProsody(tpl.text, currentPreset);
+          updateCharCount();
+          const found = voicesList.find(v => v.id === tpl.voice);
+          if (found) selectVoice(found, { autoRegenerate: true });
+        });
+      });
+
+      function initials(name) {
+        const clean = name.replace(/\(.*?\)/g, "").replace(/[0-9.—-]+/g, " ").trim();
+        const parts = clean.split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) return (parts[parts.length - 2][0] + parts[parts.length - 1][0]).toUpperCase();
+        return clean.slice(0, 2).toUpperCase();
+      }
+
+      function resolveMediaUrl(relPath) {
+        if (!relPath) return "";
+        if (relPath.startsWith("http://") || relPath.startsWith("https://")) return relPath;
+        if (relPath.startsWith("/previews/")) return relPath;
+        return (apiBaseUrl || "") + relPath;
+      }
+
+      function selectVoice(v, opts) {
+        activeVoice = v;
+        const av = document.getElementById("activeAvatar");
+        av.textContent = initials(v.name);
+        av.style.background = v.avatar_color || "#f59e0b";
+        document.getElementById("activeVoiceName").textContent = v.name;
+        document.getElementById("activeVoiceMeta").textContent = `${v.gender} · ${v.region} · ${v.style}`;
+        renderVoiceGrid();
+        if (opts && opts.autoRegenerate && (!instantRegenCheckbox || instantRegenCheckbox.checked)) {
+          triggerTtsSynthesis();
+        }
+      }
+
+      function playAudioInStickyBar(url, title, voiceName) {
+        const fullUrl = resolveMediaUrl(url);
+        document.getElementById("playerTitle").textContent = title;
+        document.getElementById("playerVoice").textContent = "Giọng đọc: " + voiceName + " • Tốc độ: " + Number(speedSlider.value).toFixed(2).replace(/\.00$/, ".0") + "x";
+        mainPlayer.src = fullUrl;
+        mainPlayer.play().catch(() => {});
+        const dlBtn = document.getElementById("playerDownloadBtn");
+        dlBtn.href = fullUrl + (fullUrl.includes("?") ? "&dl=1" : "?dl=1");
+      }
+
+      const podcastRe = /(podcast|truyện|sách nói|audiobook|đêm khuya|tâm sự|chữa lành|radio|tản văn|hồ biểu chánh|ngôn tình|kể chuyện|story)/i;
+      function getVoiceUseCase(v) {
+        if (v.use_case) return v.use_case;
+        const hay = `${v.id || ""} ${v.name || ""} ${v.badge || ""} ${v.style || ""}`;
+        return podcastRe.test(hay) ? "podcast" : "tvc";
+      }
+
+      function renderVoiceGrid() {
+        const grid = document.getElementById("voiceGrid");
+        const tvcCount = voicesList.filter(v => getVoiceUseCase(v) === "tvc").length;
+        const podCount = voicesList.filter(v => getVoiceUseCase(v) === "podcast").length;
+        const fCount = voicesList.filter(v => v.gender === "Nữ").length;
+        const mCount = voicesList.filter(v => v.gender === "Nam").length;
+
+        const elTvc = document.getElementById("titleTabTvc");
+        const elPod = document.getElementById("titleTabPodcast");
+        const elFem = document.getElementById("titleTabFemale");
+        const elMal = document.getElementById("titleTabMale");
+        if (elTvc) elTvc.textContent = `📢 Tab TVC Quảng Cáo (${tvcCount})`;
+        if (elPod) elPod.textContent = `🎙️ Tab Podcast & Kể Chuyện (${podCount})`;
+        if (elFem) elFem.textContent = `👩 Tab Giọng Nữ (${fCount})`;
+        if (elMal) elMal.textContent = `👨 Tab Giọng Nam (${mCount})`;
+
+        const q = (voiceSearchInput.value || "").trim().toLowerCase();
+        const filtered = voicesList.filter(v => {
+          const uc = getVoiceUseCase(v);
+          if (currentMainTab === "tvc" && uc !== "tvc") return false;
+          if (currentMainTab === "podcast" && uc !== "podcast") return false;
+          if (currentMainTab === "Nữ" && v.gender !== "Nữ") return false;
+          if (currentMainTab === "Nam" && v.gender !== "Nam") return false;
+
+          if (currentSubFilter === "tvc" && uc !== "tvc") return false;
+          if (currentSubFilter === "podcast" && uc !== "podcast") return false;
+          if (currentSubFilter === "Nữ" && v.gender !== "Nữ") return false;
+          if (currentSubFilter === "Nam" && v.gender !== "Nam") return false;
+          if (currentSubFilter === "Miền Nam" && !(v.region || "").includes("Miền Nam")) return false;
+          if (currentSubFilter === "Miền Bắc" && !(v.region || "").includes("Miền Bắc")) return false;
+
+          if (!q) return true;
+          const hay = `${v.name} ${v.id} ${v.region} ${v.style} ${v.badge}`.toLowerCase();
+          return hay.includes(q);
+        });
+
+        grid.innerHTML = filtered.map(v => {
+          const isSel = activeVoice && activeVoice.id === v.id;
+          const uc = getVoiceUseCase(v);
+          return `
+            <div class="voice-card ${isSel ? "selected" : ""}" data-vid="${v.id.replace(/"/g, "&quot;")}">
+              <div class="vc-top" style="align-items:flex-start;">
+                <div class="vc-avatar" style="background:${v.avatar_color || "#f59e0b"}">${initials(v.name)}</div>
+                <div class="vc-title-wrap">
+                  <div style="margin-bottom:4px;"><span class="vc-badge">${v.badge || "TVC PRO"}</span></div>
+                  <div class="vc-name">${v.name}</div>
+                  <div class="vc-meta">${v.gender} • ${v.region} • <b style="color:${uc === "podcast" ? "#7c3aed" : "#0284c7"};">${uc === "podcast" ? "🎙️ PODCAST" : "📢 TVC"}</b></div>
+                </div>
+              </div>
+              <div class="vc-desc">${v.style}</div>
+              <div class="vc-actions">
+                <button type="button" class="btn-sample" data-preview="${v.preview}" data-vname="${v.name.replace(/"/g, "&quot;")}">▶ Nghe mẫu</button>
+                <span style="font-size:11.5px;font-weight:800;color:${isSel ? "#d97706" : "#059669"};">${isSel ? "⚡ Đang chọn (Click để Regen)" : "⚡ Nhấp chọn & Regen →"}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        grid.querySelectorAll(".voice-card").forEach(card => {
+          card.addEventListener("click", (ev) => {
+            if (ev.target.closest(".btn-sample")) return;
+            const vid = card.getAttribute("data-vid");
+            const v = voicesList.find(x => x.id === vid);
+            if (v) selectVoice(v, { autoRegenerate: true });
+          });
+        });
+
+        grid.querySelectorAll(".btn-sample").forEach(btn => {
+          btn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const prevUrl = btn.getAttribute("data-preview");
+            const vname = btn.getAttribute("data-vname");
+            playAudioInStickyBar(prevUrl, "Nghe thử giọng mẫu: " + vname, vname);
+          });
+        });
+      }
+
+      voiceSearchInput.addEventListener("input", renderVoiceGrid);
+
+      function syncDrawerUi() {
+        const panel = document.getElementById("voiceDrawerPanel");
+        const tBtn = document.getElementById("btnToggleDrawer");
+        panel.classList.toggle("collapsed", !drawerOpen);
+
+        const tabMap = [
+          { id: "tabMainTvc", arrow: "arrowTvc", key: "tvc" },
+          { id: "tabMainPodcast", arrow: "arrowPodcast", key: "podcast" },
+          { id: "tabGenderFemale", arrow: "arrowFemale", key: "Nữ" },
+          { id: "tabGenderMale", arrow: "arrowMale", key: "Nam" },
+        ];
+        tabMap.forEach(item => {
+          const btnEl = document.getElementById(item.id);
+          const arrEl = document.getElementById(item.arrow);
+          const isAct = drawerOpen && currentMainTab === item.key;
+          if (btnEl) btnEl.classList.toggle("active", isAct);
+          if (arrEl) arrEl.textContent = isAct ? "▾ Đang xổ ra" : "▸ Bấm để xổ ra";
+        });
+        if (tBtn) tBtn.textContent = drawerOpen ? "🔼 Thu gọn bảng giọng" : "🔽 Xổ bảng giọng";
+      }
+
+      document.querySelectorAll("[data-main-tab]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const m = btn.getAttribute("data-main-tab");
+          if (drawerOpen && currentMainTab === m) {
+            drawerOpen = false;
+          } else {
+            currentMainTab = m;
+            drawerOpen = true;
+          }
+          syncDrawerUi();
+          renderVoiceGrid();
+        });
+      });
+
+      document.getElementById("btnToggleDrawer").addEventListener("click", () => {
+        drawerOpen = !drawerOpen;
+        syncDrawerUi();
+      });
+
+      document.querySelectorAll("#subFilterRow .filter-tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          document.querySelectorAll("#subFilterRow .filter-tab").forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          currentSubFilter = tab.getAttribute("data-sub");
+          renderVoiceGrid();
+        });
+      });
+
+      document.getElementById("btnPreviewVoice").addEventListener("click", () => {
+        if (activeVoice && activeVoice.preview) {
+          playAudioInStickyBar(activeVoice.preview, "Mẫu giọng: " + activeVoice.name, activeVoice.name);
+        }
+      });
+
+      function renderHistory(items) {
+        const tb = document.getElementById("historyTbody");
+        if (!items || !items.length) {
+          items = [{
+            id: "rec_luc_canh_tham_clean",
+            title: "Truyện Ngôn Tình: Lục Cảnh Thâm & Tô Vãn (Đã Xóa Watermark Vbee)",
+            voice: "Ngọc Huyền 2.0 (Mẫu Gốc)",
+            chars: 1842,
+            duration: "03:03",
+            status: "Hoàn thành",
+            audio_url: "/previews/truyen_luc_canh_tham_full_clean.mp3"
+          }];
+        }
+        tb.innerHTML = items.map(r => {
+          const playUrl = resolveMediaUrl(r.audio_url);
+          const dlUrl = playUrl + (playUrl.includes("?") ? "&dl=1" : "?dl=1");
+          return `
+            <tr>
+              <td><b>${r.title}</b></td>
+              <td>${r.voice}</td>
+              <td>${r.chars}</td>
+              <td>${r.duration || "00:10"}</td>
+              <td><span class="status-done">${r.status || "Hoàn thành"}</span></td>
+              <td style="display:flex;gap:8px;">
+                <button type="button" class="btn-sample" data-play="${playUrl}" data-title="${(r.title || "").replace(/"/g, "&quot;")}" data-voice="${(r.voice || "").replace(/"/g, "&quot;")}">▶ Phát</button>
+                <a href="${dlUrl}" download class="btn-dl">⬇️ Tải về</a>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        tb.querySelectorAll("[data-play]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            playAudioInStickyBar(btn.getAttribute("data-play"), btn.getAttribute("data-title"), btn.getAttribute("data-voice"));
+          });
+        });
+      }
+
+      async function discoverCompanyServer() {
+        const qs = new URLSearchParams(window.location.search);
+        const paramApi = qs.get("api");
+        if (paramApi) {
+          localStorage.setItem("vbee_pc_server_url", paramApi);
+        }
+
+        const candidates = [];
+        if (paramApi) candidates.push(paramApi);
+        if (window.location.origin && window.location.origin.startsWith("http")) {
+          candidates.push(window.location.origin);
+        }
+        const saved = localStorage.getItem("vbee_pc_server_url");
+        if (saved) candidates.push(saved);
+
+        try {
+          const r = await fetch("https://ntfy.sh/vbee_velvet_hieu_pc_8890/raw?poll=1&since=all&t=" + Date.now());
+          if (r.ok) {
+            const lines = (await r.text()).trim().split(/\r?\n/).filter(x => x.startsWith("https://"));
+            for (let i = lines.length - 1; i >= 0; i--) {
+              candidates.unshift(lines[i].trim());
+            }
+          }
+        } catch (_) {}
+
+        candidates.push("https://poker-event-perception-website.trycloudflare.com");
+
+        if (window.location.protocol === "http:") {
+          candidates.push("http://100.68.114.94:8890", "http://192.168.100.164:8890", "http://127.0.0.1:8890");
+        }
+
+        const seen = new Set();
+        for (const base of candidates) {
+          if (!base || seen.has(base)) continue;
+          seen.add(base);
+          try {
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 3500);
+            const res = await fetch(base + "/api/voices?t=" + Date.now(), { signal: ctrl.signal });
+            clearTimeout(timer);
+            if (res.ok) {
+              const data = await res.json();
+              apiBaseUrl = base;
+              localStorage.setItem("vbee_pc_server_url", base);
+              document.getElementById("srvUrlLabel").textContent = "🟢 Đã kết nối: " + base;
+              if (data.voices && data.voices.length) {
+                voicesList = data.voices;
+                renderVoiceGrid();
+              }
+              if (data.history) {
+                renderHistory(data.history);
+              }
+              return;
+            }
+          } catch (_) {}
+        }
+        document.getElementById("srvUrlLabel").textContent = "⚡ Chế độ Demo Previews (Bấm Cấu hình nếu đổi Tunnel)";
+        renderHistory([]);
+      }
+
+      document.getElementById("btnSetServer").addEventListener("click", () => {
+        const cur = apiBaseUrl || localStorage.getItem("vbee_pc_server_url") || "https://";
+        const inp = prompt("Nhập URL Server Máy Công Ty (Cloudflare Tunnel hoặc http://100.68.114.94:8890):", cur);
+        if (inp && inp.trim()) {
+          apiBaseUrl = inp.trim().replace(/\/+$/, "");
+          localStorage.setItem("vbee_pc_server_url", apiBaseUrl);
+          discoverCompanyServer();
+        }
+      });
+
+      async function triggerTtsSynthesis() {
+        const btn = document.getElementById("btnSubmitTts");
+        const spinner = document.getElementById("ttsSpinner");
+        const icon = document.getElementById("btnSubmitIcon");
+        const lbl = document.getElementById("btnSubmitLabel");
+        const hint = document.getElementById("statusHint");
+
+        if (activeTtsController) {
+          try { activeTtsController.abort(); } catch (_) {}
+        }
+        const ctrl = new AbortController();
+        activeTtsController = ctrl;
+
+        if (autoAiCheckbox.checked && !/\[break/i.test(ttsInput.value) && !/\[nhấn/i.test(ttsInput.value)) {
+          ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
+          updateCharCount();
+        }
+
+        const curSpeed = parseFloat(speedSlider.value) || 1.0;
+        btn.disabled = true;
+        spinner.style.display = "inline-block";
+        icon.style.display = "none";
+        lbl.textContent = `Đang Regenerate (${curSpeed}x)...`;
+        hint.textContent = `⚡ Đang Regenerate ngay với giọng "${activeVoice.name}" (Tốc độ ${curSpeed}x • Nhấn Khoản Cuối & Ý Hay)...`;
+
+        try {
+          if (!apiBaseUrl) await discoverCompanyServer();
+          const targetUrl = (apiBaseUrl || "") + "/api/tts";
+          const res = await fetch(targetUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: ctrl.signal,
+            body: JSON.stringify({
+              title: recordTitle.value,
+              text: ttsInput.value,
+              voice: activeVoice.id,
+              speed: curSpeed,
+              pitch: parseFloat(pitchSlider.value),
+              gain: 0.0,
+              format: "mp3",
+              auto_ai_mode: autoAiCheckbox.checked,
+              auto_preset: currentPreset
+            })
+          });
+          const data = await res.json();
+          if (data && data.ok && data.record) {
+            const rec = data.record;
+            hint.textContent = `✅ Đã Regenerate giọng "${activeVoice.name}" trong ${rec.elapsed_sec}s (${rec.duration} • ${curSpeed}x) — Đang phát ngay!`;
+            playAudioInStickyBar(rec.audio_url, rec.title, rec.voice);
+            discoverCompanyServer();
+          } else {
+            throw new Error((data && data.error) || "Lỗi tổng hợp giọng nói");
+          }
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+          hint.textContent = "⚠️ Đang phát bản mẫu Preview: " + err.message;
+          if (activeVoice && activeVoice.preview) {
+            playAudioInStickyBar(activeVoice.preview, recordTitle.value, activeVoice.name);
+          }
+        } finally {
+          if (activeTtsController === ctrl) {
+            btn.disabled = false;
+            spinner.style.display = "none";
+            icon.style.display = "inline";
+            lbl.textContent = "Chuyển văn bản";
+          }
+        }
+      }
+
+      document.getElementById("ttsForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        triggerTtsSynthesis();
+      });
+
+      document.getElementById("btnCloneNow").addEventListener("click", async () => {
+        const name = document.getElementById("cloneNameInput").value.trim();
+        const query = document.getElementById("cloneQueryInput").value.trim();
+        const regVal = document.getElementById("cloneRegionSelect").value.split("|");
+        const gender = regVal[0] || "female";
+        const region = regVal[1] || "Miền Nam";
+        const msgEl = document.getElementById("cloneStatusMsg");
+        if (!name || !query) {
+          msgEl.textContent = "⚠️ Vui lòng nhập Tên Giọng và Từ khóa / Link YouTube TVC!";
+          return;
+        }
+        const btn = document.getElementById("btnCloneNow");
+        btn.disabled = true;
+        msgEl.textContent = `⏳ Server Công Ty đang tách giọng TVC "${name}" và huấn luyện Speaker Embedding 48kHz...`;
+        try {
+          const res = await fetch((apiBaseUrl || "") + "/api/clone_youtube", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, query, gender, region })
+          });
+          const data = await res.json();
+          if (data && data.ok && data.voice) {
+            voicesList.unshift(data.voice);
+            selectVoice(data.voice, { autoRegenerate: true });
+            msgEl.textContent = `✅ Đã học thành công giọng "${data.voice.name}" và đang Regenerate ngay!`;
+          } else {
+            msgEl.textContent = "⚠️ Lỗi: " + ((data && data.error) || "Không thể học giọng");
+          }
+        } catch (e) {
+          msgEl.textContent = "⚠️ Không kết nối được tới Server Công Ty: " + e.message;
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.getElementById("btnFocusVoices").addEventListener("click", () => {
+        document.getElementById("voiceCatalogSection").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("navAutoAi").addEventListener("click", () => {
+        document.getElementById("autoAiSection").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("navVoices").addEventListener("click", () => {
+        document.getElementById("voiceCatalogSection").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("navClone").addEventListener("click", () => {
+        document.getElementById("cloneSection").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("navHistory").addEventListener("click", () => {
+        document.getElementById("historySection").scrollIntoView({ behavior: "smooth" });
+      });
+
+      const kthVoice = DEFAULT_VOICES.find(v => v.id === "kth23") || DEFAULT_VOICES[1];
+      selectVoice(kthVoice, { autoRegenerate: false });
+      ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
+      updateCharCount();
+      renderHistory([]);
+      discoverCompanyServer();
+    })();
+  </script>
+</body>
+</html>
