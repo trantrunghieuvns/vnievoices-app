@@ -22,6 +22,7 @@ if sys.platform == "win32":
             os.environ["PATH"] = _extra_bin + os.pathsep + os.environ.get("PATH", "")
 
 import numpy as np
+import scipy.signal
 import soundfile as sf
 import imageio_ffmpeg
 
@@ -64,7 +65,7 @@ ROMAN_MAP = {
 }
 
 VALID_ACTING_TAG_RE = re.compile(
-    r"^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$",
+    r"^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|lật sách|lat sach|lật trang|page\s*turn|lấy hơi|lay hoi|breath|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$",
     re.I,
 )
 
@@ -239,7 +240,7 @@ def clean_and_reword_book_text(text: str) -> dict:
     raw_blocks = re.split(r"\n\s*\n+", joined_text)
     reflowed_paras = []
     chapter_heading_re = re.compile(
-        r"^\s*(?:(?:chương|phần|hồi|quyển|tập|mục)\s+(?:\d+|[IVXLCDM]+|thứ\s+\S+|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mở\s+đầu|kết\s+thúc)|lời\s+mở\s+đầu|lời\s+nói\s+đầu|kết\s+luận)\b",
+        r"^\s*(?:(?:chương|phần|hồi|quyển|tập|mục|chapter|part|book)\s+(?:\d+|[IVXLCDM]+|thứ\s+\S+|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mở\s+đầu|kết\s+thúc)|lời\s+mở\s+đầu|lời\s+nói\s+đầu|lời\s+giới\s+thiệu|kết\s+luận|tác\s+giả\s*:|dịch\s+giả\s*:|người\s+dịch\s*:|nhà\s+xuất\s+bản\b|nxb\b|bí\s+quyết\b|how\s+to\b)\b",
         re.I,
     )
     for blk in raw_blocks:
@@ -248,16 +249,25 @@ def clean_and_reword_book_text(text: str) -> dict:
             continue
         cur_para = []
         sent_end_count = 0
-        for bl in b_lines:
-            if chapter_heading_re.match(bl):
+        for idx_bl, bl in enumerate(b_lines):
+            alpha_chars = [c for c in bl if c.isalpha()]
+            is_all_caps_line = (len(alpha_chars) >= 4) and all(c.isupper() for c in alpha_chars)
+            is_short_title_line = (len(bl) <= 88) and not bl.endswith((",", ";", "–", "—", "-"))
+            next_is_heading = (idx_bl + 1 < len(b_lines)) and bool(chapter_heading_re.match(b_lines[idx_bl + 1]))
+            if chapter_heading_re.match(bl) or is_all_caps_line or (is_short_title_line and (idx_bl == 0 or next_is_heading)):
                 if cur_para:
-                    reflowed_paras.append(" ".join(cur_para))
+                    p_prev = " ".join(cur_para)
+                    if not p_prev.endswith((".", "!", "?", "…", "”", '"')):
+                        p_prev += "."
+                    reflowed_paras.append(p_prev)
                     cur_para = []
                     sent_end_count = 0
-                if not bl.endswith((".", "!", "?", "…", ":")):
-                    bl = bl + "."
+                if not bl.endswith((".", "!", "?", "…")):
+                    bl = bl.rstrip(":;") + "."
                 reflowed_paras.append(bl)
             else:
+                if next_is_heading and not bl.endswith((".", "!", "?", "…", ",", ";", ":")):
+                    bl = bl + "."
                 cur_para.append(bl)
                 if bl.endswith((".", "!", "?", "…", "”", '"')) and len(" ".join(cur_para)) >= 320:
                     sent_end_count += 1
@@ -285,6 +295,44 @@ def clean_and_reword_book_text(text: str) -> dict:
     t = re.sub(
         r"\b(Chương|Phần|Thế kỷ|Tập|Quyển|Hồi|Mục|Lần thứ)\s+(XXX|XXIX|XXVIII|XXVII|XXVI|XXV|XXIV|XXIII|XXII|XXI|XX|XIX|XVIII|XVII|XVI|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)\b",
         _replace_roman,
+        t,
+        flags=re.I,
+    )
+
+    # Smart Bilingual '&' expansion: 'and' between English words (e.g. FRIENDS & INFLUENCE), 'và' between Vietnamese words
+    def _smart_ampersand(m):
+        nonlocal reworded_items
+        w1, w2 = m.group(1), m.group(2)
+        reworded_items += 1
+        if not re.search(r"[À-ỹ]", w1 + w2) and (is_english_token(w1) or is_english_token(w2)):
+            return f"{w1} and {w2}"
+        return f"{w1} và {w2}"
+
+    t = re.sub(r"([A-Za-zÀ-ỹ]+)\s+&\s+([A-Za-zÀ-ỹ]+)", _smart_ampersand, t)
+
+    # AI Smart Reading-Point Inspector: Insert natural sentence/pause boundaries on merged book covers, headings & credits
+    t = re.sub(
+        r"([A-ZĐÀ-Ỹa-zđà-ỹ]*[ĐđÀ-ỹ][A-ZĐÀ-Ỹa-zđà-ỹ]*)\s+(?=(?:HOW\s+TO|THE\s+[A-Z]{2,}|INTRODUCTION|CHAPTER|PART)\b)",
+        r"\1. ",
+        t,
+    )
+    t = re.sub(
+        r"(\b[A-Z]{2,})\s+(?=[A-ZĐÀ-Ỹ]*[ĐÀ-Ỹ][A-ZĐÀ-Ỹ]*\s+[A-ZĐÀ-Ỹ]{2,})",
+        r"\1. ",
+        t,
+    )
+    t = re.sub(
+        r"(?<![.!?\n])\s+(?=(?:Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Hiệu\s+đính|Nhà\s+xuất\s+bản|NXB|Chương\s+\d+|Phần\s+\d+|Hồi\s+\d+|Quyển\s+\d+|Lời\s+mở\s+đầu|Lời\s+nói\s+đầu|Lời\s+giới\s+thiệu|Mục\s+lục)\b)",
+        ". ",
+        t,
+        flags=re.I,
+    )
+    t = re.sub(r"\b(Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Hiệu\s+đính)\s*:\s*", r"\1, ", t, flags=re.I)
+
+    # Insert natural reading comma before discourse connectors in long unpunctuated clauses (>= 38 chars without punctuation)
+    t = re.sub(
+        r"([^,.!?;:\n]{38,}?)\s+\b(nhưng|tuy nhiên|bởi vì|vì vậy|cho nên|mặc dù|không chỉ|mà còn|đồng thời|bên cạnh đó|chẳng hạn như)\b",
+        r"\1, \2",
         t,
         flags=re.I,
     )
@@ -389,21 +437,114 @@ def clean_and_reword_book_text(text: str) -> dict:
     }
 
 
+_EASYOCR_READER = None
+_RAPIDOCR_READER = None
+_OCR_LOCK = threading.Lock()
+
+
+def _ocr_image_ndarray(rgb_np: np.ndarray) -> str:
+    """Runs GPU Vietnamese + Academic English OCR (EasyOCR RTX 5070 + RapidOCR fallback) on an 8-bit RGB ndarray."""
+    global _EASYOCR_READER, _RAPIDOCR_READER
+    if rgb_np is None or rgb_np.size == 0:
+        return ""
+    lines_out = []
+    with _OCR_LOCK:
+        try:
+            if _EASYOCR_READER is None:
+                import easyocr
+                import torch
+                _EASYOCR_READER = easyocr.Reader(["vi", "en"], gpu=bool(torch.cuda.is_available()), verbose=False)
+            res = _EASYOCR_READER.readtext(rgb_np, detail=0, paragraph=True)
+            if res:
+                lines_out = [str(x).strip() for x in res if str(x).strip()]
+        except Exception:
+            pass
+        if not lines_out:
+            try:
+                if _RAPIDOCR_READER is None:
+                    from rapidocr_onnxruntime import RapidOCR
+                    _RAPIDOCR_READER = RapidOCR()
+                r_out, _ = _RAPIDOCR_READER(rgb_np)
+                if r_out:
+                    lines_out = [str(item[1]).strip() for item in r_out if len(item) >= 2 and str(item[1]).strip()]
+            except Exception:
+                pass
+    return "\n\n".join(lines_out)
+
+
+def _decode_image_or_exr_to_rgb(raw_bytes: bytes, fname_low: str) -> np.ndarray:
+    """Decodes PNG, JPG, JPEG, WEBP, BMP, TIFF, or 16/32-bit float OpenEXR (.exr) into an 8-bit RGB numpy array."""
+    import io
+    os.environ["OPENCV_IO_ENABLE_OPENEXR"] = "1"
+    if fname_low.endswith(".exr") or raw_bytes[:4] == b"v/1\x01":
+        try:
+            import cv2
+            buf = np.frombuffer(raw_bytes, dtype=np.uint8)
+            img = cv2.imdecode(buf, cv2.IMREAD_ANYCOLOR | cv2.IMREAD_ANYDEPTH)
+            if img is not None and img.size > 0:
+                if img.dtype in (np.float32, np.float64, np.float16):
+                    img_f = np.nan_to_num(img.astype(np.float32), nan=0.0, posinf=1.0, neginf=0.0)
+                    img_f = np.maximum(img_f, 0.0)
+                    # Reinhard tone-mapping + gamma 2.2 for crisp text contrast on HDR/EXR frames
+                    mapped = (img_f / (1.0 + img_f)) ** (1.0 / 2.2)
+                    img = np.clip(mapped * 255.0, 0, 255).astype(np.uint8)
+                elif img.dtype == np.uint16:
+                    img = (img >> 8).astype(np.uint8)
+                if img.ndim == 2:
+                    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+                elif img.shape[2] == 4:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
+                else:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                return img
+        except Exception:
+            pass
+        try:
+            import imageio.v3 as iio
+            arr = iio.imread(raw_bytes, extension=".exr")
+            arr_f = np.maximum(np.nan_to_num(np.asarray(arr, dtype=np.float32), nan=0.0), 0.0)
+            mapped = ((arr_f / (1.0 + arr_f)) ** (1.0 / 2.2) * 255.0).clip(0, 255).astype(np.uint8)
+            if mapped.ndim == 2:
+                mapped = np.stack([mapped] * 3, axis=-1)
+            return mapped[:, :, :3]
+        except Exception as exc:
+            raise RuntimeError(f"Không thể giải mã file ảnh EXR: {exc}")
+
+    try:
+        from PIL import Image
+        im = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
+        return np.array(im)
+    except Exception:
+        import cv2
+        buf = np.frombuffer(raw_bytes, dtype=np.uint8)
+        im = cv2.imdecode(buf, cv2.IMREAD_COLOR)
+        if im is not None:
+            return cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
+        raise RuntimeError("Không thể đọc định dạng file ảnh này.")
+
+
 def extract_document_text(filename: str = "", content_b64: str = "", raw_text: str = "") -> dict:
     """
-    Extracts clean book text from .pdf or .txt (base64 or raw text), strips PDF bookmarks/headers/footers/page numbers,
-    and runs clean_and_reword_book_text() so it is 100% ready for natural audiobook narration.
+    Universal Multi-Format Document & Image/EXR Extractor:
+    Supports .txt, .pdf, .docx/.doc (Word), .xlsx/.xls/.csv (Excel), and .png/.jpg/.jpeg/.webp/.bmp/.exr (Images & OpenEXR).
+    Strips bookmarks/headers/footers/page numbers and runs clean_and_reword_book_text().
     """
     import base64
     import io
+    import zipfile
+    import xml.etree.ElementTree as ET
 
     pages_count = 1
     extracted = raw_text or ""
     fname_low = (filename or "").lower().strip()
+    file_kind = "text"
 
     if content_b64 and not extracted:
         raw_bytes = base64.b64decode(content_b64)
+
+        # 1. PDF (.pdf)
         if fname_low.endswith(".pdf") or raw_bytes[:4] == b"%PDF":
+            file_kind = "pdf"
             page_texts = []
             try:
                 import fitz  # PyMuPDF
@@ -425,6 +566,13 @@ def extract_document_text(filename: str = "", content_b64: str = "", raw_text: s
                         kept_b.append(b_txt)
                     if kept_b:
                         page_texts.append("\n".join(kept_b))
+                    elif pages_count <= 25:
+                        # Scanned PDF page fallback -> render page and run OCR
+                        pix = page.get_pixmap(dpi=160, alpha=False)
+                        arr_pg = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+                        ocr_pg = _ocr_image_ndarray(arr_pg)
+                        if ocr_pg.strip():
+                            page_texts.append(ocr_pg.strip())
                 doc.close()
             except Exception:
                 try:
@@ -438,7 +586,123 @@ def extract_document_text(filename: str = "", content_b64: str = "", raw_text: s
                 except Exception as exc:
                     raise RuntimeError(f"Không thể đọc file PDF: {exc}")
             extracted = "\n\n".join(page_texts)
+
+        # 2. Microsoft Word (.docx / .doc)
+        elif fname_low.endswith((".docx", ".doc")):
+            file_kind = "word"
+            word_paras = []
+            try:
+                import docx
+                doc_w = docx.Document(io.BytesIO(raw_bytes))
+                for p in doc_w.paragraphs:
+                    if p.text and p.text.strip():
+                        word_paras.append(p.text.strip())
+                for tbl in doc_w.tables:
+                    for row in tbl.rows:
+                        cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
+                        if cells:
+                            word_paras.append(", ".join(cells) + ".")
+            except Exception:
+                try:
+                    with zipfile.ZipFile(io.BytesIO(raw_bytes)) as zf:
+                        if "word/document.xml" in zf.namelist():
+                            xml_bytes = zf.read("word/document.xml")
+                            root = ET.fromstring(xml_bytes)
+                            for p_el in root.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}p"):
+                                texts = [t_el.text for t_el in p_el.iter("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t") if t_el.text]
+                                line_s = "".join(texts).strip()
+                                if line_s:
+                                    word_paras.append(line_s)
+                except Exception:
+                    for enc in ("utf-8", "utf-16", "cp1258", "latin-1"):
+                        try:
+                            dec = raw_bytes.decode(enc, errors="ignore")
+                            clean_chunks = re.findall(r"[A-Za-zÀ-ỹ0-9 ,.;:!?\"'()\-\n]{12,}", dec)
+                            if clean_chunks:
+                                word_paras.extend(clean_chunks)
+                                break
+                        except Exception:
+                            pass
+            extracted = "\n\n".join(word_paras)
+            pages_count = max(1, len(extracted) // 1800 + 1)
+
+        # 3. Microsoft Excel / Spreadsheet (.xlsx / .xls / .csv)
+        elif fname_low.endswith((".xlsx", ".xls", ".csv", ".tsv")):
+            file_kind = "excel"
+            sheet_blocks = []
+            if fname_low.endswith((".csv", ".tsv")):
+                import csv
+                txt_csv = ""
+                for enc in ("utf-8-sig", "utf-8", "utf-16", "cp1258", "latin-1"):
+                    try:
+                        txt_csv = raw_bytes.decode(enc)
+                        break
+                    except Exception:
+                        continue
+                delim = "\t" if fname_low.endswith(".tsv") else ","
+                reader = csv.reader(io.StringIO(txt_csv), delimiter=delim)
+                rows = [[str(c).strip() for c in r if str(c).strip()] for r in reader]
+                rows = [r for r in rows if r]
+                if rows:
+                    headers = rows[0]
+                    for r in rows[1:]:
+                        if len(r) == len(headers) and len(headers) > 1:
+                            pairs = [f"{h}: {v}" for h, v in zip(headers, r) if v]
+                            sheet_blocks.append(", ".join(pairs) + ".")
+                        else:
+                            sheet_blocks.append(", ".join(r) + ".")
+                    if len(rows) == 1:
+                        sheet_blocks.append(", ".join(rows[0]) + ".")
+            else:
+                try:
+                    import openpyxl
+                    wb = openpyxl.load_workbook(io.BytesIO(raw_bytes), data_only=True, read_only=True)
+                    pages_count = len(wb.sheetnames)
+                    for sname in wb.sheetnames:
+                        ws = wb[sname]
+                        s_rows = []
+                        for row in ws.iter_rows(values_only=True):
+                            vals = [str(v).strip() for v in row if v is not None and str(v).strip() != ""]
+                            if vals:
+                                s_rows.append(vals)
+                        if s_rows:
+                            if len(wb.sheetnames) > 1:
+                                sheet_blocks.append(f"Bảng {sname}.")
+                            headers = s_rows[0] if len(s_rows) > 1 else []
+                            start_idx = 1 if headers else 0
+                            for r in s_rows[start_idx:]:
+                                if headers and len(r) == len(headers) and len(headers) > 1:
+                                    pairs = [f"{h}: {v}" for h, v in zip(headers, r) if v]
+                                    sheet_blocks.append(", ".join(pairs) + ".")
+                                else:
+                                    sheet_blocks.append(", ".join(r) + ".")
+                    wb.close()
+                except Exception:
+                    try:
+                        import pandas as pd
+                        dfs = pd.read_excel(io.BytesIO(raw_bytes), sheet_name=None)
+                        pages_count = len(dfs)
+                        for sname, df in dfs.items():
+                            df = df.dropna(how="all")
+                            for _, row in df.iterrows():
+                                pairs = [f"{col}: {val}" for col, val in row.items() if pd.notna(val) and str(val).strip()]
+                                if pairs:
+                                    sheet_blocks.append(", ".join(pairs) + ".")
+                    except Exception as exc:
+                        raise RuntimeError(f"Không thể đọc file Excel: {exc}")
+            extracted = "\n\n".join(sheet_blocks)
+
+        # 4. Images & OpenEXR (.png, .jpg, .jpeg, .webp, .bmp, .tiff, .exr)
+        elif fname_low.endswith((".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tif", ".tiff", ".exr")) or raw_bytes[:4] in (b"\x89PNG", b"\xff\xd8\xff\xe0", b"\xff\xd8\xff\xe1", b"v/1\x01"):
+            file_kind = "image_exr" if fname_low.endswith(".exr") else "image"
+            rgb_arr = _decode_image_or_exr_to_rgb(raw_bytes, fname_low)
+            extracted = _ocr_image_ndarray(rgb_arr)
+            if not extracted or not extracted.strip():
+                extracted = f"Ảnh {filename} đã được nạp thành công nhưng không phát hiện thấy dòng chữ nào trên ảnh."
+
+        # 5. Plain Text / Markdown / JSON / SRT (.txt, .md, .json, .srt)
         else:
+            file_kind = "txt"
             for enc in ("utf-8-sig", "utf-8", "utf-16", "cp1258", "latin-1"):
                 try:
                     extracted = raw_bytes.decode(enc)
@@ -447,13 +711,23 @@ def extract_document_text(filename: str = "", content_b64: str = "", raw_text: s
                     continue
 
     res = clean_and_reword_book_text(extracted)
+    biling = analyze_and_adapt_english_vietnamese(res["text"], mode="auto_academic")
     return {
         "ok": True,
         "filename": filename,
+        "file_kind": file_kind,
         "pages": pages_count,
         "cleaned_text": res["text"],
         "removed_junk": res["removed_junk"],
         "reworded_items": res["reworded_items"],
+        "bilingual": {
+            "detected_lang": biling["detected_lang"],
+            "vn_word_count": biling["vn_word_count"],
+            "en_word_count": biling["en_word_count"],
+            "vn_percent": biling["vn_percent"],
+            "en_percent": biling["en_percent"],
+            "english_samples": biling["english_samples"],
+        },
     }
 
 
@@ -1299,12 +1573,25 @@ def translate_en_to_vi_text(text: str) -> str:
     return "\n\n".join(translated_paras)
 
 
+def _get_english_ipa_preview(word: str) -> str:
+    """Returns the authentic Academic English IPA transcription from sea_g2p for UI preview."""
+    try:
+        from vieneu_utils.phonemize_text import phonemize_text
+        ipa = phonemize_text(word).strip().rstrip(".,!?;:")
+        if ipa:
+            return f"/{ipa}/"
+    except Exception:
+        pass
+    return f"/{word}/"
+
+
 def _transcribe_english_in_context(text: str) -> tuple:
     """
-    Context-aware Bilingual Token Analyzer & Transcriber:
-    - Unambiguous English words (in CURATED_EN_WORDS, CMUdict outside VN_NO_DIACRITIC_WORDS, stop-final ASCII words, etc.) are always English.
-    - Ambiguous short ASCII words in AMBIGUOUS_EN_VN_MAP (e.g. 'to', 'do', 'go', 'so', 'no', 'he', 'me', 'be', 'my', 'in', 'on', 'an', 'am', 'can', 'man', 'way', 'day')
-      are treated as English when adjacent to an English word or inside a sentence with >= 35% unambiguous English words!
+    Context-aware Bilingual Academic English & Vietnamese Token Analyzer:
+    - Detects English words vs Vietnamese words accurately.
+    - Keeps ALL English words intact in their original spelling so VieNeu-TTS v3 Turbo + sea_g2p
+      synthesizes them in 100% authentic Academic English IPA with the exact same character voice
+      (NEVER transliterating into 'ìn flu en').
     """
     token_iter = list(re.finditer(r"[A-Za-zÀ-ỹ]+(?:['-][A-Za-zÀ-ỹ]+)*", text))
     if not token_iter:
@@ -1329,7 +1616,6 @@ def _transcribe_english_in_context(text: str) -> tuple:
     unambig_vn = sum(1 for k in kinds if k == "vn")
     mostly_english_doc = (unambig_en > 0) and (unambig_en >= unambig_vn * 0.65)
 
-    # Resolve "ambig" tokens using local window [i-2 .. i+2] and document ratio
     for i in range(n_tok):
         if kinds[i] != "ambig":
             continue
@@ -1347,34 +1633,24 @@ def _transcribe_english_in_context(text: str) -> tuple:
     en_count = sum(1 for k in kinds if k == "en")
     en_samples_map = {}
 
-    out_parts = []
-    last_pos = 0
     for i, m in enumerate(token_iter):
-        out_parts.append(text[last_pos : m.start()])
-        w = m.group(0)
         if kinds[i] == "en":
+            w = m.group(0)
             low = w.lower()
-            if low in AMBIGUOUS_EN_VN_MAP:
-                vn_phon = AMBIGUOUS_EN_VN_MAP[low]
-            else:
-                vn_phon = english_word_to_vn_fallback(w)
-            if low not in en_samples_map and len(en_samples_map) < 18 and len(low) >= 2:
-                en_samples_map[low] = vn_phon
-            out_parts.append(vn_phon)
-        else:
-            out_parts.append(w)
-        last_pos = m.end()
-    out_parts.append(text[last_pos:])
-    return "".join(out_parts), vn_count, en_count, en_samples_map
+            if low not in en_samples_map and len(en_samples_map) < 16 and len(low) >= 2:
+                en_samples_map[w] = _get_english_ipa_preview(w)
+
+    # Return original text intact so English words are pronounced in authentic Academic English IPA!
+    return text, vn_count, en_count, en_samples_map
 
 
-def analyze_and_adapt_english_vietnamese(text: str, mode: str = "auto_phonetic") -> dict:
+def analyze_and_adapt_english_vietnamese(text: str, mode: str = "auto_academic") -> dict:
     """
-    Automatically analyzes English vs Vietnamese tokens in any text or extracted news article:
+    Analyzes English vs Vietnamese tokens in any text, book, or extracted article:
     - Counts Vietnamese words vs English words (`vn_word_count`, `en_word_count`, `vn_percent`, `en_percent`).
-    - Lists detected English terms and their Vietnamese phonetic pronunciations (`english_samples`).
-    - If `mode == "translate_vi"` (or `mode == "auto_translate"` when `en_percent >= 55`), translates English into fluent Vietnamese.
-    - Converts English words/sentences into smooth Vietnamese syllables (`phonetic_text`) so VieNeu-TTS v3 Turbo reads both languages seamlessly.
+    - Lists detected English terms with their Standard Academic English IPA (`/ˈɪnfluːəns/`, `/ˌækədˈɛmɪk/`).
+    - Preserves original English words intact so VieNeu-TTS v3 Turbo reads them in authentic Academic English
+      using the exact selected character voice (never 'ìn flu en').
     """
     if not text or not text.strip():
         return {
@@ -1390,7 +1666,6 @@ def analyze_and_adapt_english_vietnamese(text: str, mode: str = "auto_phonetic")
             "translated": False,
         }
 
-    # Protect valid acting tags before scanning words
     protected = []
 
     def _save_act(m):
@@ -1409,29 +1684,17 @@ def analyze_and_adapt_english_vietnamese(text: str, mode: str = "auto_phonetic")
     vn_pct = 100 - en_pct
 
     if en_pct >= 60:
-        detected_lang = "Tiếng Anh (English Article)"
-    elif en_count >= 2 or en_pct >= 5:
-        detected_lang = "Song Ngữ Anh - Việt (Bilingual)"
+        detected_lang = "Tiếng Anh Học Thuật (Academic English)"
+    elif en_count >= 1 or en_pct >= 3:
+        detected_lang = "Song Ngữ Anh - Việt (Academic Bilingual)"
     else:
         detected_lang = "Tiếng Việt (Chuẩn)"
 
     did_translate = False
     display_text = text
-    if mode == "translate_vi" or (mode == "auto_translate" and en_pct >= 55):
+    if mode == "translate_vi":
         display_text = translate_en_to_vi_text(text)
         did_translate = True
-
-    # Build phonetic_text by applying curated multi-word English phrases first, then context-aware English tokens
-    work_t = re.sub(r"\[[^\]]+\]", _save_act, display_text)
-    for pat, rep in CURATED_EN_PHRASES:
-        work_t = re.sub(pat, rep, work_t, flags=re.I)
-
-    phonetic_t, _, _, _ = _transcribe_english_in_context(work_t)
-    if protected:
-        phonetic_t = _RESTORE_TAG_RE.sub(
-            lambda m: protected[int(m.group(1))] if int(m.group(1)) < len(protected) else " ",
-            phonetic_t,
-        )
 
     samples_list = [{"en": k, "vi": v} for k, v in list(en_samples_map.items())[:14]]
     return {
@@ -1443,7 +1706,7 @@ def analyze_and_adapt_english_vietnamese(text: str, mode: str = "auto_phonetic")
         "en_percent": en_pct,
         "english_samples": samples_list,
         "clean_display_text": display_text,
-        "phonetic_text": phonetic_t,
+        "phonetic_text": display_text,
         "translated": did_translate,
     }
 
@@ -1650,11 +1913,16 @@ def extract_article_from_url(url: str, bilingual_mode: str = "auto_phonetic") ->
 
 
 def convert_to_pure_vietnamese(text: str, skip_book_clean: bool = False) -> str:
-    """Pure Vietnamese & Bilingual English-Vietnamese phonetic normalization while preserving all [emotion] and [breaktime] tags."""
+    """
+    Academic Bilingual English + Vietnamese Text Normalizer:
+    - Preserves all [emotion], [breaktime], [lật sách], and [lấy hơi] tags.
+    - Keeps ALL English words and Academic English terms intact in their original English spelling
+      so VieNeu-TTS v3 Turbo + sea_g2p pronounces them in 100% Standard Academic English IPA
+      with the exact selected character voice (NEVER 'ìn flu en').
+    """
     if not skip_book_clean:
         text = clean_and_reword_book_text(text)["text"]
     t = text.replace("\ufeff", "")
-    # Protect inline bracket tags [breaktime=...], [hưng phấn], [nhấn mạnh], [lắng đọng], [tươi vui], [cười], [thở dài], [hắng giọng]
     protected = []
 
     def _save_tag(m):
@@ -1664,85 +1932,29 @@ def convert_to_pure_vietnamese(text: str, skip_book_clean: bool = False) -> str:
 
     t = re.sub(r"\[[^\]]+\]", _save_tag, t)
 
-    # Fix known Vbee artifact in user's story ("ca cần si" -> "bây giờ")
+    # Fix known Vbee artifact in user's story ("ca cần si" -> "bây giờ") and Vietnamese-only TV channel names
     t = re.sub(r"\bca\s+cần\s+si\b", "bây giờ?", t, flags=re.I)
-    t = re.sub(r"\bTVC\s+3D\s+anamorphic\b", "phim quảng cáo ba đê nổi", t, flags=re.I)
-    t = re.sub(r"\b3D\s+anamorphic\b", "ba đê nổi", t, flags=re.I)
-    t = re.sub(r"\bTVC\s+3D\b", "phim quảng cáo ba đê", t, flags=re.I)
-    t = re.sub(r"\bTVC\b", "ti vi xi", t, flags=re.I)
-    t = re.sub(r"\b3D\b", "ba đê", t, flags=re.I)
-    t = re.sub(r"\bKOL\b", "ây ô eo", t, flags=re.I)
-    t = re.sub(r"\bKOC\b", "ây ô xi", t, flags=re.I)
-    t = re.sub(r"\bMC\b", "em xi", t, flags=re.I)
     t = re.sub(r"\bVTV1\b", "vê tê vê một", t, flags=re.I)
     t = re.sub(r"\bVTV\b", "vê tê vê", t, flags=re.I)
     t = re.sub(r"\bHTV9\b", "hát tê vê chín", t, flags=re.I)
     t = re.sub(r"\bHTV7\b", "hát tê vê bảy", t, flags=re.I)
     t = re.sub(r"\bHTV\b", "hát tê vê", t, flags=re.I)
-    t = re.sub(r"\bVIP\b", "víp", t, flags=re.I)
-    t = re.sub(r"\bvest\b", "vét", t, flags=re.I)
-    t = re.sub(r"\btip\b", "típ", t, flags=re.I)
-    t = re.sub(r"\breview\b", "ri viu", t, flags=re.I)
-    t = re.sub(r"\bpodcast\b", "pót cát", t, flags=re.I)
-    t = re.sub(r"\bvlog\b", "vê lốc", t, flags=re.I)
-    t = re.sub(r"\blivestream\b", "lai chim", t, flags=re.I)
-    t = re.sub(r"\bsale\b", "sêu", t, flags=re.I)
-    t = re.sub(r"\bvoucher\b", "vao chờ", t, flags=re.I)
-    t = re.sub(r"\bdeal\b", "điu", t, flags=re.I)
-    t = re.sub(r"\bhotline\b", "hót lai", t, flags=re.I)
-    t = re.sub(r"\bspa\b", "sờ pa", t, flags=re.I)
-    t = re.sub(r"\bVietinBank\b", "Việt Tin Băng", t, flags=re.I)
-    t = re.sub(r"\bVietcombank\b", "Việt Com Băng", t, flags=re.I)
-    t = re.sub(r"\bTechcombank\b", "Tếch Com Băng", t, flags=re.I)
-    t = re.sub(r"\bVPBank\b", "Vi Pi Băng", t, flags=re.I)
-    t = re.sub(r"\bMBBank\b", "Em Bi Băng", t, flags=re.I)
-    t = re.sub(r"\bPremium\b", "Pờ ri mi um", t, flags=re.I)
-    t = re.sub(r"\bLuxury\b", "Lắc xơ ri", t, flags=re.I)
-    t = re.sub(r"\bVinhomes\b", "Vin Hôm", t, flags=re.I)
-    t = re.sub(r"\bVinamilk\b", "Vi na miu", t, flags=re.I)
-    t = re.sub(r"\bShopee\b", "Sóp pi", t, flags=re.I)
-    t = re.sub(r"\bLazada\b", "La da đa", t, flags=re.I)
     t = re.sub(r"\bRahula\b", "Ra hu la", t, flags=re.I)
     t = re.sub(r"\bRadula\b", "Ra hu la", t, flags=re.I)
-    # Tech, AI & Finance terms so Vietnamese voices never glitch on raw English IPA phonemes
-    t = re.sub(r"\bAnthropic\b", "An thờ rô pích", t, flags=re.I)
-    t = re.sub(r"\bPersonal\s+Finance\b", "Pơ sơ nồ Phai nen", t, flags=re.I)
-    t = re.sub(r"\bPersonal\b", "Pơ sơ nồ", t, flags=re.I)
-    t = re.sub(r"\bFinance\b", "Phai nen", t, flags=re.I)
-    t = re.sub(r"\bClaude\b", "Cờ lốt", t, flags=re.I)
-    t = re.sub(r"\bChatGPT\b", "Chát Gi Pi Ti", t, flags=re.I)
-    t = re.sub(r"\bOpenAI\b", "Ô pần Ây Ai", t, flags=re.I)
-    t = re.sub(r"\bGoogle\b", "Gu Gồ", t, flags=re.I)
-    t = re.sub(r"\bYoutube\b", "Diu Túp", t, flags=re.I)
-    t = re.sub(r"\bFacebook\b", "Phây Búc", t, flags=re.I)
-    t = re.sub(r"\bTiktok\b", "Tíc Tóc", t, flags=re.I)
-    t = re.sub(r"\bdatabase\b", "đây ta bây", t, flags=re.I)
-    t = re.sub(r"\bapp\b", "áp", t, flags=re.I)
-    t = re.sub(r"\bapps\b", "áp", t, flags=re.I)
-    t = re.sub(r"\bAPI\b", "ây pi ai", t, flags=re.I)
-    t = re.sub(r"\bCEO\b", "xi i ô", t, flags=re.I)
-    t = re.sub(r"\bGDP\b", "gi đi pi", t, flags=re.I)
-    t = re.sub(r"\bUSD\b", "đô la Mỹ", t, flags=re.I)
 
-    # Apply Curated English Phrases + CMUdict/G2P Bilingual English-to-Vietnamese syllable transcription
-    for pat, rep in CURATED_EN_PHRASES:
-        t = re.sub(pat, rep, t, flags=re.I)
+    # Uppercase English acronyms that collide with unaccented Vietnamese words -> wrap in <en>...</en> for authentic English letter pronunciation
+    for acr in ("ROI", "UI", "UX", "SEO", "KOL", "KOC", "TVC", "PR", "HR", "QA", "QC"):
+        t = re.sub(rf"\b{acr}\b", f"<en>{' '.join(acr)}</en>", t)
 
-    # Convert decimal numbers (e.g. 3.8 -> 3 chấm 8, 4.0 -> 4 chấm 0) so periods inside numbers never split sentences!
-    t = re.sub(r"(\d+)\.(\d+)", r"\1 chấm \2", t)
-    # Convert numbered list items (e.g. "1. ", "2. ") so they don't split into 1-word sentences
-    t = re.sub(r"(?:^|(?<=\n))\s*(\d+)\.\s+", r"Mục \1, ", t)
-    # Convert file extensions / tech dots (e.g. llama.cpp -> llama chấm cpp)
-    t = re.sub(r"([a-zA-Z0-9]+)\.([a-zA-Z]{2,5})\b", r"\1 chấm \2", t)
-    t = re.sub(r"(\d+)\s*-\s*(\d+)", r"\1 đến \2", t)
+    # Only expand decimal dot to 'chấm' and range '-' to 'đến' if the clause has Vietnamese diacritics
+    if re.search(r"[À-ỹ]", t):
+        t = re.sub(r"(?:^|(?<=\n))\s*(\d+)\.\s+", r"Mục \1, ", t)
+        t = re.sub(r"(\d+)\s*-\s*(\d+)", r"\1 đến \2", t)
 
-    t, _, _, _ = _transcribe_english_in_context(t)
-
-    # Strip decorative separator lines (===, ---, ***) and non-spoken emojis/kaomoji so TTS never babbles on empty symbols
+    # Strip decorative separator lines (===, ---, ***) and non-spoken emojis/kaomoji while keeping <en>...</en>
     t = re.sub(r"[=_*~-]{3,}", " ", t)
     t = re.sub(r"[:=]-?\)+", " ", t)
-    t = re.sub(r"[^\w\s,.!?;:…'\"()/\-À-ỹ\x02\x03]", " ", t)
-    # Normalize em-dash / en-dash into natural comma pause so G2P never stumbles
+    t = re.sub(r"[^\w\s,.!?;:…'\"()/<>\-À-ỹ\x02\x03]", " ", t)
     t = re.sub(r"\s*[—–]\s*", ", ", t)
 
     if protected:
@@ -1878,6 +2090,21 @@ def auto_ai_prosody_format(text: str, preset: str = "auto_human", include_nhan_d
 # ── 44 COPYRIGHT-SAFE STUDIO VOICES CATALOG ─────────────────────────────────
 # 1 Giọng Mẫu Gốc + 40 Giọng Nữ (20 Bắc VTV1/TVC + 20 Nam HTV/TVC) + 3 Giọng Nam TVC/Truyền Hình
 VOICE_CATALOG = [
+    {
+        "id": "Xưa cũ",
+        "enrolled_key": "Xưa cũ",
+        "name": "Xưa cũ (Giọng Học Cảm Xúc & Cách Diễn Chữ)",
+        "category": "male_tvc",
+        "use_case": "podcast",
+        "badge": "AI HỌC CẢ CÁI TÌNH",
+        "region": "Miền Bắc",
+        "gender": "Nam",
+        "style": "Giữ trọn âm sắc, nhịp thở, độ ngân và cái tình trong cách diễn đạt từng con chữ",
+        "avatar_color": "#0ea5e9",
+        "preview": "/previews/clone_x_a_c.mp3",
+        "pitch_st": 0.0,
+        "speed_mul": 0.96
+    },
     {
         "id": "Lê Tuệ Nghi — Giọng Nữ Truyện Mẫu Gốc (Miền Bắc)",
         "enrolled_key": "Vbee Ngọc Huyền 2.0 (Giọng Mẫu Gốc)",
@@ -2585,19 +2812,20 @@ try:
                 _is_female = str(_vinfo.get("gender", "")).lower() == "female"
                 _desc = str(_vinfo.get("description", ""))
                 _reg = "Miền Bắc" if "Bắc" in _desc else "Miền Nam"
-                VOICE_CATALOG.insert(min(3, len(VOICE_CATALOG)), {
+                VOICE_CATALOG.insert(0, {
                     "id": _vname,
-                    "name": _vname,
+                    "enrolled_key": _vname,
+                    "name": f"{_vname} (Giọng Học Cảm Xúc & Cách Diễn Chữ)",
                     "category": "female_south" if (_is_female and "Nam" in _reg) else ("female_north" if _is_female else "male_tvc"),
-                    "use_case": "podcast" if any(k in _desc.lower() for k in ("podcast", "truyện", "kể chuyện", "sách")) else "tvc",
-                    "badge": "AI CLONED",
+                    "use_case": "podcast",
+                    "badge": "AI HỌC CẢ CÁI TÌNH",
                     "region": _reg,
                     "gender": "Nữ" if _is_female else "Nam",
-                    "style": _desc or "Giọng đọc TVC truyền cảm vừa học tự động",
+                    "style": _desc or "Giữ trọn âm sắc, nhịp thở, độ ngân và cái tình trong cách diễn đạt từng con chữ",
                     "avatar_color": "#ec4899" if _is_female else "#0ea5e9",
                     "preview": f"/previews/clone_{_slug}.mp3",
                     "pitch_st": 0.0,
-                    "speed_mul": 1.0,
+                    "speed_mul": 0.96,
                 })
                 _existing_ids.add(_vname)
 except Exception as _ce:
@@ -3069,9 +3297,126 @@ def load_jobs_state():
         pass
 
 
+_FOLEY_CACHE: dict[tuple, np.ndarray] = {}
+
+
+def _get_natural_breath_wav(
+    sr: int = 48000,
+    is_female: bool = False,
+    variant: int = 0,
+    intensity: float = 1.0,
+) -> np.ndarray:
+    """
+    Synthesize a 48,000 Hz subtle, physiological human vocal-tract inhalation breath (Klatt open-glottis model).
+    Produces an intimate, gentle 0.22s intake of breath (-32 dBFS, peak ~0.025) before speaking —
+    completely distinct from a sigh ([thở dài]) or throat-clear ([hắng giọng]).
+    """
+    key = ("breath_v3", sr, bool(is_female), int(variant) % 4, round(float(intensity), 2))
+    if key in _FOLEY_CACHE:
+        return _FOLEY_CACHE[key]
+
+    rng = np.random.default_rng(seed=91023 + (100 if is_female else 0) + (int(variant) % 4) * 17)
+    dur_in = 0.22 + 0.02 * (int(variant) % 3)
+    n_in = int(round(dur_in * sr))
+    t = np.linspace(0.0, 1.0, n_in, endpoint=False, dtype=np.float32)
+
+    # Smooth inhalation envelope: gentle intake onset, peak at ~38% duration, soft taper into glottal closure
+    env = (np.power(np.maximum(t, 1e-4), 1.35) * np.exp(-3.8 * t))
+    env = env / (np.max(env) + 1e-8)
+    env *= np.sin(np.pi * t) ** 0.65
+
+    white = rng.standard_normal(n_in).astype(np.float32)
+    pink = scipy.signal.lfilter([1.0], [1.0, -0.88], white).astype(np.float32)
+    pink = pink / (np.std(pink) + 1e-8)
+
+    f1 = (615.0 if is_female else 525.0) * (1.0 + 0.03 * (int(variant) % 3))
+    f2 = (1710.0 if is_female else 1490.0) * (1.0 + 0.02 * (int(variant) % 2))
+    f3 = (2760.0 if is_female else 2440.0)
+    nyq = 0.5 * sr
+
+    def _resonator(sig: np.ndarray, fc: float, bw: float, gain: float) -> np.ndarray:
+        low = max(40.0, fc - bw * 0.5) / nyq
+        high = min(nyq * 0.92, fc + bw * 0.5) / nyq
+        if low >= high:
+            return np.zeros_like(sig)
+        sos = scipy.signal.butter(2, [low, high], btype="bandpass", output="sos")
+        return scipy.signal.sosfilt(sos, sig).astype(np.float32) * gain
+
+    tract = (
+        _resonator(pink, f1, 190.0, 0.56)
+        + _resonator(pink, f2, 260.0, 0.92)
+        + _resonator(pink, f3, 380.0, 0.40)
+    )
+    tract = tract / (np.max(np.abs(tract)) + 1e-8)
+    breath = tract * env * float(0.025 * max(0.45, min(intensity, 1.35)))
+
+    pre_pad = np.zeros(int(round(0.045 * sr)), dtype=np.float32)
+    post_pad = np.zeros(int(round(0.055 * sr)), dtype=np.float32)
+    out = np.concatenate([pre_pad, breath.astype(np.float32), post_pad])
+    _FOLEY_CACHE[key] = out
+    return out
+
+
+def _get_page_turn_wav(sr: int = 48000, variant: int = 0) -> np.ndarray:
+    """
+    Synthesize a 48,000 Hz realistic studio paper book page-turn sound:
+    1) Finger-tip paper edge catch (crisp cellulose micro-crinkle),
+    2) Arcing paper sheet slide (swept resonant air-paper friction),
+    3) Soft page settle onto the opposite stack.
+    """
+    key = ("page_turn_v3", sr, int(variant) % 3)
+    if key in _FOLEY_CACHE:
+        return _FOLEY_CACHE[key]
+
+    rng = np.random.default_rng(seed=77401 + (int(variant) % 3) * 31)
+    dur = 0.44 + 0.03 * (int(variant) % 3)
+    n = int(round(dur * sr))
+    t = np.linspace(0.0, 1.0, n, endpoint=False, dtype=np.float32)
+    nyq = 0.5 * sr
+
+    noise = rng.standard_normal(n).astype(np.float32)
+
+    # Phase 1: Initial finger-tip paper corner lift (0.00 - 0.16 of duration)
+    env_lift = np.exp(-((t - 0.08) / 0.042) ** 2).astype(np.float32)
+    sos_lift = scipy.signal.butter(2, [2200.0 / nyq, 6400.0 / nyq], btype="bandpass", output="sos")
+    crinkle_impulses = (rng.random(n) > 0.992).astype(np.float32) * rng.uniform(0.4, 1.0, n).astype(np.float32)
+    lift_sig = scipy.signal.sosfilt(sos_lift, noise * 0.45 + crinkle_impulses * 2.2).astype(np.float32) * env_lift
+
+    # Phase 2: Arcing page swoosh across air (0.14 - 0.74 of duration, dual-band swept texture)
+    env_arc_lo = np.exp(-((t - 0.34) / 0.16) ** 2).astype(np.float32)
+    env_arc_hi = np.exp(-((t - 0.46) / 0.14) ** 2).astype(np.float32)
+    sos_arc_lo = scipy.signal.butter(2, [750.0 / nyq, 2100.0 / nyq], btype="bandpass", output="sos")
+    sos_arc_hi = scipy.signal.butter(2, [1900.0 / nyq, 4800.0 / nyq], btype="bandpass", output="sos")
+    arc_sig = (
+        scipy.signal.sosfilt(sos_arc_lo, noise).astype(np.float32) * env_arc_lo * 0.65
+        + scipy.signal.sosfilt(sos_arc_hi, noise).astype(np.float32) * env_arc_hi * 0.80
+    )
+
+    # Phase 3: Soft paper page settle onto book (0.74 - 0.92 of duration)
+    env_settle = np.exp(-((t - 0.80) / 0.055) ** 2).astype(np.float32)
+    sos_settle = scipy.signal.butter(2, [260.0 / nyq, 1150.0 / nyq], btype="bandpass", output="sos")
+    settle_sig = scipy.signal.sosfilt(sos_settle, noise).astype(np.float32) * env_settle * 0.48
+
+    page_wav = lift_sig * 0.55 + arc_sig * 0.85 + settle_sig * 0.50
+    page_wav = page_wav / (np.max(np.abs(page_wav)) + 1e-8)
+    page_wav = (page_wav * 0.075).astype(np.float32)
+
+    pre_pad = np.zeros(int(round(0.08 * sr)), dtype=np.float32)
+    post_pad = np.zeros(int(round(0.09 * sr)), dtype=np.float32)
+    out = np.concatenate([pre_pad, page_wav, post_pad])
+    _FOLEY_CACHE[key] = out
+    return out
+
+
 def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
-    emo = detect_sentence_emotion(sent_raw)
+    # Guard against legacy auto-injected [nguyễn ngọc ngạn] [thở dài] on normal books (e.g. Dịch giả: Nguyễn Hiến Lê)
     raw_low = sent_raw.lower()
+    has_real_horror = any(k in raw_low for k in ("truyện ma", "kinh dị", "rùng rợn", "ma mị", "hồn ma", "nghĩa địa", "bóng đen", "căn nhà hoang"))
+    if "[nguyễn ngọc ngạn]" in raw_low and not has_real_horror:
+        sent_raw = re.sub(r"\[\s*(?:nguyễn ngọc ngạn|thở dài)\s*\]", " ", sent_raw, flags=re.I)
+        raw_low = sent_raw.lower()
+
+    emo = detect_sentence_emotion(sent_raw)
     if any(k in raw_low for k in ("[châu tinh trì]", "[hài châu tinh trì]", "[chautinhtri]", "[hài lầy]", "[cười]")):
         emo = "comedy_stephen_chow"
     elif any(k in raw_low for k in ("[trường giang]", "[hài trường giang]", "[truonggiang]", "[tưng tửng]", "[hài đời thường]")):
@@ -3087,6 +3432,8 @@ def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
 
     is_idea_highlight = bool(re.search(r"\[(nhấn mạnh|nhấn ý hay|cao trào|hưng phấn|vui|chính kịch|kinh kịch)\]", sent_raw, flags=re.I))
     is_khoan_cuoi = is_last_sent or (emo == "insight") or bool(re.search(r"\[(nhấn khoản cuối|nhận định)\]", sent_raw, flags=re.I))
+    has_page_turn = bool(re.search(r"\[(lật sách|lat sach|tiếng lật sách|lật trang|page\s*turn)\]", sent_raw, flags=re.I))
+    has_breath = bool(re.search(r"\[(lấy hơi|lay hoi|hít sâu|nhịp thở|breath)\]", sent_raw, flags=re.I)) or has_page_turn
 
     def _keep_native_emotion_cues(m):
         inner = m.group(1).strip().lower()
@@ -3094,7 +3441,7 @@ def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
             return " [cười] "
         if inner in ("thở dài", "tho dai", "sigh", "nghẹn ngào"):
             return " [thở dài] "
-        if inner in ("hắng giọng", "hang giong", "clear throat", "lấy hơi"):
+        if inner in ("hắng giọng", "hang giong", "clear throat"):
             return " [hắng giọng] "
         return " "
 
@@ -3111,6 +3458,8 @@ def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
         "emo": emo,
         "is_idea_highlight": is_idea_highlight,
         "is_khoan_cuoi": is_khoan_cuoi,
+        "has_page_turn": has_page_turn,
+        "has_breath": has_breath,
     }
 
 
@@ -3335,6 +3684,7 @@ def synthesize_vbee_audio(
     with TTS_LOCK:
         resolved_voice, vmeta = resolve_voice_strictly(tts, voice_id)
     voice_display_name = vmeta.get("name", voice_id) if vmeta else voice_id
+    is_female_voice = ("nữ" in str((vmeta or {}).get("gender", "")).lower()) or ("female" in str((vmeta or {}).get("category", "")).lower())
     base_speed_mul = float((vmeta or {}).get("speed_mul", 1.0)) * max(0.5, min(float(speed), 3.0))
 
     # 1. Strip leaked placeholders or synthetic lines in O(N) (< 4ms on 40,000 words)
@@ -3351,6 +3701,19 @@ def synthesize_vbee_audio(
         working_text,
         flags=re.I,
     ).strip()
+
+    # Run AI Smart Reading-Point & Book Sanitizer BEFORE sentence splitting so titles, subtitles, credits & unpunctuated lines get proper pauses!
+    if len(working_text) <= 25000:
+        working_text = clean_and_reword_book_text(working_text)["text"]
+
+    # Auto-detect whether this input is a Book, Novel, Story, or Long-Form Document
+    is_book_or_novel = (
+        len(working_text) >= 420
+        or working_text.count("\n") >= 2
+        or bool(re.search(r"\b(chương|phần|hồi|quyển|tập|chapter|part|lời mở đầu|lời nói đầu|tác giả|dịch giả|nhà xuất bản|tiểu thuyết)\b", working_text, flags=re.I))
+        or str(auto_preset).lower() in ("story_healing", "truyen_ma_ngoc_ngan", "chinh_kich", "kinh_kich", "bi_kich", "book_novel")
+        or bool(re.search(r"\[(lật sách|lat sach|lấy hơi|lay hoi)\]", working_text, flags=re.I))
+    )
 
     # 2. Law 1 (Cross-Clause Attention & F0 Continuity): Coalesce micro-breaks < 0.42s
     def _coalesce_short_breaks(m):
@@ -3376,6 +3739,10 @@ def synthesize_vbee_audio(
     plan_items = []
     speech_counter = 0
     text_part_idx = 0
+    heading_credit_re = re.compile(
+        r"^\s*(?:chương|phần|hồi|quyển|tập|mục|chapter|part|lời mở đầu|lời nói đầu|tác giả|dịch giả|nhà xuất bản|đắc nhân tâm|how to win|bí quyết)\b",
+        re.I,
+    )
     for idx, part in enumerate(parts):
         if idx % 2 == 1:
             try:
@@ -3399,11 +3766,15 @@ def synthesize_vbee_audio(
                 first_limit = 130 if (speech_counter == 0 and not parsed_clauses) else 235
                 sub_pieces = _split_clause_to_limit(item["text"], max_len=first_limit)
                 for sp_i, sp_txt in enumerate(sub_pieces):
+                    is_heading_or_credit = bool(heading_credit_re.match(sp_txt)) or (len(sp_txt) <= 52 and s_i <= 5)
                     parsed_clauses.append({
                         "text": sp_txt,
                         "emo": item["emo"],
                         "is_idea_highlight": item["is_idea_highlight"],
                         "is_khoan_cuoi": item["is_khoan_cuoi"] and (sp_i == len(sub_pieces) - 1),
+                        "has_page_turn": item.get("has_page_turn", False) and (sp_i == 0),
+                        "has_breath": item.get("has_breath", False) and (sp_i == 0),
+                        "is_heading_or_credit": is_heading_or_credit,
                     })
 
             batched_clauses = []
@@ -3412,11 +3783,18 @@ def synthesize_vbee_audio(
                     batched_clauses.append(cl)
                     continue
                 is_global_first = (speech_counter == 0 and len(batched_clauses) == 1)
-                max_batch_chars = 130 if is_global_first else (185 if (speech_counter + len(batched_clauses) <= 2) else 240)
+                max_batch_chars = 130 if is_global_first else (185 if (speech_counter + len(batched_clauses) <= 2) else 235)
                 prev = batched_clauses[-1]
                 combined_len = len(prev["text"]) + 1 + len(cl["text"])
+                # Never merge separate title/heading/credit reading points or clauses with explicit page-turn/breath cues!
+                no_special_boundary = not (
+                    prev.get("is_heading_or_credit")
+                    or cl.get("is_heading_or_credit")
+                    or cl.get("has_page_turn")
+                    or cl.get("has_breath")
+                )
                 same_or_compatible = (prev["emo"] == cl["emo"]) or (len(prev["text"]) < 60) or (len(cl["text"]) < 50)
-                if combined_len <= max_batch_chars and same_or_compatible and not is_global_first:
+                if combined_len <= max_batch_chars and same_or_compatible and not is_global_first and no_special_boundary:
                     sep = " " if prev["text"].endswith((".", "!", "?", "…", ",", ";", ":")) else ". "
                     prev["text"] = prev["text"] + sep + cl["text"]
                     if cl["emo"] != "neutral" and prev["emo"] == "neutral":
@@ -3430,6 +3808,7 @@ def synthesize_vbee_audio(
                 plan_items.append({
                     "type": "speech",
                     "speech_idx": speech_counter,
+                    "para_idx": text_part_idx - 1,
                     "clause": b_cl,
                     "idx_in_para": b_i,
                     "has_more_in_para": (b_i < len(batched_clauses) - 1),
@@ -3456,17 +3835,40 @@ def synthesize_vbee_audio(
 
     speech_units = []
     pending_pre_silence = 0.0
+    chars_since_page_turn = 0
     for it in plan_items:
         if it["type"] == "silence":
             pending_pre_silence += float(it["sec"])
         else:
             cl = it["clause"]
+            s_idx = it["speech_idx"]
+            p_idx = it.get("para_idx", 0)
             t_samp, k_samp, p_samp, rep_samp, pause_after, sent_speed_mul = _get_emotion_prosody_params(
                 cl["emo"], cl["text"], it["idx_in_para"]
             )
+            if cl.get("is_heading_or_credit"):
+                pause_after = max(pause_after, 0.44)
             eff_speed = round(max(0.55, min(2.4, base_speed_mul * sent_speed_mul)), 3)
+
+            # Determine automatic Book Page-Turn and Natural Human Inhalation Breath (never at 00:00 unless explicitly tagged)
+            do_page_turn = bool(cl.get("has_page_turn", False))
+            do_breath = bool(cl.get("has_breath", False))
+            is_chapter_line = bool(re.match(r"^\s*(?:chương|phần|hồi|quyển|tập|chapter|part|lời mở đầu|lời nói đầu)\b", cl["text"], flags=re.I))
+
+            if is_book_or_novel and s_idx > 0:
+                if is_chapter_line or (it["idx_in_para"] == 0 and (p_idx % 2 == 1 or chars_since_page_turn >= 420)):
+                    do_page_turn = True
+                    do_breath = True
+                    chars_since_page_turn = 0
+                elif it["idx_in_para"] == 0 or len(cl["text"]) >= 90 or cl["emo"] in ("sad", "tragedy", "horror_ngoc_ngan", "drama_chinh_kich", "insight"):
+                    do_breath = True
+            elif s_idx > 0 and (len(cl["text"]) >= 105 or it["idx_in_para"] == 0):
+                do_breath = True
+
+            chars_since_page_turn += len(cl["text"])
+
             speech_units.append({
-                "speech_idx": it["speech_idx"],
+                "speech_idx": s_idx,
                 "raw_text": cl["text"],
                 "emo": cl["emo"],
                 "t_samp": t_samp,
@@ -3477,8 +3879,10 @@ def synthesize_vbee_audio(
                 "is_idea_highlight": cl["is_idea_highlight"],
                 "is_khoan_cuoi": cl["is_khoan_cuoi"],
                 "idx_in_para": it["idx_in_para"],
+                "has_page_turn": do_page_turn,
+                "has_breath": do_breath,
                 "pre_silence": pending_pre_silence,
-                "post_silence": pause_after if it["has_more_in_para"] else 0.0,
+                "post_silence": pause_after if (it["has_more_in_para"] or cl.get("is_heading_or_credit")) else 0.0,
             })
             pending_pre_silence = 0.0
     if pending_pre_silence > 0 and speech_units:
@@ -3487,7 +3891,8 @@ def synthesize_vbee_audio(
     def _synthesize_studio_wave(units_slice: list[dict], coalesce_into_single_mp3: bool = False):
         """
         Synthesize a slice of speech_units using 100% Authentic 48kHz VieNeu-TTS v3 Turbo
-        (RTX 5070 GPU Batch-32 CUDA Graph when available) with content-addressed .npy/.mp3 caching.
+        (RTX 5070 GPU Batch-32 CUDA Graph when available) with content-addressed .npy/.mp3 caching,
+        plus 48kHz Studio Book Page-Turn Foley and Subtle Human Inhalation Breath.
         """
         norm_texts = []
         for u in units_slice:
@@ -3570,7 +3975,7 @@ def synthesize_vbee_audio(
                 except Exception:
                     pass
 
-        # Assemble final waveforms with pre/post silence
+        # Assemble final waveforms with pre/post silence + 48kHz Book Page-Turn + Subtle Human Inhalation Breath
         unit_wavs = []
         for u, nt in zip(units_slice, norm_texts):
             ckey = hashlib.blake2b(
@@ -3583,6 +3988,17 @@ def synthesize_vbee_audio(
             parts_w = []
             if u["pre_silence"] >= 0.08:
                 parts_w.append(np.zeros(int(round(u["pre_silence"] * sr)), dtype=np.float32))
+            if u.get("has_page_turn"):
+                parts_w.append(_get_page_turn_wav(sr=sr, variant=u["speech_idx"]))
+            if u.get("has_breath"):
+                parts_w.append(
+                    _get_natural_breath_wav(
+                        sr=sr,
+                        is_female=is_female_voice,
+                        variant=u["speech_idx"],
+                        intensity=0.92 if u["emo"] == "neutral" else 1.05,
+                    )
+                )
             parts_w.append(sp_w)
             if u["post_silence"] >= 0.08:
                 parts_w.append(np.zeros(int(round(u["post_silence"] * sr)), dtype=np.float32))
@@ -3779,28 +4195,71 @@ def synthesize_vbee_audio(
     return record
 
 
+def _extract_best_expressive_window(wav_arr: np.ndarray, sr: int, win_sec: float = 11.0) -> np.ndarray:
+    """
+    Scans a multi-second audio track to select the 11-second window with the richest
+    expressive human vocal phrasing ('cái tình & cách diễn con chữ'):
+    - Rejects intro silence, applause, or flat music drones.
+    - Prefers windows where active speech ratio is 55%..86% with natural micro-pauses
+      between clauses and warm dynamic modulation.
+    """
+    n_win = int(round(win_sec * sr))
+    if len(wav_arr) <= n_win:
+        return wav_arr
+    hop = max(1, int(round(1.5 * sr)))
+    frame = max(1, int(round(0.04 * sr)))
+    best_score = -1e9
+    best_slice = wav_arr[:n_win]
+
+    for start in range(0, len(wav_arr) - n_win + 1, hop):
+        seg = wav_arr[start : start + n_win]
+        n_frames = len(seg) // frame
+        if n_frames < 10:
+            continue
+        frames = seg[: n_frames * frame].reshape(n_frames, frame)
+        rms = np.sqrt(np.mean(frames ** 2, axis=1) + 1e-10)
+        peak_rms = float(np.percentile(rms, 95))
+        if peak_rms < 0.015:
+            continue
+        active_ratio = float(np.mean(rms > (peak_rms * 0.16)))
+        pause_ratio = float(np.mean((rms <= (peak_rms * 0.14)) & (rms >= 0.0005)))
+        dyn_var = float(np.std(rms / (peak_rms + 1e-8)))
+        # Optimal expressive storytelling has ~60%-84% active vocalization and ~14%-36% natural phrase pauses
+        ratio_score = 1.0 - abs(active_ratio - 0.72) * 2.2
+        pause_score = 1.0 - abs(pause_ratio - 0.24) * 2.0
+        score = ratio_score * 2.5 + pause_score * 1.8 + dyn_var * 2.0 + min(peak_rms, 0.25)
+        if score > best_score:
+            best_score = score
+            best_slice = seg
+    return best_slice
+
+
 def clone_new_voice_from_youtube(name: str, yt_query_or_url: str, gender: str = "female", region: str = "Miền Nam") -> dict:
     """
-    Zero-shot clone any TVC / Podcast / Broadcast voice from YouTube or Facebook URL or search query:
-    - Automatically extracts URL from markdown [Title](https://...) if pasted.
-    - Respects &t=Xs timestamp and filters to human vocal band (90Hz-4200Hz) to reject TVC background music/drums.
-    - Blends the extracted 192-D speaker x-vector onto the 48kHz studio manifold and pairs with clean studio ref_codes
-      so background music never corrupts the cloned voice!
+    Zero-shot Expressive Voice & Soul Cloning ('Học Cả Giọng Lẫn Cái Tình & Cách Diễn Con Chữ'):
+    - Automatically extracts URL from markdown or search query.
+    - Downloads up to 42s of audio and scans for the 11s window with the richest emotional vocal phrasing & micro-pauses.
+    - Runs VieNeu-TTS 44.1kHz neural speech denoiser (`tts.denoise`) to strip background piano/music while keeping 100%
+      of upper-frequency vocal air, breath intakes, and consonant articulation (never muffling at 4.2kHz).
+    - Preserves BOTH 100% of `speaker_emb` AND 100% of `ref_codes` (`codes` from MOSS-Audio-Tokenizer-Nano)
+      so the cloned voice inherits the speaker's exact emotional pacing, vowel lingering, and soulful delivery!
     """
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", name.lower()).strip("_") or f"voice_{int(time.time())}"
     raw_tmpl = str(REF_DIR / f"clone_{slug}_raw.%(ext)s")
+    scan_wav = REF_DIR / f"clone_{slug}_scan.wav"
     clean_wav = REF_DIR / f"clone_{slug}.wav"
     prev_mp3 = PREV_DIR / f"clone_{slug}.mp3"
 
     target = yt_query_or_url.strip()
-    # Extract URL if user pasted Markdown like [🌟 VIETINBANK PREMIUM 🌟](https://www.youtube.com/watch?v=RIPVdickaAw&t=2s)
     md_match = re.search(r"https?://[^\s\)\]]+", target)
     start_sec = 2.0
+    has_explicit_t = False
     if md_match:
         target = md_match.group(0)
         t_match = re.search(r"[?&]t=([0-9]+)", target)
         if t_match:
             start_sec = max(0.5, float(t_match.group(1)))
+            has_explicit_t = True
     elif not target.startswith(("http://", "https://")):
         target = f"ytsearch1:{target}"
 
@@ -3818,65 +4277,74 @@ def clone_new_voice_from_youtube(name: str, yt_query_or_url: str, gender: str = 
         ],
         capture_output=True,
         text=True,
-        timeout=45,
+        timeout=50,
     )
     cands = [p for p in REF_DIR.glob(f"clone_{slug}_raw*") if not p.name.endswith(".part")]
-    if not cands:
+    if not cands and not clean_wav.is_file():
         raise RuntimeError(f"Không tìm thấy mẫu âm thanh cho '{yt_query_or_url}'.")
 
-    subprocess.run(
-        [
-            FFMPEG, "-y",
-            "-ss", str(start_sec), "-t", "10.0",
-            "-i", str(cands[0]),
-            "-af", "highpass=f=85,lowpass=f=4200,afftdn=nf=-24,dynaudnorm=f=150:g=11",
-            "-ar", "48000", "-ac", "1",
-            str(clean_wav),
-        ],
-        check=True,
-        capture_output=True,
-    )
-    for c in cands:
-        c.unlink(missing_ok=True)
+    if cands:
+        # Extract 40s wide window at full 48kHz vocal bandwidth (75Hz - 14,500Hz) so emotional air & articulation stay intact
+        subprocess.run(
+            [
+                FFMPEG, "-y",
+                "-ss", str(start_sec), "-t", "11.5" if has_explicit_t else "40.0",
+                "-i", str(cands[0]),
+                "-af", "highpass=f=75,lowpass=f=14500,dynaudnorm=f=150:g=9",
+                "-ar", "48000", "-ac", "1",
+                str(scan_wav),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        for c in cands:
+            c.unlink(missing_ok=True)
+        wav_scan, sr_scan = sf.read(str(scan_wav), dtype="float32")
+        if getattr(wav_scan, "ndim", 1) > 1:
+            wav_scan = wav_scan.mean(axis=1)
+        best_win = wav_scan if has_explicit_t else _extract_best_expressive_window(wav_scan, sr_scan, win_sec=11.0)
+        sf.write(str(clean_wav), best_win, sr_scan)
+        scan_wav.unlink(missing_ok=True)
 
     tts = get_tts_engine()
+    is_female = (str(gender).lower() == "female") or ("nữ" in str(gender).lower())
+    is_south = ("nam" in str(region).lower() and "bắc" not in str(region).lower())
+
     with TTS_LOCK:
         load_enrolled_into_engine(tts)
-        emb_raw, _ = tts.encode_reference(str(clean_wav), denoise=True)
-        emb_raw = np.asarray(emb_raw, dtype=np.float32).reshape(-1)
+        denoised_wav = REF_DIR / f"clone_{slug}_denoised.wav"
+        try:
+            tts.denoise(str(clean_wav), out_path=str(denoised_wav), max_seconds=11.5)
+            enroll_src = denoised_wav if denoised_wav.is_file() else clean_wav
+        except Exception:
+            enroll_src = clean_wav
 
-        # Pair with clean studio anchor codes (so TVC background music/drums never pollute codes!)
-        is_female = (str(gender).lower() == "female")
-        is_south = ("Nam" in str(region))
-        if is_female:
-            anchor_name = "Thùy Dung" if is_south else "Ngọc Huyền"
-        else:
-            anchor_name = "Thái Sơn" if is_south else "Minh Đức"
-        anchor_v = tts._preset_voices[anchor_name]
-        ref_norm = float(np.linalg.norm(anchor_v["speaker_emb"]))
-        u_raw = emb_raw / (float(np.linalg.norm(emb_raw)) + 1e-8)
-        u_anc = anchor_v["speaker_emb"] / (ref_norm + 1e-8)
-        blended_emb = (0.65 * u_raw + 0.35 * u_anc)
-        blended_emb = (blended_emb / (float(np.linalg.norm(blended_emb)) + 1e-8)) * ref_norm
+        # Extract BOTH 192-D speaker_emb AND MOSS acoustic ref_codes so the model learns 'cái tình & cách diễn con chữ'!
+        emb_raw, codes_raw = tts.encode_reference(str(enroll_src), denoise=(enroll_src == clean_wav))
+        emb_raw = np.asarray(emb_raw, dtype=np.float32).reshape(-1)
+        codes_arr = np.asarray(codes_raw, dtype=np.int64) if codes_raw is not None else None
 
         tts._preset_voices[name] = {
-            "description": f"{'Nữ' if is_female else 'Nam'} · {region} · Giọng TVC/Podcast AI tự học (Chuẩn Luật Người Thật)",
+            "description": f"{'Nữ' if is_female else 'Nam'} · {region} · Giọng AI Học Cả Tình Cảm & Cách Diễn Con Chữ (48kHz Studio)",
             "gender": "female" if is_female else "male",
             "style": "tu_nhien",
-            "speaker_emb": blended_emb.astype(np.float32),
-            "codes": anchor_v["codes"].copy(),
+            "speaker_emb": emb_raw,
+            "codes": codes_arr,
         }
         saved_p = Path(tts.save_voices())
         shutil.copy2(saved_p, REF_DIR / "voices_v3_turbo_enrolled.json")
 
-        sample_txt = f"Xin chào quý vị và các bạn! Đây là giọng đọc {name}, tròn vành rõ chữ và truyền cảm chuẩn phòng thu bốn mươi tám kilohertz."
+        sample_txt = (
+            f"Xin chào quý vị và các bạn. Đây là giọng đọc {name}, "
+            f"lắng nghe từng nhịp thở, giữ trọn cái tình và cách ngân chữ sâu lắng chuẩn phòng thu."
+        )
         wav_out = tts.infer(
             sample_txt,
             voice=name,
-            temperature=0.72,
-            top_k=16,
-            top_p=0.88,
-            repetition_penalty=1.22,
+            temperature=0.69,
+            top_k=15,
+            top_p=0.87,
+            repetition_penalty=1.20,
             apply_watermark=False,
         )
         wav_out = clean_eos_tail_and_fade(wav_out, sr=tts.sample_rate, is_final_clause=True)
@@ -3891,19 +4359,21 @@ def clone_new_voice_from_youtube(name: str, yt_query_or_url: str, gender: str = 
 
     new_entry = {
         "id": name,
-        "name": name,
+        "enrolled_key": name,
+        "name": f"{name} (Giọng Học Cảm Xúc & Cách Diễn Chữ)",
         "category": "female_south" if (is_female and is_south) else ("female_north" if is_female else "male_tvc"),
-        "use_case": "podcast" if any(k in name.lower() for k in ("podcast", "truyện", "sách")) else "tvc",
-        "badge": "AI CLONED PRO",
+        "use_case": "podcast",
+        "badge": "AI HỌC CẢ CÁI TÌNH",
         "region": region,
-        "gender": "Nữ" if gender == "female" else "Nam",
-        "style": "Giọng đọc TVC truyền cảm vừa học tự động",
-        "avatar_color": "#ec4899" if gender == "female" else "#0ea5e9",
+        "gender": "Nữ" if is_female else "Nam",
+        "style": "Giữ trọn âm sắc, nhịp thở, độ ngân và cái tình trong cách diễn đạt từng con chữ",
+        "avatar_color": "#ec4899" if is_female else "#0ea5e9",
         "preview": f"/previews/clone_{slug}.mp3",
         "pitch_st": 0.0,
-        "speed_mul": 1.0,
+        "speed_mul": 0.96,
     }
-    VOICE_CATALOG.insert(1, new_entry)
+    VOICE_CATALOG[:] = [v for v in VOICE_CATALOG if v.get("id") != name]
+    VOICE_CATALOG.insert(0, new_entry)
     VOICE_META_MAP[name] = new_entry
     return new_entry
 

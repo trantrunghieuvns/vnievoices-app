@@ -1194,15 +1194,12 @@
         </label>
       </div>
 
-      <!-- Import TXT / PDF + AI Clean Book + 1-Click Fun Sample Stories -->
+      <!-- Unified 1-Button Import All (TXT / PDF / WORD / EXCEL / IMAGE PNG-JPG-EXR) + AI Clean Book + Sample Stories -->
       <div class="samples-row">
-        <input type="file" id="importTxtInput" accept=".txt,.md,.srt,.csv,text/plain" class="visually-hidden">
-        <label for="importTxtInput" class="sample-pill import-file-btn import-txt-btn" id="lblImportTxt" title="Chọn file .TXT — AI tự xoá Bookmark/phần thừa &amp; viết lại chuẩn sách nói">📄 Import TXT</label>
+        <input type="file" id="importAllInput" accept=".txt,.md,.srt,.csv,.tsv,.json,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.exr" class="visually-hidden">
+        <label for="importAllInput" class="sample-pill import-file-btn import-txt-btn" id="lblImportAll" title="1 Nút Import Tất Cả: TXT, PDF, Word (.DOC/.DOCX), Excel (.XLS/.XLSX/.CSV) &amp; Ảnh OCR (.PNG/.JPG/.JPEG/.EXR)">📂 IMPORT TẤT CẢ (TXT • PDF • WORD • EXCEL • ẢNH PNG/JPG/EXR)</label>
 
-        <input type="file" id="importPdfInput" accept=".pdf,application/pdf" class="visually-hidden">
-        <label for="importPdfInput" class="sample-pill import-file-btn import-pdf-btn" id="lblImportPdf" title="Chọn file sách .PDF — AI tự lọc bỏ Bookmark, Mục lục, Số trang &amp; biên tập lại câu văn">📕 Import PDF</label>
-
-        <button type="button" class="sample-pill" id="btnCleanBookNow" style="background:#fffbeb !important;border-color:#f59e0b !important;color:#92400e !important;" title="Tự động xoá Bookmark, Mục lục, Số trang, phần thừa khác với sách và wordings lại toàn bộ câu văn">🧹 AI Xoá Bookmark &amp; Viết Lại Chuẩn Sách</button>
+        <button type="button" class="sample-pill" id="btnCleanBookNow" style="background:#fffbeb !important;border-color:#f59e0b !important;color:#92400e !important;" title="Tự động kiểm tra các điểm đọc, ngắt nghỉ tự nhiên, xoá Bookmark/Mục lục/Số trang và wordings lại chuẩn sách">🧹 AI Check Điểm Đọc &amp; Chuẩn Hoá Sách</button>
         <button type="button" class="sample-pill" id="btnQuickPaste" style="background:#ecfdf5 !important;border-color:#10b981 !important;color:#065f46 !important;">📋 Dán chữ nhanh</button>
         <button type="button" class="sample-pill" id="btnQuickClear" style="background:#fef2f2 !important;border-color:#f87171 !important;color:#991b1b !important;">🗑️ Xóa trắng</button>
         <span style="font-size:13px;font-weight:900;color:#4c1d95;margin-left:4px;">📚 Thử bài mẫu:</span>
@@ -1220,20 +1217,20 @@
       <!-- Bilingual English & Vietnamese Live Analysis Banner -->
       <div id="bilingualStatusBanner" class="bilingual-banner" role="status" aria-live="polite">
         <div id="bilingualStatusText" style="flex:1;line-height:1.5;">
-          🌐 <b>Tự Phân Tích Anh &amp; Việt:</b> AI tự động nhận diện từ Tiếng Anh &amp; Tiếng Việt trong bài để đọc chuẩn phát âm cả 2 ngôn ngữ!
+          🌐 <b>Tự Phân Tích Anh &amp; Việt (Academic English IPA):</b> Phát hiện Tiếng Anh là lập tức đọc chuẩn <b>Academic English</b> bằng chính giọng nhân vật đang chọn (Không đọc "ìn flu en")!
         </div>
         <div id="bilingualSampleChips" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
       </div>
 
       <!-- Book Sanitization & Re-wording Live Report Banner -->
       <div id="bookCleanStatusBanner" class="book-clean-banner" role="status" aria-live="polite">
-        <span id="bookCleanStatusText">📖 AI Biên Tập Sách: Tự động xoá Bookmark, Mục lục, Số trang và wordings lại toàn bộ câu văn mượt mà trước khi đọc.</span>
-        <span style="font-size:12px;color:#047857;background:#d1fae5;padding:3px 10px;border-radius:999px;border:1px solid #10b981;">✅ Chuẩn Sách Nói 100%</span>
+        <span id="bookCleanStatusText">📖 AI Check Điểm Đọc &amp; Sách Nói: Tự động ngắt nghỉ đúng điểm đọc, thêm tiếng lật sách &amp; tiếng lấy hơi nhẹ tự nhiên (khác thở dài).</span>
+        <span style="font-size:12px;color:#047857;background:#d1fae5;padding:3px 10px;border-radius:999px;border:1px solid #10b981;">✅ Có Tiếng Lật Sách &amp; Lấy Hơi Tự Nhiên</span>
       </div>
 
       <!-- Clean, High-Contrast White Textbox -->
       <label for="ttsInput" class="visually-hidden">Nội dung văn bản</label>
-      <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V) văn bản, dán thẳng đường link báo chí (https://...), hoặc kéo thả file .TXT / .PDF vào đây... AI tự trích xuất bài báo, xoá Bookmark/phần thừa, tự phân tích Anh &amp; Việt và đọc ngay!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
+      <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V) văn bản, dán thẳng đường link báo chí (https://...), hoặc kéo thả file TXT / PDF / WORD / EXCEL / ẢNH PNG-JPG-EXR vào đây... AI tự check điểm đọc, đọc chuẩn Academic English và thêm tiếng lật sách + lấy hơi tự nhiên!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
 
       <!-- Magic AI Auto-Thinking Status Bar (Distinct Studio Emerald-Teal & Warm Amber Theme!) -->
       <div class="magic-ai-bar" id="aiAssessmentBox">
@@ -1242,27 +1239,28 @@
             <span style="font-size:14px;font-weight:900;color:#0f766e;">🎭 TOOL DIỄN XUẤT AI:</span>
             <span class="persona-pill-active" id="activePersonaBadge">🎬 #01 Hài Châu Tinh Trì — Tỉnh Bơ Nói Chuyện Vô Lý</span>
             <button type="button" class="btn-open-acting-tool" id="btnOpen108Drawer">🎨 Đổi Vai Diễn Khác (108 Phong Cách) ▾</button>
-            <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:900;color:#065f46;background:#d1fae5;border:1.5px solid #10b981;padding:4px 11px;border-radius:999px;">✨ Tự động lọc Bookmark &amp; diễn cảm</span>
+            <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:900;color:#065f46;background:#d1fae5;border:1.5px solid #10b981;padding:4px 11px;border-radius:999px;">✨ Tự check điểm đọc • Tiếng lật sách &amp; lấy hơi</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <label for="autoBookCleanCheckbox" style="font-size:12.5px;font-weight:800;color:#065f46;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Tự động xoá Bookmark, Mục lục, Số trang, chú thích rác và viết lại câu văn chuẩn sách nói">
+            <label for="autoBookCleanCheckbox" style="font-size:12.5px;font-weight:800;color:#065f46;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Tự động kiểm tra điểm đọc, xoá Bookmark/Mục lục/Số trang và viết lại câu văn chuẩn sách nói">
               <input type="checkbox" id="autoBookCleanCheckbox" checked>
-              <span>📖 Tự xoá Bookmark/phần thừa &amp; wordings lại chuẩn sách</span>
+              <span>📖 Tự check điểm đọc, xoá Bookmark &amp; thêm tiếng lật sách</span>
             </label>
           </div>
         </div>
         <div id="aiAssessmentText" style="font-size:13.5px;color:#0f172a;font-weight:700;line-height:1.5;">
-          💡 Chỉ cần <b>Dán chữ (Paste)</b> hoặc <b>Dán Link Báo</b> vào ô trên — AI tự động chọn đúng vai diễn trong <b>108 Phong Cách</b> và phân tích <b>Anh - Việt</b> để giọng đọc có hồn như diễn viên thật!
+          💡 Chỉ cần <b>Dán chữ (Paste)</b>, <b>Dán Link Báo</b> hoặc bấm <b>📂 Import Tất Cả</b> — AI tự động kiểm tra các điểm ngắt nghỉ, đọc chuẩn <b>Academic English</b> bằng chính giọng nhân vật và thêm tiếng lật sách + lấy hơi tự nhiên!
         </div>
       </div>
 
-      <!-- Primary Action Buttons + Companion Loading Button -->
+      <!-- Primary Action Buttons + Companion Follow-Along Import & Loading Buttons -->
       <div class="big-action-bar">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="font-size:13.5px;font-weight:800;color:#0f766e;">Độ dài: <strong id="charCount">0</strong> chữ</span>
-          <span id="statusHint" role="status" aria-live="polite">⚡ Bấm "ĐỌC NGAY BÀI NÀY!" để AI đọc toàn bộ văn bản của em!</span>
+          <span id="statusHint" role="status" aria-live="polite">⚡ Bấm "ĐỌC NGAY BÀI NÀY!" hoặc "📂 IMPORT TẤT CẢ" bên cạnh!</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <label for="importAllInput" class="btn-secondary-kid" id="btnActionImportAll" style="cursor:pointer;background:linear-gradient(135deg,#0284c7,#0369a1);color:#ffffff;border-color:#38bdf8;display:inline-flex;align-items:center;gap:6px;" title="Import 1 nút cho tất cả định dạng: TXT, PDF, Word (.DOCX), Excel (.XLSX) &amp; Ảnh (.PNG/.JPG/.EXR)">📂 IMPORT TẤT CẢ (TXT•PDF•WORD•EXCEL•ẢNH/EXR)</label>
           <button type="button" class="btn-secondary-kid" id="btnPreviewVoice" title="Chỉ nghe thử 8 giây mẫu giọng của nhân vật">🔊 Nghe thử mẫu giọng (8s)</button>
           <!-- Inline Companion Button that appears next to ĐỌC NGAY while reading -->
           <button type="button" class="companion-loading-btn" id="btnInlineLoadingCompanion">
@@ -1310,7 +1308,9 @@
 
           <!-- Fun Emotion Stickers in Warm Sunny Amber Box -->
           <div class="emotion-sticker-box">
-            <span style="font-size:13px;font-weight:900;color:#92400e;">✨ Chèn cảm xúc người thật vào chỗ con trỏ:</span>
+            <span style="font-size:13px;font-weight:900;color:#92400e;">✨ Chèn cảm xúc &amp; hiệu ứng sách nói:</span>
+            <button type="button" class="sticker-btn" data-insert="[lật sách]">📖 Tiếng lật sách</button>
+            <button type="button" class="sticker-btn" data-insert="[lấy hơi]">🌬️ Lấy hơi tự nhiên</button>
             <button type="button" class="sticker-btn" data-insert="[cười]">😂 Tiếng cười</button>
             <button type="button" class="sticker-btn" data-insert="[thở dài]">😮‍💨 Thở dài</button>
             <button type="button" class="sticker-btn" data-insert="[hắng giọng]">🗣️ Hắng giọng</button>
@@ -1479,12 +1479,22 @@
 
   </main>
 
-  <!-- Floating Follow-Along Loading Button (Follows User on Scroll During Reading Synthesis) -->
-  <button type="button" class="floating-companion-btn" id="btnFloatingLoadingCompanion" title="Bấm để xem trạng thái đọc bài">
-    <span style="font-size:18px;">⏳</span>
-    <span id="floatingLoadingText">Đang đọc bài, xin đợi giây lát...</span>
-    <progress id="ttsFloatingProgressBar" class="tts-progress" max="100" value="12" aria-label="Tiến độ đọc bài đang chạy"></progress>
-  </button>
+  <!-- Floating Follow-Along Dock: Import All + Read Now + Loading Progress (Follows User on Scroll!) -->
+  <div id="floatingActionDock" style="position:fixed;right:20px;bottom:84px;z-index:240;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <label for="importAllInput" id="btnFloatingImportAll" style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:999px;background:linear-gradient(135deg,#0284c7,#0369a1);color:#ffffff;font-size:13px;font-weight:900;border:2px solid #7dd3fc;box-shadow:0 8px 22px rgba(2,132,199,0.35);" title="Import 1 nút cho mọi file: TXT, PDF, Word (.DOCX), Excel (.XLSX) &amp; Ảnh (.PNG/.JPG/.EXR)">
+      <span>📂</span>
+      <span>IMPORT TẤT CẢ (TXT•PDF•WORD•EXCEL•ẢNH/EXR)</span>
+    </label>
+    <button type="button" id="btnFloatingReadNow" style="cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#059669,#0d9488);color:#ffffff;font-size:13.5px;font-weight:900;border:2px solid #6ee7b7;box-shadow:0 8px 22px rgba(5,150,105,0.35);" title="Bấm để đọc ngay bài viết hiện tại">
+      <span>▶️</span>
+      <span>ĐỌC NGAY</span>
+    </button>
+    <button type="button" class="floating-companion-btn" id="btnFloatingLoadingCompanion" style="position:static;" title="Bấm để xem trạng thái đọc bài">
+      <span style="font-size:18px;">⏳</span>
+      <span id="floatingLoadingText">Đang đọc bài, xin đợi giây lát...</span>
+      <progress id="ttsFloatingProgressBar" class="tts-progress" max="100" value="12" aria-label="Tiến độ đọc bài đang chạy"></progress>
+    </button>
+  </div>
 
   <!-- Sticky Bottom Audio Player -->
   <div class="sticky-player">
@@ -1514,6 +1524,21 @@
 
     (function() {
       const DEFAULT_VOICES = [
+        {
+                "id": "Xưa cũ",
+                "enrolled_key": "Xưa cũ",
+                "name": "Xưa cũ (Giọng Học Cảm Xúc & Cách Diễn Chữ)",
+                "category": "male_tvc",
+                "use_case": "podcast",
+                "badge": "AI HỌC CẢ CÁI TÌNH",
+                "region": "Miền Bắc",
+                "gender": "Nam",
+                "style": "Giữ trọn âm sắc, nhịp thở, độ ngân và cái tình trong cách diễn đạt từng con chữ",
+                "avatar_color": "#0ea5e9",
+                "preview": "/previews/clone_x_a_c.mp3",
+                "pitch_st": 0.0,
+                "speed_mul": 0.96
+        },
         {
                 "id": "Lê Tuệ Nghi — Giọng Nữ Truyện Mẫu Gốc (Miền Bắc)",
                 "enrolled_key": "Vbee Ngọc Huyền 2.0 (Giọng Mẫu Gốc)",
@@ -2831,16 +2856,14 @@
           if (pinned) return pinned;
         }
         const clean = (rawText || "").replace(/\s*\[[^\]]+\]\s*/g, " ").trim();
-        let best = PERSONAS_108[65];
-        let bestScore = -1;
+        // Default to warm Audiobook/Storytelling narrator (#66/#75) when no specific genre keywords match.
+        // Never match persona first/last names (e.g. "Nguyễn") against translator/author names like "Nguyễn Hiến Lê"!
+        let best = PERSONAS_108.find(p => p.id === "P075") || PERSONAS_108[65];
+        let bestScore = 0;
         for (const p of PERSONAS_108) {
           let score = 0;
           const matches = clean.match(new RegExp(p.regex.source, "gi"));
           if (matches) score += matches.length * 10;
-          const nameWords = p.name.toLowerCase().split(/[\s—,-]+/).filter(w => w.length > 3);
-          for (const nw of nameWords) {
-            if (clean.toLowerCase().includes(nw)) score += 6;
-          }
           if (score > bestScore) {
             bestScore = score;
             best = p;
@@ -2987,9 +3010,9 @@
         XXVI: "26", XXVII: "27", XXVIII: "28", XXIX: "29", XXX: "30"
       };
 
-      const VALID_ACTING_TAG_CLIENT_RE = /^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$/i;
+      const VALID_ACTING_TAG_CLIENT_RE = /^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|lật sách|tiếng lật sách|lật trang|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$/i;
 
-      // Client-side Bilingual English & Vietnamese Phonetic Dictionary + Analyzer
+      // Client-side Bilingual Academic English & Vietnamese IPA Analyzer (100% Native Academic English — Zero "ìn flu en")
       const CLIENT_VN_OPEN_SYLLABLES = new Set([
         "a","ai","am","an","anh","ao","au","ay","ba","bai","ban","bang","bao","bau","bay","be","ben","benh","bi","bia","bien","bieu","binh","bo","boi","bom","bon","bong","bu","bua","bui","bun","bung","buoi","buon","buong","buu",
         "ca","cai","cam","can","canh","cao","cau","cay","cha","chai","cham","chan","chang","chao","chau","chay","che","chen","cheo","chi","chia","chiem","chien","chieu","chim","chin","chinh","cho","choi","chom","chon","chong","chu","chua","chui","chum","chung","chuoi","chuom","chuon","chuong","chuyen","co","coi","com","con","cong","cu","cua","cui","cum","cung","cuoi","cuon","cuong","cuu",
@@ -3082,6 +3105,42 @@
         "number": "năm bơ", "people": "pi pồ", "first": "phớt", "water": "gua tơ", "been": "bin", "call": "côn"
       };
 
+      const CLIENT_ACADEMIC_IPA_MAP = {
+        "how": "/haʊ/", "to": "/tuː/", "win": "/wɪn/", "friends": "/frɛndz/", "and": "/ænd/",
+        "influence": "/ˈɪn.flu.əns/", "people": "/ˈpiː.pəl/", "dale": "/deɪl/", "carnegie": "/ˈkɑːr.nə.ɡi/",
+        "academic": "/ˌæk.əˈdɛm.ɪk/", "research": "/rɪˈsɜːrtʃ/", "university": "/ˌjuː.nɪˈvɜːr.sə.ti/",
+        "science": "/ˈsaɪ.əns/", "technology": "/tɛkˈnɒl.ə.dʒi/", "artificial": "/ˌɑːr.tɪˈfɪʃ.əl/",
+        "intelligence": "/ɪnˈtɛl.ɪ.dʒəns/", "algorithm": "/ˈæl.ɡə.rɪð.əm/", "architecture": "/ˈɑːr.kɪ.tɛk.tʃər/",
+        "analysis": "/əˈnæl.ə.sɪs/", "analytics": "/ˌæn.əˈlɪt.ɪks/", "methodology": "/ˌmɛθ.əˈdɒl.ə.dʒi/",
+        "theory": "/ˈθɪə.ri/", "hypothesis": "/haɪˈpɒθ.ə.sɪs/", "experiment": "/ɪkˈspɛr.ɪ.mənt/",
+        "innovation": "/ˌɪn.əˈveɪ.ʃən/", "strategy": "/ˈstræt.ə.dʒi/", "management": "/ˈmæn.ɪdʒ.mənt/",
+        "leadership": "/ˈliː.dər.ʃɪp/", "communication": "/kəˌmjuː.nɪˈkeɪ.ʃən/", "psychology": "/saɪˈkɒl.ə.dʒi/",
+        "philosophy": "/fɪˈlɒs.ə.fi/", "economics": "/ˌiː.kəˈnɒm.ɪks/", "finance": "/ˈfaɪ.næns/",
+        "investment": "/ɪnˈvɛst.mənt/", "business": "/ˈbɪz.nəs/", "marketing": "/ˈmɑːr.kɪ.tɪŋ/",
+        "enterprise": "/ˈɛn.tər.praɪz/", "performance": "/pərˈfɔːr.məns/", "productivity": "/ˌprɒd.ʌkˈtɪv.ə.ti/",
+        "development": "/dɪˈvɛl.əp.mənt/", "engineering": "/ˌɛn.dʒɪˈnɪə.rɪŋ/", "software": "/ˈsɒft.weər/",
+        "hardware": "/ˈhɑːrd.weər/", "database": "/ˈdeɪ.tə.beɪs/", "network": "/ˈnɛt.wɜːrk/",
+        "security": "/sɪˈkjʊə.rə.ti/", "cloud": "/klaʊd/", "computing": "/kəmˈpjuː.tɪŋ/",
+        "digital": "/ˈdɪdʒ.ɪ.təl/", "global": "/ˈɡloʊ.bəl/", "international": "/ˌɪn.tərˈnæʃ.ən.əl/",
+        "education": "/ˌɛdʒ.ʊˈkeɪ.ʃən/", "knowledge": "/ˈnɒl.ɪdʒ/", "literature": "/ˈlɪt.rə.tʃər/",
+        "history": "/ˈhɪs.tər.i/", "culture": "/ˈkʌl.tʃər/", "society": "/səˈsaɪ.ə.ti/",
+        "environment": "/ɪnˈvaɪ.rən.mənt/", "sustainable": "/səˈsteɪ.nə.bəl/", "energy": "/ˈɛn.ər.dʒi/",
+        "medicine": "/ˈmɛd.ɪ.sɪn/", "clinical": "/ˈklɪn.ɪ.kəl/", "data": "/ˈdeɪ.tə/",
+        "model": "/ˈmɒd.əl/", "models": "/ˈmɒd.əlz/", "system": "/ˈsɪs.təm/", "systems": "/ˈsɪs.təmz/",
+        "project": "/ˈprɒdʒ.ɛkt/", "process": "/ˈprəʊ.sɛs/", "product": "/ˈprɒd.ʌkt/",
+        "production": "/prəˈdʌk.ʃən/", "quality": "/ˈkwɒl.ə.ti/", "standard": "/ˈstæn.dərd/",
+        "professional": "/prəˈfɛʃ.ən.əl/", "executive": "/ɪɡˈzɛk.jʊ.tɪv/", "director": "/dəˈrɛk.tər/",
+        "manager": "/ˈmæn.ɪ.dʒər/", "founder": "/ˈfaʊn.dər/", "partner": "/ˈpɑːrt.nər/",
+        "client": "/ˈklaɪ.ənt/", "customer": "/ˈkʌs.tə.mər/", "service": "/ˈsɜːr.vɪs/",
+        "solution": "/səˈluː.ʃən/", "platform": "/ˈplæt.fɔːrm/", "application": "/ˌæp.lɪˈkeɪ.ʃən/",
+        "interface": "/ˈɪn.tər.feɪs/", "design": "/dɪˈzaɪn/", "creative": "/kriˈeɪ.tɪv/",
+        "content": "/ˈkɒn.tɛnt/", "media": "/ˈmiː.di.ə/", "podcast": "/ˈpɒd.kɑːst/",
+        "studio": "/ˈstjuː.di.oʊ/", "video": "/ˈvɪd.i.oʊ/", "audio": "/ˈɔː.di.oʊ/",
+        "voice": "/vɔɪs/", "speech": "/spiːtʃ/", "language": "/ˈlæŋ.ɡwɪdʒ/", "bilingual": "/baɪˈlɪŋ.ɡwəl/",
+        "english": "/ˈɪŋ.ɡlɪʃ/", "vietnamese": "/ˌvjɛt.nəˈmiːz/", "world": "/wɜːrld/",
+        "future": "/ˈfjuː.tʃər/", "success": "/səkˈsɛs/", "power": "/ˈpaʊ.ər/", "mindset": "/ˈmaɪnd.sɛt/"
+      };
+
       // Yield to main thread per modern-web-guidance/break-up-long-tasks (keeps INP < 50ms on 40,000-word pastes)
       function yieldToMain() {
         if ("scheduler" in window && "yield" in scheduler) {
@@ -3112,10 +3171,10 @@
           if (!low) continue;
           const isStopFinalAscii = /(?:p|t|c|ch|k|d|g|b|v|z|f|j|w|sh|th|st|nd|rd|ld|nk|mp|ct|pt|ft|xt)$/i.test(low);
           const isEnSuffix = low.length >= 4 && /(?:tion|sion|ment|ight|ough|ould|ance|ence|ship|ward|less|ness|able|ible|ology|graph|ware|line|work|book|tech|cloud|data|flow|ing|ed|ly)$/i.test(low);
-          if (CLIENT_EN_PHONETIC_MAP[low] || (!CLIENT_VN_OPEN_SYLLABLES.has(low) && (isStopFinalAscii || isEnSuffix || /[fjwz]/i.test(low) || low.length >= 5))) {
+          if (CLIENT_EN_PHONETIC_MAP[low] || CLIENT_ACADEMIC_IPA_MAP[low] || (!CLIENT_VN_OPEN_SYLLABLES.has(low) && (isStopFinalAscii || isEnSuffix || /[fjwz]/i.test(low) || low.length >= 5))) {
             enCount++;
             if (!sampleMap.has(low) && sampleMap.size < 10 && low.length >= 2) {
-              sampleMap.set(low, CLIENT_EN_PHONETIC_MAP[low] || tok);
+              sampleMap.set(low, CLIENT_ACADEMIC_IPA_MAP[low] || "Chuẩn Academic EN");
             }
           } else {
             vnCount++;
@@ -3128,8 +3187,8 @@
         const enPct = Math.round((enCount * 100) / total);
         const vnPct = 100 - enPct;
         let detectedLang = "Tiếng Việt (Chuẩn)";
-        if (enPct >= 60) detectedLang = "Tiếng Anh (English Article)";
-        else if (enCount >= 1 || enPct >= 4) detectedLang = "Song Ngữ Anh - Việt (Bilingual)";
+        if (enPct >= 60) detectedLang = "Tiếng Anh Academic (Standard English)";
+        else if (enCount >= 1 || enPct >= 4) detectedLang = "Song Ngữ Anh Academic - Việt (Bilingual)";
 
         const samples = [];
         sampleMap.forEach((vi, en) => samples.push({ en, vi }));
@@ -3148,13 +3207,13 @@
         const b = bilingObj || analyzeBilingualClient(ttsInput.value);
         const srcPrefix = sourceNote ? `<span style="color:#0f766e;">[${sourceNote}]</span> ` : "";
         if (b.en_word_count > 0) {
-          bilingualStatusText.innerHTML = `🌐 ${srcPrefix}<b>Tự Phân Tích Anh &amp; Việt (${b.detected_lang}):</b> Phát hiện <b>${b.vn_word_count} từ Tiếng Việt (${b.vn_percent}%)</b> &amp; <b>${b.en_word_count} từ Tiếng Anh (${b.en_percent}%)</b> — AI tự động phiên âm chuẩn cả 2 ngôn ngữ khi đọc!`;
+          bilingualStatusText.innerHTML = `🇬🇧 ${srcPrefix}<b>Tự Phát Hiện &amp; Đọc Chuẩn Tiếng Anh Academic (${b.detected_lang}):</b> Phát hiện <b>${b.vn_word_count} từ Tiếng Việt (${b.vn_percent}%)</b> &amp; <b>${b.en_word_count} từ Tiếng Anh (${b.en_percent}%)</b> — Đọc chuẩn phát âm Tiếng Anh Academic bằng chính giọng đang chọn (tuyệt đối không đọc bồi "ìn flu en")!`;
           bilingualSampleChips.innerHTML = (b.english_samples || []).slice(0, 7).map(item =>
-            `<span class="bilingual-chip" title="Từ Tiếng Anh '${item.en}' sẽ được đọc mượt là '${item.vi}'">🇬🇧 <b>${item.en}</b> ➔ 🗣️ ${item.vi}</span>`
+            `<span class="bilingual-chip" title="Từ Tiếng Anh '${item.en}' được đọc chuẩn Academic IPA ${item.vi} bằng chính giọng đang chọn">🇬🇧 <b>${item.en}</b> ➔ 🎓 ${item.vi}</span>`
           ).join("");
         } else {
-          bilingualStatusText.innerHTML = `🌐 ${srcPrefix}<b>Tự Phân Tích Anh &amp; Việt (${b.detected_lang}):</b> <b>${b.vn_word_count} từ Tiếng Việt (100%)</b> — Nếu em dán thêm từ Tiếng Anh hoặc bài báo quốc tế, AI sẽ tự động phân tích và đọc mượt cả Anh lẫn Việt!`;
-          bilingualSampleChips.innerHTML = `<span class="bilingual-chip">🇻🇳 100% Tiếng Việt Chuẩn</span>`;
+          bilingualStatusText.innerHTML = `🌐 ${srcPrefix}<b>Tự Phân Tích Anh Academic &amp; Việt (${b.detected_lang}):</b> <b>${b.vn_word_count} từ Tiếng Việt (100%)</b> — Khi gặp từ Tiếng Anh bất kỳ, AI lập tức phát âm chuẩn Tiếng Anh Academic bằng chính giọng đang chọn!`;
+          bilingualSampleChips.innerHTML = `<span class="bilingual-chip">🇻🇳 100% Tiếng Việt Chuẩn · 🇬🇧 Sẵn sàng Academic English</span>`;
         }
       }
 
@@ -3298,7 +3357,26 @@
         let joinedText = keptLines.join("\n").replace(/([a-zA-ZÀ-ỹ])-\s*\n\s*([a-zA-ZÀ-ỹ])/gu, "$1$2");
         const rawBlocks = joinedText.split(/\n\s*\n+/);
         const reflowedParas = [];
-        const chapterHeadingRe = /^\s*(?:(?:chương|phần|hồi|quyển|tập|mục)\s+(?:\d+|[IVXLCDM]+|thứ\s+\S+|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mở\s+đầu|kết\s+thúc)|lời\s+mở\s+đầu|lời\s+nói\s+đầu|kết\s+luận)\b/i;
+        const chapterHeadingRe = /^\s*(?:(?:chương|phần|hồi|quyển|tập|mục|chapter|part)\s+(?:\d+|[IVXLCDM]+|thứ\s+\S+|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mở\s+đầu|kết\s+thúc)|lời\s+mở\s+đầu|lời\s+nói\s+đầu|lời\s+giới\s+thiệu|kết\s+luận|tác\s+giả|dịch\s+giả|người\s+dịch|nhà\s+xuất\s+bản)(?:\s*[:,-]|\s+|$)/iu;
+
+        function isAllCapsTitleLine(sLine) {
+          const sClean = (sLine || "").replace(/\x02VBEE(?:ACT|TAG)\d+\x03/g, "").trim();
+          if (sClean.length < 3 || sClean.length > 95) return false;
+          const letters = Array.from(sClean).filter(c => /[A-Za-zÀ-ỹ]/u.test(c));
+          if (letters.length < 3) return false;
+          const upperRatio = letters.filter(c => c === c.toUpperCase() && c !== c.toLowerCase()).length / letters.length;
+          return upperRatio >= 0.85;
+        }
+
+        function isShortTitleOrCreditLine(sLine) {
+          const sClean = (sLine || "").replace(/\x02VBEE(?:ACT|TAG)\d+\x03/g, "").trim();
+          if (!sClean || sClean.length > 90) return false;
+          if (chapterHeadingRe.test(sClean) || isAllCapsTitleLine(sClean)) return true;
+          if (/^(?:tác\s+giả|dịch\s+giả|người\s+dịch|biên\s+dịch|nhà\s+xuất\s+bản|nxb|chủ\s+biên|hiệu\s+đính|nguyên\s+tác)(?:\s*[:,-]|\s+|$)/iu.test(sClean)) {
+            return true;
+          }
+          return false;
+        }
 
         for (const blk of rawBlocks) {
           const bLines = blk.split("\n").map(x => x.trim()).filter(Boolean);
@@ -3306,13 +3384,21 @@
           let curPara = [];
           let sentEndCount = 0;
           for (let bl of bLines) {
-            if (chapterHeadingRe.test(bl)) {
+            if (isShortTitleOrCreditLine(bl)) {
               if (curPara.length) {
-                reflowedParas.push(curPara.join(" "));
+                let pJoin = curPara.join(" ");
+                if (!/[.!?…”"]$/.test(pJoin) && !/\x02VBEEACT\d+\x03$/.test(pJoin)) {
+                  pJoin += ".";
+                  rewordedItems++;
+                }
+                reflowedParas.push(pJoin);
                 curPara = [];
                 sentEndCount = 0;
               }
-              if (!/[.!?…:]$/.test(bl)) bl += ".";
+              if (!/[.!?…]$/.test(bl)) {
+                bl = bl.replace(/[:;,-]+$/, "").trim() + ".";
+                rewordedItems++;
+              }
               reflowedParas.push(bl);
             } else {
               curPara.push(bl);
@@ -3337,7 +3423,7 @@
 
         t = reflowedParas.join("\n");
 
-        // Spoken Vietnamese Re-Wording ("Wordings Lại Toàn Bộ")
+        // Spoken Vietnamese Re-Wording & Smart AI Reading-Point Inspector ("Tự Check Điểm Đọc & Ngắt Nhịp")
         t = t.replace(/\b(Chương|Phần|Thế kỷ|Tập|Quyển|Hồi|Mục|Lần thứ)\s+(XXX|XXIX|XXVIII|XXVII|XXVI|XXV|XXIV|XXIII|XXII|XXI|XX|XIX|XVIII|XVII|XVI|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)\b/gi, (m, prefix, rom) => {
           const num = ROMAN_CLIENT_MAP[rom.toUpperCase()];
           if (num) {
@@ -3345,6 +3431,20 @@
             return `${prefix} ${num}`;
           }
           return m;
+        });
+
+        // Replace '&' between English ASCII words with 'and' (Academic English), and between Vietnamese words with 'và'
+        t = t.replace(/(?<=[A-Za-z])\s*&\s*(?=[A-Za-z])/g, () => { rewordedItems++; return " and "; });
+        t = t.replace(/\b([A-Z]{2,})\s+và\s+([A-Z]{2,})\b/g, (_, w1, w2) => { rewordedItems++; return `${w1} and ${w2}`; });
+
+        // Smart inline reading-point insertion for unpunctuated title/author/translator/publisher transitions
+        t = t.replace(/(?<=[A-Za-zÀ-ỹ0-9])\s+(?=(?:Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Nhà\s+xuất\s+bản|NXB|Chương\s+\d+|Phần\s+\d+|HOW\s+TO\s+WIN|BÍ\s+QUYẾT\s+ĐỂ)(?:\s*[:,-]|\s+))/giu, () => {
+          rewordedItems++;
+          return ". ";
+        });
+        t = t.replace(/(?:^|(?<=[\s.!?]))(Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Nhà\s+xuất\s+bản)\s*:\s*/giu, (_, lbl) => {
+          rewordedItems++;
+          return `${lbl}, `;
         });
 
         const clientRewordRules = [
@@ -3402,6 +3502,16 @@
           });
         }
 
+        // Smart AI Reading-Point Clause Pause Inspector: insert natural breath-point commas before discourse connectors in long clauses
+        t = t.replace(/([a-zà-ỹA-ZÀ-Ỹ0-9]{2,})\s+(nhưng|tuy\s+nhiên|vì\s+vậy|cho\s+nên|do\s+đó|bởi\s+vì|mặc\s+dù|không\s+những\s+thế|hơn\s+thế\s+nữa|đồng\s+thời|ngược\s+lại|chẳng\s+hạn\s+như)\b/giu, (fullM, prevWord, conn, offset, fullStr) => {
+          const lookback = fullStr.slice(Math.max(0, offset - 48), offset + prevWord.length);
+          if (!/[,.;:!?…\n]/.test(lookback) && lookback.length >= 36) {
+            rewordedItems++;
+            return `${prevWord}, ${conn}`;
+          }
+          return fullM;
+        });
+
         // Strip inline footnote superscripts attached to words/quotes
         t = t.replace(/(?<=[a-zà-ỹ])[1-9](?=[,.;:!?”"'\s]|$)/gu, () => { removedJunk++; return ""; });
         t = t.replace(/(?<=[”"'])[1-9](?=[,.;:!?\s]|$)/gu, () => { removedJunk++; return ""; });
@@ -3441,11 +3551,11 @@
       function showBookCleanBanner(removedJunk, rewordedItems, sourceLabel) {
         if (!bookCleanStatusBanner || !bookCleanStatusText) return;
         bookCleanStatusBanner.classList.add("is-visible");
-        const srcPrefix = sourceLabel ? `<b>${sourceLabel}:</b> ` : "<b>AI Biên Tập Sách:</b> ";
+        const srcPrefix = sourceLabel ? `<b>${sourceLabel}:</b> ` : "<b>AI Biên Tập &amp; Check Điểm Đọc:</b> ";
         if (removedJunk > 0 || rewordedItems > 0) {
-          bookCleanStatusText.innerHTML = `📖 ${srcPrefix}Đã tự động xoá <b>${removedJunk} phần thừa</b> (Bookmark, số trang, mục lục, ký tự rác) &amp; wordings lại <b>${rewordedItems} cụm từ/câu văn</b> chuẩn sách nói!`;
+          bookCleanStatusText.innerHTML = `📖 ${srcPrefix}Đã tự động xoá <b>${removedJunk} phần thừa</b>, ngắt <b>${rewordedItems} điểm đọc/lấy hơi tự nhiên</b>, giữ chuẩn <b>Tiếng Anh Academic</b> &amp; thêm <b>tiếng lật sách</b> cho sách dài!`;
         } else {
-          bookCleanStatusText.innerHTML = `📖 ${srcPrefix}Văn bản đã được kiểm tra sạch sẽ (0 Bookmark/phần thừa) và chuẩn hóa câu văn mượt mà để đọc ngay!`;
+          bookCleanStatusText.innerHTML = `📖 ${srcPrefix}Đã kiểm tra các điểm đọc, ngắt nhịp lấy hơi tự nhiên, đọc chuẩn Tiếng Anh Academic &amp; lật sách tự động!`;
         }
       }
 
@@ -3458,12 +3568,17 @@
         return compiled;
       }
 
-      function stripAllTechnicalTagsForDisplay(text) {
+      function stripAllTechnicalTagsForDisplay(text, keepManualActingTags) {
         if (!text) return "";
-        return text
+        let res = text
           .replace(/_{0,2}VBEE_(?:ACT_)?TAG_\d+_{0,2}|\x02VBEE(?:ACT|TAG)\d+\x03/gi, " ")
-          .replace(/\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*/gi, "")
-          .replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ")
+          .replace(/\n*(?:\s*\[[^\]]+\]\s*)*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*/gi, "");
+        if (keepManualActingTags) {
+          res = res.replace(/\s*\[(nhấn mạnh|nhấn ý hay|nhấn khoản cuối|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ");
+        } else {
+          res = res.replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|lật sách|tiếng lật sách|lật trang|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ");
+        }
+        return res
           .replace(/[ \t]+/g, " ")
           .replace(/\n{3,}/g, "\n\n")
           .trim();
@@ -3471,7 +3586,7 @@
 
       function formatTextWithAiProsody(text, preset, opts) {
         const skipClean = Boolean(opts && opts.skipClientClean);
-        let raw = stripAllTechnicalTagsForDisplay(text || "");
+        let raw = stripAllTechnicalTagsForDisplay(text || "", true);
         raw = raw.replace(/(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)/gi, "");
         if (!skipClean && (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked)) {
           raw = cleanAndRewordBookTextClient(raw).text;
@@ -3479,7 +3594,7 @@
           raw = raw.replace(/[ \t]+/g, " ").trim();
         }
         if (preset === "clean" || !raw) {
-          if (aiAssessmentText) aiAssessmentText.innerHTML = "🧹 Đã lọc sạch phần thừa &amp; đưa văn bản về câu chữ chuẩn sách.";
+          if (aiAssessmentText) aiAssessmentText.innerHTML = "🧹 Đã lọc sạch phần thừa, tự check các điểm đọc &amp; chuẩn hóa câu chữ sách nói.";
           return raw;
         }
 
@@ -3505,7 +3620,7 @@
             else if (emo === "horror") tag = "[nguyễn ngọc ngạn]";
             else if (emo === "epic") tag = "[kinh kịch]";
             else if (emo === "drama") tag = "[chính kịch]";
-            else if (emo === "sad") { countSad++; tag = "[buồn]"; }
+            else if (emo === "sad") { countSad++; tag = "[buồn] [lắng đọng]"; }
             else if (emo === "happy") { countHappy++; tag = "[vui]"; }
             else if (emo === "insight") { countInsight++; tag = "[nhận định]"; }
             countDramatic++;
@@ -3516,24 +3631,26 @@
           const taggedSents = sents.map((s, sIdx) => {
             const emo = detectSentenceEmotionClient(s, persona);
             let tag = persona ? persona.tag : "[nhấn ý hay]";
+            // NEVER auto-inject [thở dài] (sigh) or [hắng giọng] (throat clear)!
+            // Breath intake (lấy hơi) is handled organically at reading points by the server!
             if (emo === "chow") {
               countDramatic++;
-              tag = sIdx === 0 ? `[châu tinh trì] [hắng giọng]` : `[châu tinh trì] [cười]`;
+              tag = `[châu tinh trì]`;
             } else if (emo === "giang") {
               countDramatic++;
-              tag = sIdx === 0 ? `[trường giang]` : `[trường giang] [cười]`;
+              tag = `[trường giang]`;
             } else if (emo === "horror") {
               countDramatic++;
-              tag = sIdx === sents.length - 1 ? `[nguyễn ngọc ngạn] [thở dài]` : `[nguyễn ngọc ngạn]`;
+              tag = sIdx === sents.length - 1 ? `[nguyễn ngọc ngạn] [lắng đọng]` : `[nguyễn ngọc ngạn]`;
             } else if (emo === "epic") {
               countDramatic++;
-              tag = sIdx === 0 ? `[kinh kịch] [hắng giọng]` : `[kinh kịch]`;
+              tag = `[kinh kịch]`;
             } else if (emo === "drama") {
               countDramatic++;
               tag = `[chính kịch]`;
             } else if (emo === "sad") {
               countSad++;
-              tag = "[buồn] [thở dài]";
+              tag = "[buồn] [lắng đọng]";
             } else if (emo === "happy") {
               countHappy++;
               tag = "[vui]";
@@ -3555,10 +3672,10 @@
         const { commentary } = buildAiNhanDinhClient(sampleForPersona, persona);
 
         if (aiEmotionStatsBadge) {
-          aiEmotionStatsBadge.textContent = `✨ Diễn xuất: ${countDramatic + countHappy + countSad} đoạn · ⚡ HyperStream 40K`;
+          aiEmotionStatsBadge.textContent = `✨ Điểm đọc: ${countDramatic + countHappy + countSad} nhịp · 📖 Lật sách & Lấy hơi tự nhiên · 🇬🇧 Academic EN`;
         }
         if (aiAssessmentText) {
-          aiAssessmentText.innerHTML = `${commentary} <span style="color:#047857;font-weight:800;">⚡ Thuật Toán HyperStream 40K:</span> Phát âm thanh ngay sau <b>~0.8 giây</b> và nạp song song siêu tốc ở hậu cảnh (40.000 chữ không cần chờ)!`;
+          aiAssessmentText.innerHTML = `${commentary} <span style="color:#047857;font-weight:800;">📖 Tự Check Điểm Đọc + Lật Sách &amp; Lấy Hơi Tự Nhiên:</span> Tự động ngắt nhịp ở tiêu đề/tác giả/mệnh đề dài, hít hơi nhẹ tự nhiên (không thở dài!) và đọc chuẩn <b>Tiếng Anh Academic</b> bằng chính giọng đang chọn!`;
         }
 
         const paraB = (persona && persona.paraBreak) || "0.48s";
@@ -3849,11 +3966,16 @@
       async function handleDocumentFileImport(file) {
         if (!file) return;
         const hint = document.getElementById("statusHint");
-        const cleanTitle = file.name.replace(/\.(txt|pdf|md|srt|csv)$/i, "").replace(/[_-]+/g, " ").trim();
+        const cleanTitle = file.name.replace(/\.(txt|pdf|md|srt|csv|tsv|json|doc|docx|xls|xlsx|png|jpg|jpeg|webp|bmp|tif|tiff|exr)$/i, "").replace(/[_-]+/g, " ").trim();
         if (cleanTitle) recordTitle.value = cleanTitle;
 
-        const isPdf = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
-        hint.textContent = `⏳ Đang đọc và lọc Bookmark/phần thừa từ file "${file.name}"...`;
+        const extMatch = (file.name || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+        const ext = extMatch ? extMatch[1] : "";
+        const isPdf = ext === "pdf" || file.type === "application/pdf";
+        const isPlainText = ["txt", "md", "srt", "csv", "tsv", "json"].includes(ext);
+        const isServerMultiFormat = ["doc", "docx", "xls", "xlsx", "png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff", "exr"].includes(ext) || /^image\//i.test(file.type || "");
+
+        hint.textContent = `⏳ Đang Import All (${ext.toUpperCase() || "FILE"}) & tự check điểm đọc từ "${file.name}"...`;
 
         try {
           const buf = await file.arrayBuffer();
@@ -3861,13 +3983,31 @@
           let pageCount = 1;
           let serverCleaned = null;
 
-          if (isPdf) {
+          if (isServerMultiFormat) {
+            if (!apiBaseUrl) await discoverCompanyServer();
+            const b64 = arrayBufferToBase64(buf);
+            const r = await fetch((apiBaseUrl || "") + "/api/extract_document", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ filename: file.name, content_base64: b64 })
+            });
+            const d = await r.json();
+            if (d && d.ok) {
+              serverCleaned = d;
+              pageCount = d.pages || 1;
+            } else {
+              throw new Error((d && d.error) || `Không thể trích xuất file ${ext.toUpperCase()}`);
+            }
+          } else if (isPdf) {
             try {
               const browserPdf = await extractPdfTextInBrowser(buf);
               rawExtracted = browserPdf.text;
               pageCount = browserPdf.pages;
+              if (!rawExtracted || rawExtracted.trim().length < 8) {
+                throw new Error("PDF scan/image cần OCR từ Server");
+              }
             } catch (_) {
-              // Fallback to Cloud Backend /api/extract_document
+              // Fallback to Cloud Backend /api/extract_document (includes OCR fallback)
               if (!apiBaseUrl) await discoverCompanyServer();
               const b64 = arrayBufferToBase64(buf);
               const r = await fetch((apiBaseUrl || "") + "/api/extract_document", {
@@ -3878,6 +4018,7 @@
               const d = await r.json();
               if (d && d.ok) {
                 serverCleaned = d;
+                pageCount = d.pages || 1;
               } else {
                 throw new Error((d && d.error) || "Không thể trích xuất file PDF");
               }
@@ -3903,23 +4044,38 @@
           updateAiThinkingDisplay(cleanDisplay);
           updateCharCount();
           saveDraftToLocalStorage();
-          showBookCleanBanner(res.removedJunk, res.rewordedItems, isPdf ? `Đã Import PDF (${pageCount} trang - ${file.name})` : `Đã Import TXT (${file.name})`);
-          hint.textContent = `✅ Đã Import "${file.name}", tự động xoá ${res.removedJunk} Bookmark/phần thừa & wordings lại ${res.rewordedItems} câu văn! Bấm ĐỌC NGAY để nghe!`;
+          const fmtLabel = (serverCleaned && serverCleaned.format) ? serverCleaned.format : (ext ? ext.toUpperCase() : "FILE");
+          showBookCleanBanner(res.removedJunk, res.rewordedItems, `Đã Import ${fmtLabel} (${file.name})`);
+          hint.textContent = `✅ Đã Import "${file.name}" (${fmtLabel}), tự check ${res.rewordedItems} điểm đọc/lấy hơi & chuẩn hóa Academic English! Bấm ĐỌC NGAY để nghe!`;
         } catch (err) {
-          hint.textContent = "⚠️ Lỗi khi đọc file: " + err.message;
+          hint.textContent = "⚠️ Lỗi khi Import file: " + err.message;
         }
       }
 
-      document.getElementById("importTxtInput").addEventListener("change", (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (f) handleDocumentFileImport(f);
-        e.target.value = "";
-      });
-      document.getElementById("importPdfInput").addEventListener("change", (e) => {
-        const f = e.target.files && e.target.files[0];
-        if (f) handleDocumentFileImport(f);
-        e.target.value = "";
-      });
+      const importAllEl = document.getElementById("importAllInput");
+      if (importAllEl) {
+        importAllEl.addEventListener("change", (e) => {
+          const f = e.target.files && e.target.files[0];
+          if (f) handleDocumentFileImport(f);
+          e.target.value = "";
+        });
+      }
+      const legacyTxtEl = document.getElementById("importTxtInput");
+      if (legacyTxtEl) {
+        legacyTxtEl.addEventListener("change", (e) => {
+          const f = e.target.files && e.target.files[0];
+          if (f) handleDocumentFileImport(f);
+          e.target.value = "";
+        });
+      }
+      const legacyPdfEl = document.getElementById("importPdfInput");
+      if (legacyPdfEl) {
+        legacyPdfEl.addEventListener("change", (e) => {
+          const f = e.target.files && e.target.files[0];
+          if (f) handleDocumentFileImport(f);
+          e.target.value = "";
+        });
+      }
 
       ttsInput.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -4121,8 +4277,9 @@
         const q = (voiceSearchInput.value || "").trim().toLowerCase();
         const filtered = voicesList.filter(v => {
           const uc = getVoiceUseCase(v);
-          if (currentMainTab === "tvc" && uc !== "tvc") return false;
-          if (currentMainTab === "podcast" && uc !== "podcast") return false;
+          const isClonedStar = (v.badge || "").includes("AI HỌC CẢ CÁI TÌNH") || (v.id || "") === "Xưa cũ";
+          if (currentMainTab === "tvc" && uc !== "tvc" && !isClonedStar) return false;
+          if (currentMainTab === "podcast" && uc !== "podcast" && !isClonedStar) return false;
           if (currentMainTab === "Nữ" && v.gender !== "Nữ") return false;
           if (currentMainTab === "Nam" && v.gender !== "Nam") return false;
 
@@ -4278,7 +4435,7 @@
         }
 
         // Priority #1: Company PC RTX 5070 12GB CUDA Batch-32 Compute Server (Direct & active_vbee_tunnel.json)
-        candidates.push("https://let-affect-alliance-wishing.trycloudflare.com");
+        candidates.push("https://toys-isbn-purchase-electrical.trycloudflare.com");
         for (const tJsonUrl of [
           "/active_vbee_tunnel.json?t=" + Date.now(),
           "https://raw.githubusercontent.com/trantrunghieuvns/vnievoices-app/main/active_vbee_tunnel.json?t=" + Date.now()
@@ -4327,7 +4484,11 @@
                 ? `⚡ Máy Tính Công Ty RTX 5070 (CUDA Batch-32 • Auto-Publish Cloud): ${base}`
                 : `☁️ GitHub Cloud Đang Hoạt Động: ${base}`;
               if (data.voices && data.voices.length) {
-                voicesList = data.voices;
+                const srvVoices = data.voices.slice();
+                if (!srvVoices.some(v => v.id === "Xưa cũ") && DEFAULT_VOICES[0] && DEFAULT_VOICES[0].id === "Xưa cũ") {
+                  srvVoices.unshift(DEFAULT_VOICES[0]);
+                }
+                voicesList = srvVoices;
                 renderVoiceGrid();
               }
               if (data.history) renderHistory(data.history);
@@ -4340,7 +4501,7 @@
       }
 
       document.getElementById("btnSetServer").addEventListener("click", () => {
-        const cur = apiBaseUrl || localStorage.getItem("vnievoices_github_cloud_url") || "https://let-affect-alliance-wishing.trycloudflare.com";
+        const cur = apiBaseUrl || localStorage.getItem("vnievoices_github_cloud_url") || "https://toys-isbn-purchase-electrical.trycloudflare.com";
         const inp = prompt("Nhập địa chỉ Máy Tính Công Ty RTX 5070 / Cloud Compute:", cur);
         if (inp && inp.trim()) {
           apiBaseUrl = inp.trim().replace(/\/+$/, "");
@@ -4477,6 +4638,7 @@
       function setCompanionLoadingState(isActive, textMsg, pctVal) {
         const inlineBtn = document.getElementById("btnInlineLoadingCompanion");
         const floatBtn = document.getElementById("btnFloatingLoadingCompanion");
+        const floatReadBtn = document.getElementById("btnFloatingReadNow");
         const inlineTxt = document.getElementById("inlineLoadingText");
         const floatTxt = document.getElementById("floatingLoadingText");
         const prog1 = document.getElementById("ttsProgressBar");
@@ -4484,6 +4646,7 @@
 
         if (inlineBtn) inlineBtn.classList.toggle("is-active", Boolean(isActive));
         if (floatBtn) floatBtn.classList.toggle("is-active", Boolean(isActive));
+        if (floatReadBtn) floatReadBtn.style.display = isActive ? "none" : "inline-flex";
         if (textMsg) {
           if (inlineTxt) inlineTxt.textContent = textMsg;
           if (floatTxt) floatTxt.textContent = textMsg;
@@ -4498,6 +4661,12 @@
         }
       }
 
+      const btnFloatingReadNowEl = document.getElementById("btnFloatingReadNow");
+      if (btnFloatingReadNowEl) {
+        btnFloatingReadNowEl.addEventListener("click", () => {
+          triggerTtsSynthesis();
+        });
+      }
       document.getElementById("btnFloatingLoadingCompanion").addEventListener("click", () => {
         document.getElementById("ttsForm").scrollIntoView({ behavior: "smooth" });
       });
