@@ -2315,7 +2315,7 @@
       let currentSubFilter = "all";
       let drawerOpen = true;
       let currentPreset = "human_rewrite";
-      let apiBaseUrl = "";
+      let apiBaseUrl = "https://gay-giants-tony-boutique.trycloudflare.com";
       let activeTtsController = null;
 
       const speedSlider = document.getElementById("speedSlider");
@@ -3113,25 +3113,35 @@
         });
       }
 
+      function safeGetStorage(k) {
+        try { return localStorage.getItem(k); } catch (_) { return null; }
+      }
+      function safeSetStorage(k, v) {
+        try { localStorage.setItem(k, v); } catch (_) {}
+      }
+
       async function discoverCompanyServer() {
         try { localStorage.removeItem("vbee_pc_server_url"); } catch (_) {}
         const qs = new URLSearchParams(window.location.search);
         const paramApi = qs.get("api");
-        if (paramApi) localStorage.setItem("vnievoices_github_cloud_url", paramApi);
+        if (paramApi) safeSetStorage("vnievoices_github_cloud_url", paramApi);
 
         const candidates = [];
         if (paramApi) candidates.push(paramApi);
+        candidates.push("https://gay-giants-tony-boutique.trycloudflare.com");
+        const saved = safeGetStorage("vnievoices_github_cloud_url");
+        if (saved) candidates.push(saved);
+
         try {
-          const r = await fetch("https://ntfy.sh/vnievoices_github_cloud_compute/raw?poll=1&since=all&t=" + Date.now());
+          const nCtrl = new AbortController();
+          const nTimer = setTimeout(() => nCtrl.abort(), 1800);
+          const r = await fetch("https://ntfy.sh/vnievoices_github_cloud_compute/raw?poll=1&since=all&t=" + Date.now(), { signal: nCtrl.signal });
+          clearTimeout(nTimer);
           if (r.ok) {
             const lines = (await r.text()).trim().split(/\r?\n/).filter(x => x.startsWith("https://"));
             for (let i = lines.length - 1; i >= 0; i--) candidates.push(lines[i].trim());
           }
         } catch (_) {}
-
-        candidates.push("https://gay-giants-tony-boutique.trycloudflare.com");
-        const saved = localStorage.getItem("vnievoices_github_cloud_url");
-        if (saved) candidates.push(saved);
 
         const seen = new Set();
         for (const base of candidates) {
@@ -3139,13 +3149,13 @@
           seen.add(base);
           try {
             const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 4500);
+            const timer = setTimeout(() => ctrl.abort(), 3500);
             const res = await fetch(base + "/api/voices?t=" + Date.now(), { signal: ctrl.signal });
             clearTimeout(timer);
             if (res.ok) {
               const data = await res.json();
               apiBaseUrl = base;
-              localStorage.setItem("vnievoices_github_cloud_url", base);
+              safeSetStorage("vnievoices_github_cloud_url", base);
               document.getElementById("srvUrlLabel").textContent = "☁️ GitHub Cloud Đang Hoạt Động: " + base;
               if (data.voices && data.voices.length) {
                 voicesList = data.voices;
