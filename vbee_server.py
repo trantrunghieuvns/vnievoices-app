@@ -44,10 +44,399 @@ REF_DIR.mkdir(parents=True, exist_ok=True)
 GEN_DIR.mkdir(parents=True, exist_ok=True)
 
 FFMPEG = imageio_ffmpeg.get_ffmpeg_exe()
+JOBS_FILE = BASE_DIR / "tts_jobs_state.json"
+
+ROMAN_MAP = {
+    "I": "1", "II": "2", "III": "3", "IV": "4", "V": "5",
+    "VI": "6", "VII": "7", "VIII": "8", "IX": "9", "X": "10",
+    "XI": "11", "XII": "12", "XIII": "13", "XIV": "14", "XV": "15",
+    "XVI": "16", "XVII": "17", "XVIII": "18", "XIX": "19", "XX": "20",
+    "XXI": "21", "XXII": "22", "XXIII": "23", "XXIV": "24", "XXV": "25",
+    "XXVI": "26", "XXVII": "27", "XXVIII": "28", "XXIX": "29", "XXX": "30",
+}
+
+VALID_ACTING_TAG_RE = re.compile(
+    r"^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$",
+    re.I,
+)
+
+
+def clean_and_reword_book_text(text: str) -> dict:
+    """
+    5-Stage AI Book Sanitizer & Spoken Vietnamese Re-Wording Engine:
+    1. Strips all Bookmarks, TOC dot-leader lines, Page numbers, Running headers/footers, Footnote brackets, URLs, and Ebook/Web UI junk.
+    2. De-hyphenates and reflows mid-sentence PDF line wraps into complete, natural paragraphs.
+    3. Re-words written book shorthand, Roman numerals, dates, units, symbols, and parentheticals into smooth spoken Vietnamese.
+    """
+    if not text or not text.strip():
+        return {"text": "", "removed_junk": 0, "reworded_items": 0}
+
+    t = text.replace("\ufeff", "").replace("\r\n", "\n").replace("\r", "\n")
+    removed_junk = 0
+    reworded_items = 0
+
+    protected_tags = []
+
+    def _handle_brackets(m):
+        nonlocal removed_junk
+        full_tag = m.group(0)
+        if VALID_ACTING_TAG_RE.match(full_tag):
+            idx = len(protected_tags)
+            protected_tags.append(full_tag)
+            return f"__VBEE_ACT_TAG_{idx}__"
+        removed_junk += 1
+        return " "
+
+    def _strip_md_link(m):
+        nonlocal removed_junk
+        removed_junk += 1
+        label = m.group(1).strip()
+        if re.search(r"^(?:bookmarks?|đánh dấu|mục lục|xem thêm|đọc tiếp|tải về|download|click|nguồn|link)", label, re.I):
+            return " "
+        return label
+
+    t = re.sub(r"\[([^\]]+)\]\((?:https?://|mailto:|#)[^\)]+\)", _strip_md_link, t)
+    t = re.sub(r"\[[^\]]*\]", _handle_brackets, t)
+
+    paren_junk_re = re.compile(
+        r"\(\s*(?:bookmarks?|đánh dấu(?: trang)?|xem\s+(?:trang|tr\.?|chương|hình|bảng|mục)[^)]*|trang\s*\d+[^)]*|page\s*\d+[^)]*|tr\.?\s*\d+[^)]*|p\.?\s*\d+[^)]*|nguồn\s*:[^)]*|ảnh\s*:[^)]*|hình\s*\d+[^)]*|bảng\s*\d+[^)]*|xem thêm[^)]*|đọc tiếp[^)]*|còn tiếp[^)]*|chú thích[^)]*|note\s*:[^)]*|\*+)\s*\)",
+        re.I,
+    )
+    t, n_p = paren_junk_re.subn(" ", t)
+    removed_junk += n_p
+
+    t, n_u = re.subn(r"https?://\S+|www\.\S+", " ", t, flags=re.I)
+    removed_junk += n_u
+    t, n_h = re.subn(r"<[^>]+>", " ", t)
+    removed_junk += n_h
+    t, n_sup = re.subn(r"[¹²³⁴⁵⁶⁷⁸⁹⁰]+", "", t)
+    removed_junk += n_sup
+
+    raw_lines = t.split("\n")
+    line_freq = {}
+    for ln in raw_lines:
+        s_ln = ln.strip()
+        if 1 <= len(s_ln) <= 85 and not s_ln.startswith(("__VBEE_ACT_TAG_", "-", "–", "—", "“", '"')):
+            line_freq[s_ln.lower()] = line_freq.get(s_ln.lower(), 0) + 1
+
+    bookmark_line_re = re.compile(
+        r"^\s*(?:bookmarks?\b|đánh dấu trang|danh sách đánh dấu|thêm bookmark|xoá bookmark|đã lưu bookmark|mục lục\s*$|table of contents|danh mục chương|chuyển đến trang|go to page|trang trước|trang tiếp|trang sau|chương trước|chương tiếp|chương sau|đọc tiếp|xem thêm|chia sẻ bài viết|bình luận|quảng cáo|advertisement|sponsored|copy link|tải sách|download ebook|nguồn\s*:|link gốc\s*:|bản quyền thuộc về|copyright\s*©|all rights reserved|isbn\s*[:0-9-]|chịu trách nhiệm xuất bản|in xong và nộp lưu chiểu|biên tập\s*:|trình bày bìa\s*:|sửa bản in\s*:)",
+        re.I,
+    )
+    ebook_watermark_re = re.compile(
+        r"(?:mua sách giấy tại|đặt hàng online qua|để có những cảm nhận phong phú nhất|ebook chỉ để tặng|nghiêm cấm các hành vi in lậu|tải ebook miễn phí|thuvienebook|dtv-ebook|sachvui|wattpad|truyenfull|wikidich|bizbooks\.vn)",
+        re.I,
+    )
+    running_header_re = re.compile(
+        r"^\s*[∼~—–\-=*★☆•|]{1,4}\s*[^∼~—–\-=*★☆•|\n]{2,80}\s*[∼~—–\-=*★☆•|]{1,4}\s*$"
+    )
+    pipe_or_sep_line_re = re.compile(r"^\s*[-—–|•*~_=+✦★☆/\\]+\s*$")
+    toc_dot_line_re = re.compile(
+        r"^.*?(?:\.{3,}|…{2,}|-{3,}|_{3,}|\t+|\s{4,})\s*(?:trang\s*|page\s*|tr\.?\s*)?\d{1,5}\s*$",
+        re.I,
+    )
+    toc_chap_page_re = re.compile(
+        r"^\s*(?:chương|phần|mục|bài|quyển|tập|chapter|part)\s+[0-9IVXLCDM]+\b[^\n]{0,65}\s+\d{1,4}\s*$",
+        re.I,
+    )
+    page_num_line_re = re.compile(
+        r"^\s*(?:[-—–|•*~_()]*\s*)?(?:trang|page|tr\.?|p\.?|tờ)?\s*\d{1,5}(?:\s*(?:/|trên|of|-)\s*\d{1,5})?\s*(?:[-—–|•*~_()]*)\s*$",
+        re.I,
+    )
+    footnote_line_re = re.compile(
+        r"^\s*(?:\(\d{1,2}\)|\[\d{1,2}\]|\d+\)|\*\s+|\†\s+).+",
+        re.I,
+    )
+    footnote_num_start_re = re.compile(
+        r"^\s*(?:\(\d{1,2}\)|\[\d{1,2}\]|\d{1,2})\s+[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ]"
+    )
+
+    def _is_page_break_or_watermark(s_line: str) -> bool:
+        if not s_line:
+            return False
+        return bool(
+            bookmark_line_re.search(s_line)
+            or ebook_watermark_re.search(s_line)
+            or running_header_re.match(s_line)
+            or pipe_or_sep_line_re.match(s_line)
+            or toc_dot_line_re.match(s_line)
+            or toc_chap_page_re.match(s_line)
+            or page_num_line_re.match(s_line)
+        )
+
+    # Pre-mark bottom-of-page multi-line footnote blocks that sit within 1..6 lines above a page break / watermark
+    n_raw = len(raw_lines)
+    skip_line_indices = set()
+    for idx_ln in range(n_raw):
+        s_cur = raw_lines[idx_ln].strip()
+        if not s_cur:
+            continue
+        if footnote_num_start_re.match(s_cur) or footnote_line_re.match(s_cur):
+            # Look ahead up to 6 lines for a page-break/watermark/running-header line
+            anchor_pos = -1
+            for look_i in range(idx_ln + 1, min(n_raw, idx_ln + 7)):
+                if _is_page_break_or_watermark(raw_lines[look_i].strip()):
+                    anchor_pos = look_i
+                    break
+            if anchor_pos != -1:
+                for k_skip in range(idx_ln, anchor_pos):
+                    skip_line_indices.add(k_skip)
+            elif footnote_line_re.match(s_cur):
+                skip_line_indices.add(idx_ln)
+
+    kept_lines = []
+    for idx_ln, ln in enumerate(raw_lines):
+        if idx_ln in skip_line_indices:
+            removed_junk += 1
+            continue
+        s = ln.strip()
+        if not s:
+            kept_lines.append("")
+            continue
+        s = re.sub(r"^\s*#{1,6}\s+", "", s)
+        s = re.sub(r"^\s*>\s+", "", s)
+        if _is_page_break_or_watermark(s) or footnote_line_re.match(s):
+            removed_junk += 1
+            continue
+        s, n_bm_inline = re.subn(
+            r"(?:\bBookmark(?:s)?\b\s*[:\-–—]?\s*(?:trang\s*\d+)?|\bĐánh dấu trang\b\s*[:\-–—]?\s*(?:trang\s*\d+)?|\bTrang\s+\d{1,5}\s*(?:/\s*\d{1,5})?\b|\bPage\s+\d{1,5}\s*(?:of\s*\d{1,5})?\b)",
+            " ",
+            s,
+            flags=re.I,
+        )
+        removed_junk += n_bm_inline
+        s = s.strip()
+        if not s:
+            continue
+        if len(raw_lines) >= 10 and line_freq.get(s.lower(), 0) >= 3 and len(s) <= 85:
+            removed_junk += 1
+            continue
+        s = re.sub(r"^\s*[•▪▫◆◇►▸➢➔✓✔✦★☆]+\s*", "", s)
+        s = re.sub(r"^\s*[-–—]\s+(?=[A-ZÀ-Ỹa-zà-ỹ])", "", s)
+        kept_lines.append(s)
+
+    joined_text = "\n".join(kept_lines)
+    joined_text = re.sub(r"([a-zA-ZÀ-ỹ])-\s*\n\s*([a-zA-ZÀ-ỹ])", r"\1\2", joined_text)
+
+    raw_blocks = re.split(r"\n\s*\n+", joined_text)
+    reflowed_paras = []
+    chapter_heading_re = re.compile(
+        r"^\s*(?:(?:chương|phần|hồi|quyển|tập|mục)\s+(?:\d+|[IVXLCDM]+|thứ\s+\S+|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mở\s+đầu|kết\s+thúc)|lời\s+mở\s+đầu|lời\s+nói\s+đầu|kết\s+luận)\b",
+        re.I,
+    )
+    for blk in raw_blocks:
+        b_lines = [x.strip() for x in blk.split("\n") if x.strip()]
+        if not b_lines:
+            continue
+        cur_para = []
+        sent_end_count = 0
+        for bl in b_lines:
+            if chapter_heading_re.match(bl):
+                if cur_para:
+                    reflowed_paras.append(" ".join(cur_para))
+                    cur_para = []
+                    sent_end_count = 0
+                if not bl.endswith((".", "!", "?", "…", ":")):
+                    bl = bl + "."
+                reflowed_paras.append(bl)
+            else:
+                cur_para.append(bl)
+                if bl.endswith((".", "!", "?", "…", "”", '"')) and len(" ".join(cur_para)) >= 320:
+                    sent_end_count += 1
+                    if sent_end_count >= 2:
+                        reflowed_paras.append(" ".join(cur_para))
+                        cur_para = []
+                        sent_end_count = 0
+        if cur_para:
+            p_str = " ".join(cur_para)
+            if not p_str.endswith((".", "!", "?", "…", "”", '"')) and not re.search(r"__VBEE_ACT_TAG_\d+__$", p_str):
+                p_str += "."
+            reflowed_paras.append(p_str)
+
+    t = "\n".join(reflowed_paras)
+
+    def _replace_roman(m):
+        nonlocal reworded_items
+        prefix = m.group(1)
+        rom = m.group(2).upper()
+        if rom in ROMAN_MAP:
+            reworded_items += 1
+            return f"{prefix} {ROMAN_MAP[rom]}"
+        return m.group(0)
+
+    t = re.sub(
+        r"\b(Chương|Phần|Thế kỷ|Tập|Quyển|Hồi|Mục|Lần thứ)\s+(XXX|XXIX|XXVIII|XXVII|XXVI|XXV|XXIV|XXIII|XXII|XXI|XX|XIX|XVIII|XVII|XVI|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)\b",
+        _replace_roman,
+        t,
+        flags=re.I,
+    )
+
+    reword_rules = [
+        (r"\b(?:ngày\s+)?(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b", r"ngày \1 tháng \2 năm \3"),
+        (r"\btháng\s+(\d{1,2})[/-](\d{4})\b", r"tháng \1 năm \2"),
+        (r"\b(\d{1,2})h(\d{2})\b", r"\1 giờ \2 phút"),
+        (r"\b(\d{1,2})h\s*(sáng|trưa|chiều|tối|đêm)\b", r"\1 giờ \2"),
+        (r"(\d+(?:[.,]\d+)?)\s*%", r"\1 phần trăm"),
+        (r"(\d+(?:[.,]\d+)?)\s*°C\b", r"\1 độ C"),
+        (r"(\d+(?:[.,]\d+)?)\s*km/h\b", r"\1 ki lô mét trên giờ"),
+        (r"(\d+(?:[.,]\d+)?)\s*(?:km2|km²)\b", r"\1 ki lô mét vuông"),
+        (r"(\d+(?:[.,]\d+)?)\s*(?:m2|m²)\b", r"\1 mét vuông"),
+        (r"(\d+(?:[.,]\d+)?)\s*(?:m3|m³)\b", r"\1 mét khối"),
+        (r"\b(\d+(?:[.,]\d+)?)\s*km\b", r"\1 ki lô mét"),
+        (r"\b(\d+(?:[.,]\d+)?)\s*kg\b", r"\1 ki lô gam"),
+        (r"\b(\d+(?:[.,]\d+)?)\s*(?:VNĐ|VND)\b", r"\1 đồng"),
+        (r"\bTP\.?\s*HCM\b", "Thành phố Hồ Chí Minh"),
+        (r"\bTP\.?\s+(?=[A-ZĐÀ-Ỹ])", "Thành phố "),
+        (r"\bPGS\.?\s*TS\.?\s+", "Phó giáo sư Tiến sĩ "),
+        (r"\bGS\.?\s*TS\.?\s+", "Giáo sư Tiến sĩ "),
+        (r"\bTS\.?\s+(?=[A-ZĐÀ-Ỹ])", "Tiến sĩ "),
+        (r"\bThS\.?\s+(?=[A-ZĐÀ-Ỹ])", "Thạc sĩ "),
+        (r"\bBS\.?\s+(?=[A-ZĐÀ-Ỹ])", "Bác sĩ "),
+        (r"\bNXB\b", "Nhà xuất bản"),
+        (r"\bUBND\b", "Ủy ban nhân dân"),
+        (r"\bHĐND\b", "Hội đồng nhân dân"),
+        (r"\bCHXHCN\b", "Cộng hòa xã hội chủ nghĩa"),
+        (r"\bXHCN\b", "xã hội chủ nghĩa"),
+        (r"\bTNHH\b", "Trách nhiệm hữu hạn"),
+        (r"\bTHPT\b", "Trung học phổ thông"),
+        (r"\bTHCS\b", "Trung học cơ sở"),
+        (r"\bĐH\b(?=\s+[A-ZĐÀ-Ỹ])", "Đại học"),
+        (r"\bBĐS\b", "bất động sản"),
+        (r"\bCNTT\b", "công nghệ thông tin"),
+        (r"\bMXH\b", "mạng xã hội"),
+        (r"\bđ/c\b", "đồng chí"),
+        (r"\bv/v\b", "về việc"),
+        (r"\bvà/hoặc\b", "và hoặc"),
+        (r"\bnam/nữ\b", "nam hoặc nữ"),
+        (r"\b24/7\b", "hai mươi tư trên bảy"),
+        (r"\b(?:v\.v\.\.\.|v\.v\.|vv\.\.\.|v\.v)\b", "vân vân"),
+        (r"\b(?:VD|Vd|Ví dụ)\s*:\s*", "Ví dụ như, "),
+        (r"\bLưu ý\s*:\s*", "Lưu ý là, "),
+        (r"\bTức là\s*:\s*", "Tức là, "),
+        (r"\bCụ thể\s*:\s*", "Cụ thể là, "),
+        (r"\s+&\s+", " và "),
+        (r"\s*(?:->|=>|→)\s*", ", dẫn đến "),
+    ]
+    for pat, rep in reword_rules:
+        t, n_r = re.subn(pat, rep, t)
+        reworded_items += n_r
+
+    # Strip inline footnote superscripts attached to words/quotes (e.g. Lincoln1, dây thép1, Nhà Trắng1, Mỹ kim1, tuyết”2., coi lại1”, Al Capone 1,)
+    t, n_fn1 = re.subn(r"(?<=[a-zà-ỹ])[1-9](?=[,.;:!?”\"'\s]|$)", "", t)
+    t, n_fn2 = re.subn(r"(?<=[”\"'])[1-9](?=[,.;:!?\s]|$)", "", t)
+    t, n_fn3 = re.subn(r"([A-ZÀ-Ỹ][a-zà-ỹ]+)\s+[1-9](?=[,.;:!?])", r"\1", t)
+    t, n_fn4 = re.subn(r"\(\s*\d{1,3}\s*\)", " ", t)
+    removed_junk += (n_fn1 + n_fn2 + n_fn3 + n_fn4)
+
+    # Strip redundant foreign original-spelling parentheticals after Vietnamese phonetic names (e.g. "Nữu Ước (New York)" -> "Nữu Ước")
+    t, n_biling = re.subn(
+        r"\b(Nữu Ước|Hoa Thịnh Đốn|Luân Đôn|Ba Lê|Mạc Tư Khoa|Á Căn Đình|Bắc Kinh|Thượng Hải|Đông Kinh)\s*\(\s*[A-Za-z\s\-]{2,30}\s*\)",
+        r"\1",
+        t,
+        flags=re.I,
+    )
+    reworded_items += n_biling
+
+    def _reword_spoken_parens(m):
+        nonlocal reworded_items
+        inner = m.group(1).strip()
+        if not inner:
+            return ""
+        reworded_items += 1
+        return f", {inner}, "
+
+    t = re.sub(r"\(\s*([^()]{2,120})\s*\)", _reword_spoken_parens, t)
+    t = re.sub(r"(\*\*|__|~~|`)", "", t)
+    t = re.sub(r"(?:\.{2,}|…+)\s+(?=[a-zà-ỹ])", ", ", t)
+    t = re.sub(r"([!?])\s*(?:\.{2,}|…+)", r"\1", t)
+    t = re.sub(r",\s*([.!?…;:])", r"\1", t)
+    t = re.sub(r"\s+([,.;!?])", r"\1", t)
+    t = re.sub(r",\s*,+", ", ", t)
+    t = re.sub(r"\.\s*\.+", ".", t)
+    t = re.sub(r"[ \t]+", " ", t)
+    t = re.sub(r"\n{3,}", "\n\n", t).strip()
+
+    for idx, val in enumerate(protected_tags):
+        t = t.replace(f"__VBEE_ACT_TAG_{idx}__", val)
+
+    return {
+        "text": t.strip(),
+        "removed_junk": removed_junk,
+        "reworded_items": reworded_items,
+    }
+
+
+def extract_document_text(filename: str = "", content_b64: str = "", raw_text: str = "") -> dict:
+    """
+    Extracts clean book text from .pdf or .txt (base64 or raw text), strips PDF bookmarks/headers/footers/page numbers,
+    and runs clean_and_reword_book_text() so it is 100% ready for natural audiobook narration.
+    """
+    import base64
+    import io
+
+    pages_count = 1
+    extracted = raw_text or ""
+    fname_low = (filename or "").lower().strip()
+
+    if content_b64 and not extracted:
+        raw_bytes = base64.b64decode(content_b64)
+        if fname_low.endswith(".pdf") or raw_bytes[:4] == b"%PDF":
+            page_texts = []
+            try:
+                import fitz  # PyMuPDF
+                doc = fitz.open(stream=raw_bytes, filetype="pdf")
+                pages_count = len(doc)
+                for page in doc:
+                    rect_h = float(page.rect.height or 800.0)
+                    blocks = page.get_text("blocks")
+                    blocks = [b for b in blocks if len(b) >= 5 and (b[6] == 0 if len(b) > 6 else True)]
+                    blocks.sort(key=lambda b: (round(b[1] / 12.0), b[0]))
+                    kept_b = []
+                    for b in blocks:
+                        y0, y1, b_txt = float(b[1]), float(b[3]), str(b[4]).strip()
+                        if not b_txt:
+                            continue
+                        if (y0 < rect_h * 0.055 or y1 > rect_h * 0.945) and len(b_txt) <= 75:
+                            if re.search(r"^(?:trang|page|tr\.?|p\.?)?\s*\d{1,5}(?:\s*/\s*\d{1,5})?$|bookmark|mục lục", b_txt, re.I):
+                                continue
+                        kept_b.append(b_txt)
+                    if kept_b:
+                        page_texts.append("\n".join(kept_b))
+                doc.close()
+            except Exception:
+                try:
+                    import pypdf
+                    reader = pypdf.PdfReader(io.BytesIO(raw_bytes))
+                    pages_count = len(reader.pages)
+                    for pg in reader.pages:
+                        t_pg = (pg.extract_text() or "").strip()
+                        if t_pg:
+                            page_texts.append(t_pg)
+                except Exception as exc:
+                    raise RuntimeError(f"Không thể đọc file PDF: {exc}")
+            extracted = "\n\n".join(page_texts)
+        else:
+            for enc in ("utf-8-sig", "utf-8", "utf-16", "cp1258", "latin-1"):
+                try:
+                    extracted = raw_bytes.decode(enc)
+                    break
+                except Exception:
+                    continue
+
+    res = clean_and_reword_book_text(extracted)
+    return {
+        "ok": True,
+        "filename": filename,
+        "pages": pages_count,
+        "cleaned_text": res["text"],
+        "removed_junk": res["removed_junk"],
+        "reworded_items": res["reworded_items"],
+    }
 
 
 def convert_to_pure_vietnamese(text: str) -> str:
     """Pure Vietnamese phonetic normalization while preserving all [emotion] and [breaktime] tags."""
+    text = clean_and_reword_book_text(text)["text"]
     t = text.replace("\ufeff", "")
     # Protect inline bracket tags [breaktime=...], [hưng phấn], [nhấn mạnh], [lắng đọng], [tươi vui], [cười], [thở dài], [hắng giọng]
     protected = []
@@ -219,26 +608,28 @@ def generate_ai_nhan_dinh(raw_text: str) -> dict:
     }
 
 
-def auto_ai_prosody_format(text: str, preset: str = "auto_human", include_nhan_dinh: bool = True) -> dict:
+def auto_ai_prosody_format(text: str, preset: str = "auto_human", include_nhan_dinh: bool = False) -> dict:
     """
     Bộ Luật Toán Học Giọng Người Thật (Human Prosody & Emotional Rhythm Constitution):
-    1. Phân tích từng câu để gắn nhãn nhịp điệu thật: [vui] (nhịp tươi sáng), [buồn] (nhịp trầm lắng),
-       [nhấn ý hay] (nhấn phân tích), và [nhận định] [nhấn khoản cuối] (điểm rơi đúc kết).
-    2. Giữ liền mạch hơi thở nguyên câu (không cắt vụn bằng breaktime 0.20s sau dấu phẩy).
-    3. Tự động tổng hợp thêm 'Khoản Nhận Định' ở cuối bài khi người dùng bấm AI Viết Lại (nếu bật include_nhan_dinh).
+    1. Tự động lọc sạch Bookmark, mục lục, số trang, ký tự thừa và wordings lại câu văn chuẩn sách nói.
+    2. Phân tích từng câu để gắn nhãn nhịp điệu thật: [vui], [buồn], [nhấn ý hay], [nhận định] [nhấn khoản cuối].
+    3. Không tự ý thêm câu ngoài sách trừ khi người dùng bật include_nhan_dinh.
     """
     raw = re.sub(
-        r"\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán)\]\s*",
+        r"\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\]\s*",
         " ",
         text,
         flags=re.I,
     )
     raw = re.sub(r"(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)", "", raw, flags=re.I)
     # Strip previously appended AI Nhận định if re-running so it never duplicates
-    raw = re.sub(r"\n*(?:Nhận định chung:|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*$", "", raw.strip(), flags=re.I).strip()
-    raw = re.sub(r"[ \t]+", " ", raw).strip()
+    raw = re.sub(r"\n*(?:Nhận định (?:chung|lại)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*$", "", raw.strip(), flags=re.I).strip()
+    book_res = clean_and_reword_book_text(raw)
+    raw = book_res["text"]
 
     analysis = generate_ai_nhan_dinh(raw)
+    analysis["removed_junk"] = book_res["removed_junk"]
+    analysis["reworded_items"] = book_res["reworded_items"]
     if preset == "clean" or not raw:
         return {"formatted_text": raw, "analysis": analysis}
 
@@ -1347,6 +1738,27 @@ TTS_JOBS_LOCK = threading.Lock()
 TTS_JOBS = {}
 
 
+def save_jobs_state():
+    try:
+        with TTS_JOBS_LOCK:
+            serializable = dict(TTS_JOBS)
+        JOBS_FILE.write_text(json.dumps(serializable, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def load_jobs_state():
+    if not JOBS_FILE.exists():
+        return
+    try:
+        data = json.loads(JOBS_FILE.read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            with TTS_JOBS_LOCK:
+                TTS_JOBS.update(data)
+    except Exception:
+        pass
+
+
 def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
     emo = detect_sentence_emotion(sent_raw)
     raw_low = sent_raw.lower()
@@ -1947,8 +2359,13 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
             self._serve_file(SITE_DIR / "index.html", "text/html; charset=utf-8")
             return
 
-        if path == "/api/tts_status":
+        if path == "/api/tts_status" or path == "/api/tts_jobs":
             job_id = qs.get("job_id", [""])[0].strip()
+            if path == "/api/tts_jobs" or qs.get("all", [""])[0] == "1" or not job_id:
+                with TTS_JOBS_LOCK:
+                    jobs_list = sorted(TTS_JOBS.values(), key=lambda x: x.get("created_at", 0), reverse=True)[:15]
+                self._send_json({"ok": True, "jobs": jobs_list})
+                return
             with TTS_JOBS_LOCK:
                 job = TTS_JOBS.get(job_id)
                 if not job:
@@ -2011,10 +2428,34 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
         except Exception:
             body = {}
 
+        if path == "/api/clean_book_text":
+            text = str(body.get("text", "")).strip()
+            res = clean_and_reword_book_text(text)
+            self._send_json(
+                {
+                    "ok": True,
+                    "cleaned_text": res["text"],
+                    "removed_junk": res["removed_junk"],
+                    "reworded_items": res["reworded_items"],
+                }
+            )
+            return
+
+        if path == "/api/extract_document":
+            filename = str(body.get("filename", "")).strip()
+            content_b64 = str(body.get("content_base64", "")).strip()
+            raw_text = str(body.get("raw_text", "")).strip()
+            try:
+                res = extract_document_text(filename=filename, content_b64=content_b64, raw_text=raw_text)
+                self._send_json(res)
+            except Exception as exc:
+                self._send_json({"ok": False, "error": str(exc)}, status=500)
+            return
+
         if path == "/api/auto_prosody":
             text = str(body.get("text", "")).strip()
             preset = str(body.get("preset", "auto_human")).strip()
-            include_nhan_dinh = bool(body.get("include_nhan_dinh", True))
+            include_nhan_dinh = bool(body.get("include_nhan_dinh", False))
             res_obj = auto_ai_prosody_format(text, preset=preset, include_nhan_dinh=include_nhan_dinh)
             self._send_json(
                 {
@@ -2039,38 +2480,60 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
             title = str(body.get("title", "")).strip()
             auto_ai_mode = bool(body.get("auto_ai_mode", True))
             auto_preset = str(body.get("auto_preset", "auto_human")).strip()
+            client_job_id = str(body.get("job_id", "")).strip()
 
             if not text:
                 self._send_json({"ok": False, "error": "Vui lòng nhập văn bản cần chuyển đổi."}, status=400)
                 return
 
-            job_id = f"job_{int(time.time() * 1000)}_{hashlib.blake2b((text[:64] + str(time.time())).encode('utf-8'), digest_size=3).hexdigest()}"
+            job_id = client_job_id or f"job_{int(time.time() * 1000)}_{hashlib.blake2b((text[:64] + str(time.time())).encode('utf-8'), digest_size=3).hexdigest()}"
             with TTS_JOBS_LOCK:
-                # Keep TTS_JOBS bounded
+                existing = TTS_JOBS.get(job_id)
+                if existing and existing.get("status") in ("running", "done"):
+                    self._send_json(dict(existing))
+                    return
                 if len(TTS_JOBS) > 40:
-                    oldest_k = sorted(TTS_JOBS.keys())[0]
+                    oldest_k = sorted(TTS_JOBS.keys(), key=lambda k: TTS_JOBS[k].get("created_at", 0))[0]
                     TTS_JOBS.pop(oldest_k, None)
                 TTS_JOBS[job_id] = {
                     "ok": True,
                     "job_id": job_id,
+                    "title": title or (text[:48] + ("..." if len(text) > 48 else "")),
+                    "voice": voice_id,
                     "status": "running",
                     "done_chunks": 0,
                     "total_chunks": 1,
-                    "percent": 6,
-                    "message": "Đang đọc bài, xin đợi giây lát...",
+                    "percent": 1,
+                    "message": "Đang đọc bài trong nền, xin đợi giây lát... (1%)",
                     "created_at": time.time(),
                     "record": None,
                     "error": None,
+                    "params": {
+                        "text": text,
+                        "voice_id": voice_id,
+                        "speed": speed,
+                        "pitch": pitch,
+                        "gain": gain,
+                        "temp": temp,
+                        "break_comma": break_comma,
+                        "break_period": break_period,
+                        "out_format": out_format,
+                        "title": title,
+                        "auto_ai_mode": auto_ai_mode,
+                        "auto_preset": auto_preset,
+                    },
                 }
+            save_jobs_state()
 
             def _progress_update(done_c: int, total_c: int, msg: str):
-                pct = min(96, max(8, int(round(8 + 88 * (done_c / max(1, total_c))))))
+                pct = min(96, max(1, int(round(1 + 95 * (done_c / max(1, total_c))))))
                 with TTS_JOBS_LOCK:
                     if job_id in TTS_JOBS:
                         TTS_JOBS[job_id]["done_chunks"] = done_c
                         TTS_JOBS[job_id]["total_chunks"] = total_c
                         TTS_JOBS[job_id]["percent"] = pct
                         TTS_JOBS[job_id]["message"] = msg
+                save_jobs_state()
 
             def _worker():
                 try:
@@ -2096,15 +2559,17 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
                             TTS_JOBS[job_id]["done_chunks"] = TTS_JOBS[job_id]["total_chunks"]
                             TTS_JOBS[job_id]["message"] = "Đã đọc xong bài!"
                             TTS_JOBS[job_id]["record"] = rec
+                    save_jobs_state()
                 except Exception as exc:
                     with TTS_JOBS_LOCK:
                         if job_id in TTS_JOBS:
                             TTS_JOBS[job_id]["status"] = "error"
                             TTS_JOBS[job_id]["error"] = str(exc)
                             TTS_JOBS[job_id]["message"] = f"Lỗi: {exc}"
+                    save_jobs_state()
 
             threading.Thread(target=_worker, daemon=True).start()
-            self._send_json({"ok": True, "job_id": job_id, "status": "running"})
+            self._send_json({"ok": True, "job_id": job_id, "status": "running", "percent": 1})
             return
 
         if path == "/api/tts":
@@ -2163,7 +2628,63 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
         self._send_json({"ok": False, "error": "Not found"}, status=404)
 
 
+def resume_unfinished_jobs_on_startup():
+    load_jobs_state()
+    to_resume = []
+    with TTS_JOBS_LOCK:
+        for jid, jdata in list(TTS_JOBS.items()):
+            if jdata.get("status") == "running" and isinstance(jdata.get("params"), dict):
+                if time.time() - float(jdata.get("created_at", 0)) < 1800:
+                    to_resume.append((jid, dict(jdata["params"])))
+                else:
+                    jdata["status"] = "error"
+                    jdata["error"] = "Quá hạn phiên xử lý"
+    for jid, prm in to_resume:
+        def _run_resumed(job_id=jid, p=prm):
+            def _prog(done_c: int, total_c: int, msg: str):
+                pct = min(96, max(1, int(round(1 + 95 * (done_c / max(1, total_c))))))
+                with TTS_JOBS_LOCK:
+                    if job_id in TTS_JOBS:
+                        TTS_JOBS[job_id]["done_chunks"] = done_c
+                        TTS_JOBS[job_id]["total_chunks"] = total_c
+                        TTS_JOBS[job_id]["percent"] = pct
+                        TTS_JOBS[job_id]["message"] = msg
+                save_jobs_state()
+            try:
+                rec = synthesize_vbee_audio(
+                    text=p.get("text", ""),
+                    voice_id=p.get("voice_id", VOICE_CATALOG[0]["id"]),
+                    speed=float(p.get("speed", 1.0)),
+                    pitch_semitones=float(p.get("pitch", 0.0)),
+                    gain_db=float(p.get("gain", 0.0)),
+                    temperature=float(p.get("temp", 0.78)),
+                    break_comma=float(p.get("break_comma", 0.24)),
+                    break_period=float(p.get("break_period", 0.45)),
+                    out_format=str(p.get("out_format", "mp3")),
+                    title=str(p.get("title", "")),
+                    auto_ai_mode=bool(p.get("auto_ai_mode", True)),
+                    auto_preset=str(p.get("auto_preset", "auto_human")),
+                    progress_cb=_prog,
+                )
+                with TTS_JOBS_LOCK:
+                    if job_id in TTS_JOBS:
+                        TTS_JOBS[job_id]["status"] = "done"
+                        TTS_JOBS[job_id]["percent"] = 100
+                        TTS_JOBS[job_id]["done_chunks"] = TTS_JOBS[job_id]["total_chunks"]
+                        TTS_JOBS[job_id]["message"] = "Đã đọc xong bài!"
+                        TTS_JOBS[job_id]["record"] = rec
+                save_jobs_state()
+            except Exception as exc:
+                with TTS_JOBS_LOCK:
+                    if job_id in TTS_JOBS:
+                        TTS_JOBS[job_id]["status"] = "error"
+                        TTS_JOBS[job_id]["error"] = str(exc)
+                save_jobs_state()
+        threading.Thread(target=_run_resumed, daemon=True).start()
+
+
 def main():
+    resume_unfinished_jobs_on_startup()
     if not IS_CLOUD_COMPUTE:
         threading.Thread(target=ensure_vbee_tunnel_daemon, daemon=True).start()
     threading.Thread(target=get_tts_engine, daemon=True).start()

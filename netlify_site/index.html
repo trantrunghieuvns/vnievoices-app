@@ -940,7 +940,103 @@
       from { translate: -100%; }
       to { translate: 100cqi; }
     }
+
+    /* Canonical .visually-hidden per modern-web-guidance/forms (preserves accessibility tree & keyboard focus) */
+    .visually-hidden {
+      position: absolute;
+      clip-path: inset(50%);
+      overflow: hidden;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      white-space: nowrap;
+    }
+    input.visually-hidden:focus-visible + label {
+      outline: 3px solid #0284c7;
+      outline-offset: 2px;
+    }
+
+    .import-file-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .import-txt-btn {
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+      border-color: #0284c7 !important;
+      color: #0c4a6e !important;
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.18);
+    }
+    .import-txt-btn:hover {
+      background: #0284c7 !important;
+      color: #ffffff !important;
+    }
+    .import-pdf-btn {
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+      border-color: #dc2626 !important;
+      color: #7f1d1d !important;
+      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.18);
+    }
+    .import-pdf-btn:hover {
+      background: #dc2626 !important;
+      color: #ffffff !important;
+    }
+
+    /* Book Clean & Re-wording Status Banner */
+    .book-clean-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #ecfdf5 0%, #f0fdfa 60%, #fffbeb 100%);
+      border: 2px solid #10b981;
+      color: #064e3b;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .book-clean-banner.is-visible {
+      display: flex;
+    }
+
+    /* Persistent Background Session & Completion Notification Banner (Survives F5 / Reload even at 1%) */
+    .bg-session-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 14px 20px;
+      border-radius: 18px;
+      border: 3px solid #f59e0b;
+      background: linear-gradient(135deg, #0f172a 0%, #0f766e 55%, #b45309 100%);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+    }
+    .bg-session-banner.is-active {
+      display: flex;
+    }
+    .bg-session-banner.is-done {
+      border-color: #fde047;
+      background: linear-gradient(135deg, #065f46 0%, #0d9488 55%, #0284c7 100%);
+      box-shadow: 0 12px 32px rgba(5, 150, 105, 0.38);
+    }
+    .tts-textarea.drag-over {
+      border-color: #0284c7 !important;
+      background: #f0f9ff !important;
+      box-shadow: 0 0 0 5px rgba(2, 132, 199, 0.25) !important;
+    }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 </head>
 <body>
 
@@ -965,6 +1061,23 @@
 
   <main class="main-wrap">
 
+    <!-- Persistent Background Session & Completion Notification Banner (Survives F5 / Reload even at 1%) -->
+    <div id="bgSessionBanner" class="bg-session-banner" role="status" aria-live="polite">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;">
+        <span id="bgSessionIcon" style="font-size:22px;">⏳</span>
+        <div>
+          <div id="bgSessionTitle" style="font-size:14.5px;font-weight:900;color:#fef08a;">Đang đọc bài ngầm trên Cloud (Giữ nguyên tiến độ cả khi bấm F5 / Tải lại trang)...</div>
+          <div id="bgSessionDesc" style="font-size:12.5px;font-weight:700;color:#e2e8f0;margin-top:2px;">Hệ thống sẽ tự động phát âm thanh và thông báo ngay khi hoàn tất 100%.</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <progress id="bgSessionProgress" class="tts-progress" max="100" value="1" aria-label="Tiến độ phiên chạy ngầm"></progress>
+        <button type="button" id="btnBgPlayNow" class="sample-pill" style="display:none;background:#fef08a !important;border-color:#f59e0b !important;color:#0f172a !important;font-weight:900;">▶️ Phát Ngay Bản Thu</button>
+        <a id="btnBgDownloadMp3" href="#" download class="sample-pill" style="display:none;background:#ffffff !important;border-color:#38bdf8 !important;color:#0369a1 !important;text-decoration:none;font-weight:900;">⬇️ Tải MP3</a>
+        <button type="button" id="btnBgDismiss" class="sample-pill" style="background:rgba(255,255,255,0.16) !important;border-color:rgba(255,255,255,0.4) !important;color:#ffffff !important;">✕ Đóng</button>
+      </div>
+    </div>
+
     <!-- ═══════════════════════════════════════════════════════════════════════
          BƯỚC 1: VIẾT HOẶC DÁN CHỮ CẦN ĐỌC (NGAY ĐẦU TRANG - CỰC DỄ CHO LỚP 5)
          ═══════════════════════════════════════════════════════════════════════ -->
@@ -972,7 +1085,7 @@
       <div class="step-header">
         <div class="step-title-group">
           <span class="step-badge">BƯỚC 1</span>
-          <h1 class="step-heading">✍️ Em muốn AI đọc câu chuyện hay bản tin gì?</h1>
+          <h1 class="step-heading">✍️ Em muốn AI đọc sách, tài liệu PDF/TXT hay bản tin gì?</h1>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <label for="recordTitle" style="font-size:13px;font-weight:800;color:#4c1d95;">Tên bài:</label>
@@ -980,8 +1093,15 @@
         </div>
       </div>
 
-      <!-- 1-Click Fun Sample Stories + Paste / Clear Quick Buttons -->
+      <!-- Import TXT / PDF + AI Clean Book + 1-Click Fun Sample Stories -->
       <div class="samples-row">
+        <input type="file" id="importTxtInput" accept=".txt,.md,.srt,.csv,text/plain" class="visually-hidden">
+        <label for="importTxtInput" class="sample-pill import-file-btn import-txt-btn" id="lblImportTxt" title="Chọn file .TXT — AI tự xoá Bookmark/phần thừa &amp; viết lại chuẩn sách nói">📄 Import TXT</label>
+
+        <input type="file" id="importPdfInput" accept=".pdf,application/pdf" class="visually-hidden">
+        <label for="importPdfInput" class="sample-pill import-file-btn import-pdf-btn" id="lblImportPdf" title="Chọn file sách .PDF — AI tự lọc bỏ Bookmark, Mục lục, Số trang &amp; biên tập lại câu văn">📕 Import PDF</label>
+
+        <button type="button" class="sample-pill" id="btnCleanBookNow" style="background:#fffbeb !important;border-color:#f59e0b !important;color:#92400e !important;" title="Tự động xoá Bookmark, Mục lục, Số trang, phần thừa khác với sách và wordings lại toàn bộ câu văn">🧹 AI Xoá Bookmark &amp; Viết Lại Chuẩn Sách</button>
         <button type="button" class="sample-pill" id="btnQuickPaste" style="background:#ecfdf5 !important;border-color:#10b981 !important;color:#065f46 !important;">📋 Dán chữ nhanh</button>
         <button type="button" class="sample-pill" id="btnQuickClear" style="background:#fef2f2 !important;border-color:#f87171 !important;color:#991b1b !important;">🗑️ Xóa trắng</button>
         <span style="font-size:13px;font-weight:900;color:#4c1d95;margin-left:4px;">📚 Thử bài mẫu:</span>
@@ -996,9 +1116,15 @@
         <button type="button" class="sample-pill" data-tpl="tvc_sale">🔥 Quảng Cáo Siêu Sale</button>
       </div>
 
+      <!-- Book Sanitization & Re-wording Live Report Banner -->
+      <div id="bookCleanStatusBanner" class="book-clean-banner" role="status" aria-live="polite">
+        <span id="bookCleanStatusText">📖 AI Biên Tập Sách: Tự động xoá Bookmark, Mục lục, Số trang và wordings lại toàn bộ câu văn mượt mà trước khi đọc.</span>
+        <span style="font-size:12px;color:#047857;background:#d1fae5;padding:3px 10px;border-radius:999px;border:1px solid #10b981;">✅ Chuẩn Sách Nói 100%</span>
+      </div>
+
       <!-- Clean, High-Contrast White Textbox -->
-      <label for="ttsInput" style="display:none;">Nội dung văn bản</label>
-      <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V) hoặc gõ bất kỳ đoạn văn nào vào đây... AI sẽ tự hiểu nội dung vui, buồn, hài hước hay kể chuyện để diễn xuất ngay!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
+      <label for="ttsInput" class="visually-hidden">Nội dung văn bản</label>
+      <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V), gõ chữ, hoặc kéo thả file .TXT / .PDF vào đây... AI sẽ tự động xoá Bookmark, số trang, mục lục, phần thừa và wordings lại toàn bộ câu văn chuẩn sách nói trước khi đọc!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
 
       <!-- Magic AI Auto-Thinking Status Bar (Distinct Studio Emerald-Teal & Warm Amber Theme!) -->
       <div class="magic-ai-bar" id="aiAssessmentBox">
@@ -1007,11 +1133,15 @@
             <span style="font-size:14px;font-weight:900;color:#0f766e;">🎭 TOOL DIỄN XUẤT AI:</span>
             <span class="persona-pill-active" id="activePersonaBadge">🎬 #01 Hài Châu Tinh Trì — Tỉnh Bơ Nói Chuyện Vô Lý</span>
             <button type="button" class="btn-open-acting-tool" id="btnOpen108Drawer">🎨 Đổi Vai Diễn Khác (108 Phong Cách) ▾</button>
-            <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:900;color:#065f46;background:#d1fae5;border:1.5px solid #10b981;padding:4px 11px;border-radius:999px;">✨ Tự động diễn cảm khi Dán chữ</span>
+            <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:900;color:#065f46;background:#d1fae5;border:1.5px solid #10b981;padding:4px 11px;border-radius:999px;">✨ Tự động lọc Bookmark &amp; diễn cảm</span>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <label style="font-size:12.5px;font-weight:800;color:#0f766e;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-              <input type="checkbox" id="includeNhanDinhCheckbox" checked>
+            <label style="font-size:12.5px;font-weight:800;color:#065f46;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Tự động xoá Bookmark, Mục lục, Số trang, chú thích rác và viết lại câu văn chuẩn sách nói">
+              <input type="checkbox" id="autoBookCleanCheckbox" checked>
+              <span>📖 Tự xoá Bookmark/phần thừa &amp; wordings lại chuẩn sách</span>
+            </label>
+            <label style="font-size:12.5px;font-weight:800;color:#0f766e;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Chỉ bật khi em muốn AI tự sáng tác thêm 1 câu kết Nhận định ở cuối bài">
+              <input type="checkbox" id="includeNhanDinhCheckbox">
               <span>💡 Tự thêm câu kết Nhận Định</span>
             </label>
             <label style="font-size:12.5px;font-weight:800;color:#b45309;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Bật nếu muốn nhìn thấy các thẻ [cười], [vui], [buồn] trực tiếp trong ô chữ">
@@ -1070,10 +1200,11 @@
           </div>
 
           <!-- Search + 9 Category Tabs + 108 Persona Cards -->
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-            <input type="text" id="personaSearchInput" placeholder="🔍 Tìm trong 108 vai diễn (VD: Châu Tinh Trì, Trường Giang, truyện ma, tổng tài...)" style="flex:1;min-width:260px;padding:9px 16px;border-radius:999px;border:2px solid #0891b2;font-size:13.5px;font-weight:700;">
+          <search style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+            <label for="personaSearchInput" class="visually-hidden">Tìm trong 108 vai diễn</label>
+            <input type="search" id="personaSearchInput" placeholder="🔍 Tìm trong 108 vai diễn (VD: Châu Tinh Trì, Trường Giang, truyện ma, tổng tài...)" style="flex:1;min-width:260px;padding:9px 16px;border-radius:999px;border:2px solid #0891b2;font-size:13.5px;font-weight:700;">
             <button type="button" id="btnResetAutoPersona" class="acting-preset-pill" data-preset="human_rewrite">🔄 Để AI Tự Chọn Theo Nội Dung</button>
-          </div>
+          </search>
           <div id="personaCategoryTabs" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;"></div>
           <div id="personaGrid108" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:10px;max-height:230px;overflow-y:auto;padding:8px;background:#ffffff;border:2px solid #99f6e4;border-radius:14px;"></div>
 
@@ -1183,10 +1314,11 @@
             <button type="button" class="filter-tab" data-sub="Nữ">👩 Chỉ Nữ</button>
             <button type="button" class="filter-tab" data-sub="Nam">👨 Chỉ Nam</button>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <search style="display:flex;align-items:center;gap:8px;">
+            <label for="voiceSearchInput" class="visually-hidden">Tìm tên nhân vật</label>
             <input type="search" id="voiceSearchInput" class="search-voice-input" placeholder="🔍 Tìm tên nhân vật (VD: Khang, Nghi, Bách...)">
             <button type="button" class="btn-sample" id="btnToggleDrawer">🔼 Thu gọn</button>
-          </div>
+          </search>
         </div>
         <div class="voice-grid" id="voiceGrid"></div>
       </div>
@@ -2737,6 +2869,305 @@
       });
       renderPersonaBrowser();
 
+      const autoBookCleanCheckbox = document.getElementById("autoBookCleanCheckbox");
+      const bookCleanStatusBanner = document.getElementById("bookCleanStatusBanner");
+      const bookCleanStatusText = document.getElementById("bookCleanStatusText");
+
+      const ROMAN_CLIENT_MAP = {
+        I: "1", II: "2", III: "3", IV: "4", V: "5",
+        VI: "6", VII: "7", VIII: "8", IX: "9", X: "10",
+        XI: "11", XII: "12", XIII: "13", XIV: "14", XV: "15",
+        XVI: "16", XVII: "17", XVIII: "18", XIX: "19", XX: "20",
+        XXI: "21", XXII: "22", XXIII: "23", XXIV: "24", XXV: "25",
+        XXVI: "26", XXVII: "27", XXVIII: "28", XXIX: "29", XXX: "30"
+      };
+
+      const VALID_ACTING_TAG_CLIENT_RE = /^\[\s*(?:break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|hài châu tinh trì|trường giang|hài trường giang|nguyễn ngọc ngạn|truyện ma|chính kịch|kinh kịch|bi kịch)\s*\]$/i;
+
+      function cleanAndRewordBookTextClient(rawInput) {
+        if (!rawInput || !rawInput.trim()) {
+          return { text: "", removedJunk: 0, rewordedItems: 0 };
+        }
+        let t = rawInput.replace(/\ufeff/g, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        let removedJunk = 0;
+        let rewordedItems = 0;
+
+        // Strip previously appended synthetic AI Nhận định if present
+        t = t.replace(/\n*(?:Nhận định (?:lại|chung)[:\s,]|Ngẫm lại mới thấy,|Có thể khẳng định,|Nhìn rộng hơn, đây chính là điểm nhấn)[^\n]*$/gi, () => {
+          removedJunk++;
+          return "";
+        });
+
+        const protectedTags = [];
+        t = t.replace(/\[([^\]]+)\]\((?:https?:\/\/|mailto:|#)[^\)]+\)/gi, (_, label) => {
+          removedJunk++;
+          const lb = (label || "").trim();
+          if (/^(?:bookmarks?|đánh dấu|mục lục|xem thêm|đọc tiếp|tải về|download|click|nguồn|link)/i.test(lb)) return " ";
+          return lb;
+        });
+
+        t = t.replace(/\[[^\]]*\]/g, (fullTag) => {
+          if (VALID_ACTING_TAG_CLIENT_RE.test(fullTag)) {
+            const idx = protectedTags.length;
+            protectedTags.push(fullTag);
+            return `__VBEE_ACT_TAG_${idx}__`;
+          }
+          removedJunk++;
+          return " ";
+        });
+
+        // Strip parenthetical bookmarks, page refs, figure refs, source notes (keep (\d+) until after footnote line scan!)
+        t = t.replace(/\(\s*(?:bookmarks?|đánh dấu(?: trang)?|xem\s+(?:trang|tr\.?|chương|hình|bảng|mục)[^)]*|trang\s*\d+[^)]*|page\s*\d+[^)]*|tr\.?\s*\d+[^)]*|p\.?\s*\d+[^)]*|nguồn\s*:[^)]*|ảnh\s*:[^)]*|hình\s*\d+[^)]*|bảng\s*\d+[^)]*|xem thêm[^)]*|đọc tiếp[^)]*|còn tiếp[^)]*|chú thích[^)]*|note\s*:[^)]*|\*+)\s*\)/gi, () => {
+          removedJunk++;
+          return " ";
+        });
+
+        // Strip bare URLs, HTML tags, superscript footnote numbers
+        t = t.replace(/https?:\/\/\S+|www\.\S+/gi, () => { removedJunk++; return " "; });
+        t = t.replace(/<[^>]+>/g, () => { removedJunk++; return " "; });
+        t = t.replace(/[¹²³⁴⁵⁶⁷⁸⁹⁰]+/g, () => { removedJunk++; return ""; });
+
+        const rawLines = t.split("\n");
+        const lineFreq = {};
+        for (const ln of rawLines) {
+          const sLn = ln.trim();
+          if (sLn.length >= 1 && sLn.length <= 85 && !/^(__VBEE_ACT_TAG_|[-–—“"])/.test(sLn)) {
+            const k = sLn.toLowerCase();
+            lineFreq[k] = (lineFreq[k] || 0) + 1;
+          }
+        }
+
+        const bookmarkLineRe = /^\s*(?:bookmarks?\b|đánh dấu trang|danh sách đánh dấu|thêm bookmark|xoá bookmark|đã lưu bookmark|mục lục\s*$|table of contents|danh mục chương|chuyển đến trang|go to page|trang trước|trang tiếp|trang sau|chương trước|chương tiếp|chương sau|đọc tiếp|xem thêm|chia sẻ bài viết|bình luận|quảng cáo|advertisement|sponsored|copy link|tải sách|download ebook|nguồn\s*:|link gốc\s*:|bản quyền thuộc về|copyright\s*©|all rights reserved|isbn\s*[:0-9-]|chịu trách nhiệm xuất bản|in xong và nộp lưu chiểu|biên tập\s*:|trình bày bìa\s*:|sửa bản in\s*:)/i;
+        const ebookWatermarkRe = /(?:mua sách giấy tại|đặt hàng online qua|để có những cảm nhận phong phú nhất|ebook chỉ để tặng|nghiêm cấm các hành vi in lậu|tải ebook miễn phí|thuvienebook|dtv-ebook|sachvui|wattpad|truyenfull|wikidich|bizbooks\.vn)/i;
+        const runningHeaderRe = /^\s*[∼~—–\-=*★☆•|]{1,4}\s*[^∼~—–\-=*★☆•|\n]{2,80}\s*[∼~—–\-=*★☆•|]{1,4}\s*$/;
+        const pipeOrSepLineRe = /^\s*[-—–|•*~_=+✦★☆/\\]+\s*$/;
+        const tocDotLineRe = /^.*?(?:\.{3,}|…{2,}|-{3,}|_{3,}|\t+|\s{4,})\s*(?:trang\s*|page\s*|tr\.?\s*)?\d{1,5}\s*$/i;
+        const tocChapPageRe = /^\s*(?:chương|phần|mục|bài|quyển|tập|chapter|part)\s+[0-9IVXLCDM]+\b[^\n]{0,65}\s+\d{1,4}\s*$/i;
+        const pageNumLineRe = /^\s*(?:[-—–|•*~_()]*\s*)?(?:trang|page|tr\.?|p\.?|tờ)?\s*\d{1,5}(?:\s*(?:\/|trên|of|-)\s*\d{1,5})?\s*(?:[-—–|•*~_()]*)\s*$/i;
+        const footnoteLineRe = /^\s*(?:\(\d{1,2}\)|\[\d{1,2}\]|\d+\)|\*\s+|\†\s+).+/i;
+        const footnoteNumStartRe = /^\s*(?:\(\d{1,2}\)|\[\d{1,2}\]|\d{1,2})\s+[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ]/u;
+
+        function isPageBreakOrWatermark(sLine) {
+          if (!sLine) return false;
+          return (
+            bookmarkLineRe.test(sLine) ||
+            ebookWatermarkRe.test(sLine) ||
+            runningHeaderRe.test(sLine) ||
+            pipeOrSepLineRe.test(sLine) ||
+            tocDotLineRe.test(sLine) ||
+            tocChapPageRe.test(sLine) ||
+            pageNumLineRe.test(sLine)
+          );
+        }
+
+        // Pre-mark multi-line bottom-of-page footnote blocks situated 1..6 lines above a page break / watermark
+        const skipLineIndices = new Set();
+        for (let idxLn = 0; idxLn < rawLines.length; idxLn++) {
+          const sCur = rawLines[idxLn].trim();
+          if (!sCur) continue;
+          if (footnoteNumStartRe.test(sCur) || footnoteLineRe.test(sCur)) {
+            let anchorPos = -1;
+            for (let lookI = idxLn + 1; lookI < Math.min(rawLines.length, idxLn + 7); lookI++) {
+              if (isPageBreakOrWatermark(rawLines[lookI].trim())) {
+                anchorPos = lookI;
+                break;
+              }
+            }
+            if (anchorPos !== -1) {
+              for (let kSkip = idxLn; kSkip < anchorPos; kSkip++) {
+                skipLineIndices.add(kSkip);
+              }
+            } else if (footnoteLineRe.test(sCur)) {
+              skipLineIndices.add(idxLn);
+            }
+          }
+        }
+
+        const keptLines = [];
+        for (let idxLn = 0; idxLn < rawLines.length; idxLn++) {
+          if (skipLineIndices.has(idxLn)) {
+            removedJunk++;
+            continue;
+          }
+          let s = rawLines[idxLn].trim();
+          if (!s) {
+            keptLines.push("");
+            continue;
+          }
+          s = s.replace(/^\s*#{1,6}\s+/, "").replace(/^\s*>\s+/, "");
+          if (isPageBreakOrWatermark(s) || footnoteLineRe.test(s)) {
+            removedJunk++;
+            continue;
+          }
+          s = s.replace(/(?:\bBookmark(?:s)?\b\s*[:\-–—]?\s*(?:trang\s*\d+)?|\bĐánh dấu trang\b\s*[:\-–—]?\s*(?:trang\s*\d+)?|\bTrang\s+\d{1,5}\s*(?:\/\s*\d{1,5})?\b|\bPage\s+\d{1,5}\s*(?:of\s*\d{1,5})?\b)/gi, () => {
+            removedJunk++;
+            return " ";
+          }).trim();
+          if (!s) continue;
+          if (rawLines.length >= 10 && (lineFreq[s.toLowerCase()] || 0) >= 3 && s.length <= 85) {
+            removedJunk++;
+            continue;
+          }
+          s = s.replace(/^\s*[•▪▫◆◇►▸➢➔✓✔✦★☆]+\s*/, "");
+          s = s.replace(/^\s*[-–—]\s+(?=[A-ZÀ-Ỹa-zà-ỹ])/u, "");
+          keptLines.push(s);
+        }
+
+        // De-hyphenate and reflow broken mid-sentence PDF lines
+        let joinedText = keptLines.join("\n").replace(/([a-zA-ZÀ-ỹ])-\s*\n\s*([a-zA-ZÀ-ỹ])/gu, "$1$2");
+        const rawBlocks = joinedText.split(/\n\s*\n+/);
+        const reflowedParas = [];
+        const chapterHeadingRe = /^\s*(?:(?:chương|phần|hồi|quyển|tập|mục)\s+(?:\d+|[IVXLCDM]+|thứ\s+\S+|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|mở\s+đầu|kết\s+thúc)|lời\s+mở\s+đầu|lời\s+nói\s+đầu|kết\s+luận)\b/i;
+
+        for (const blk of rawBlocks) {
+          const bLines = blk.split("\n").map(x => x.trim()).filter(Boolean);
+          if (!bLines.length) continue;
+          let curPara = [];
+          let sentEndCount = 0;
+          for (let bl of bLines) {
+            if (chapterHeadingRe.test(bl)) {
+              if (curPara.length) {
+                reflowedParas.push(curPara.join(" "));
+                curPara = [];
+                sentEndCount = 0;
+              }
+              if (!/[.!?…:]$/.test(bl)) bl += ".";
+              reflowedParas.push(bl);
+            } else {
+              curPara.push(bl);
+              if (/[.!?…”"]$/.test(bl) && curPara.join(" ").length >= 320) {
+                sentEndCount++;
+                if (sentEndCount >= 2) {
+                  reflowedParas.push(curPara.join(" "));
+                  curPara = [];
+                  sentEndCount = 0;
+                }
+              }
+            }
+          }
+          if (curPara.length) {
+            let pStr = curPara.join(" ");
+            if (!/[.!?…”"]$/.test(pStr) && !/__VBEE_ACT_TAG_\d+__$/.test(pStr)) {
+              pStr += ".";
+            }
+            reflowedParas.push(pStr);
+          }
+        }
+
+        t = reflowedParas.join("\n");
+
+        // Spoken Vietnamese Re-Wording ("Wordings Lại Toàn Bộ")
+        t = t.replace(/\b(Chương|Phần|Thế kỷ|Tập|Quyển|Hồi|Mục|Lần thứ)\s+(XXX|XXIX|XXVIII|XXVII|XXVI|XXV|XXIV|XXIII|XXII|XXI|XX|XIX|XVIII|XVII|XVI|XV|XIV|XIII|XII|XI|X|IX|VIII|VII|VI|V|IV|III|II|I)\b/gi, (m, prefix, rom) => {
+          const num = ROMAN_CLIENT_MAP[rom.toUpperCase()];
+          if (num) {
+            rewordedItems++;
+            return `${prefix} ${num}`;
+          }
+          return m;
+        });
+
+        const clientRewordRules = [
+          [/\b(?:ngày\s+)?(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b/gi, "ngày $1 tháng $2 năm $3"],
+          [/\btháng\s+(\d{1,2})[/-](\d{4})\b/gi, "tháng $1 năm $2"],
+          [/\b(\d{1,2})h(\d{2})\b/gi, "$1 giờ $2 phút"],
+          [/\b(\d{1,2})h\s*(sáng|trưa|chiều|tối|đêm)\b/gi, "$1 giờ $2"],
+          [/(\d+(?:[.,]\d+)?)\s*%/g, "$1 phần trăm"],
+          [/(\d+(?:[.,]\d+)?)\s*°C\b/gi, "$1 độ C"],
+          [/(\d+(?:[.,]\d+)?)\s*km\/h\b/gi, "$1 ki lô mét trên giờ"],
+          [/(\d+(?:[.,]\d+)?)\s*(?:km2|km²)\b/gi, "$1 ki lô mét vuông"],
+          [/(\d+(?:[.,]\d+)?)\s*(?:m2|m²)\b/gi, "$1 mét vuông"],
+          [/(\d+(?:[.,]\d+)?)\s*(?:m3|m³)\b/gi, "$1 mét khối"],
+          [/\b(\d+(?:[.,]\d+)?)\s*km\b/gi, "$1 ki lô mét"],
+          [/\b(\d+(?:[.,]\d+)?)\s*kg\b/gi, "$1 ki lô gam"],
+          [/\b(\d+(?:[.,]\d+)?)\s*(?:VNĐ|VND)\b/gi, "$1 đồng"],
+          [/\bTP\.?\s*HCM\b/gi, "Thành phố Hồ Chí Minh"],
+          [/\bTP\.?\s+(?=[A-ZĐÀ-Ỹ])/gu, "Thành phố "],
+          [/\bPGS\.?\s*TS\.?\s+/gi, "Phó giáo sư Tiến sĩ "],
+          [/\bGS\.?\s*TS\.?\s+/gi, "Giáo sư Tiến sĩ "],
+          [/\bTS\.?\s+(?=[A-ZĐÀ-Ỹ])/gu, "Tiến sĩ "],
+          [/\bThS\.?\s+(?=[A-ZĐÀ-Ỹ])/gu, "Thạc sĩ "],
+          [/\bBS\.?\s+(?=[A-ZĐÀ-Ỹ])/gu, "Bác sĩ "],
+          [/\bNXB\b/gi, "Nhà xuất bản"],
+          [/\bUBND\b/gi, "Ủy ban nhân dân"],
+          [/\bHĐND\b/gi, "Hội đồng nhân dân"],
+          [/\bCHXHCN\b/gi, "Cộng hòa xã hội chủ nghĩa"],
+          [/\bXHCN\b/gi, "xã hội chủ nghĩa"],
+          [/\bTNHH\b/gi, "Trách nhiệm hữu hạn"],
+          [/\bTHPT\b/gi, "Trung học phổ thông"],
+          [/\bTHCS\b/gi, "Trung học cơ sở"],
+          [/\bĐH\b(?=\s+[A-ZĐÀ-Ỹ])/gu, "Đại học"],
+          [/\bBĐS\b/gi, "bất động sản"],
+          [/\bCNTT\b/gi, "công nghệ thông tin"],
+          [/\bMXH\b/gi, "mạng xã hội"],
+          [/\bđ\/c\b/gi, "đồng chí"],
+          [/\bv\/v\b/gi, "về việc"],
+          [/\bvà\/hoặc\b/gi, "và hoặc"],
+          [/\bnam\/nữ\b/gi, "nam hoặc nữ"],
+          [/\b24\/7\b/gi, "hai mươi tư trên bảy"],
+          [/\b(?:v\.v\.\.\.|v\.v\.|vv\.\.\.|v\.v)\b/gi, "vân vân"],
+          [/\b(?:VD|Vd|Ví dụ)\s*:\s*/g, "Ví dụ như, "],
+          [/\bLưu ý\s*:\s*/gi, "Lưu ý là, "],
+          [/\bTức là\s*:\s*/gi, "Tức là, "],
+          [/\bCụ thể\s*:\s*/gi, "Cụ thể là, "],
+          [/\s+&\s+/g, " và "],
+          [/\s*(?:->|=>|→)\s*/g, ", dẫn đến "]
+        ];
+
+        for (const [pat, rep] of clientRewordRules) {
+          t = t.replace(pat, (...args) => {
+            rewordedItems++;
+            const match = args[0];
+            return match.replace(pat, rep);
+          });
+        }
+
+        // Strip inline footnote superscripts attached to words/quotes (e.g. Lincoln1, dây thép1, Nhà Trắng1, Mỹ kim1, tuyết”2., coi lại1”, Al Capone 1,)
+        t = t.replace(/(?<=[a-zà-ỹ])[1-9](?=[,.;:!?”"'\s]|$)/gu, () => { removedJunk++; return ""; });
+        t = t.replace(/(?<=[”"'])[1-9](?=[,.;:!?\s]|$)/gu, () => { removedJunk++; return ""; });
+        t = t.replace(/([A-ZÀ-Ỹ][a-zà-ỹ]+)\s+[1-9](?=[,.;:!?])/gu, (_, w) => { removedJunk++; return w; });
+        t = t.replace(/\(\s*\d{1,3}\s*\)/g, () => { removedJunk++; return " "; });
+
+        // Strip redundant foreign original-spelling parentheticals after Vietnamese phonetic names (e.g. "Nữu Ước (New York)" -> "Nữu Ước")
+        t = t.replace(/\b(Nữu Ước|Hoa Thịnh Đốn|Luân Đôn|Ba Lê|Mạc Tư Khoa|Á Căn Đình|Bắc Kinh|Thượng Hải|Đông Kinh)\s*\(\s*[A-Za-z\s\-]{2,30}\s*\)/gi, (_, vnName) => {
+          rewordedItems++;
+          return vnName;
+        });
+
+        t = t.replace(/\(\s*([^()]{2,120})\s*\)/g, (_, inner) => {
+          const cleanInner = (inner || "").trim();
+          if (!cleanInner) return "";
+          rewordedItems++;
+          return `, ${cleanInner}, `;
+        });
+
+        t = t.replace(/(\*\*|__|~~|`)/g, "");
+        t = t.replace(/(?:\.{2,}|…+)\s+(?=[a-zà-ỹ])/gu, ", ");
+        t = t.replace(/([!?])\s*(?:\.{2,}|…+)/g, "$1");
+        t = t.replace(/,\s*([.!?…;:])/g, "$1");
+        t = t.replace(/\s+([,.;!?])/g, "$1");
+        t = t.replace(/,\s*,+/g, ", ");
+        t = t.replace(/\.\s*\.+/g, ".");
+        t = t.replace(/[ \t]+/g, " ");
+        t = t.replace(/\n{3,}/g, "\n\n").trim();
+
+        protectedTags.forEach((val, idx) => {
+          t = t.replace(`__VBEE_ACT_TAG_${idx}__`, val);
+        });
+
+        return { text: t.trim(), removedJunk, rewordedItems };
+      }
+
+      function showBookCleanBanner(removedJunk, rewordedItems, sourceLabel) {
+        if (!bookCleanStatusBanner || !bookCleanStatusText) return;
+        bookCleanStatusBanner.classList.add("is-visible");
+        const srcPrefix = sourceLabel ? `<b>${sourceLabel}:</b> ` : "<b>AI Biên Tập Sách:</b> ";
+        if (removedJunk > 0 || rewordedItems > 0) {
+          bookCleanStatusText.innerHTML = `📖 ${srcPrefix}Đã tự động xoá <b>${removedJunk} phần thừa</b> (Bookmark, số trang, mục lục, ký tự rác) &amp; wordings lại <b>${rewordedItems} cụm từ/câu văn</b> chuẩn sách nói!`;
+        } else {
+          bookCleanStatusText.innerHTML = `📖 ${srcPrefix}Văn bản đã được kiểm tra sạch sẽ (0 Bookmark/phần thừa) và chuẩn hóa câu văn mượt mà để đọc ngay!`;
+        }
+      }
+
       // Updates the friendly AI Thinking status bar WITHOUT cluttering the user's clean text with bracket tags!
       function updateAiThinkingDisplay(rawText) {
         const compiled = formatTextWithAiProsody(rawText, currentPreset || "human_rewrite");
@@ -2747,9 +3178,13 @@
         let raw = (text || "").replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|trường giang|nguyễn ngọc ngạn|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ");
         raw = raw.replace(/(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)/gi, "");
         raw = raw.replace(/\s*Nhận định (?:lại|chung),[^.\n]+\.?\s*$/i, "").trim();
-        raw = raw.replace(/[ \t]+/g, " ").trim();
+        if (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked) {
+          raw = cleanAndRewordBookTextClient(raw).text;
+        } else {
+          raw = raw.replace(/[ \t]+/g, " ").trim();
+        }
         if (preset === "clean" || !raw) {
-          if (aiAssessmentText) aiAssessmentText.innerHTML = "🧹 Đã đưa văn bản về nguyên gốc.";
+          if (aiAssessmentText) aiAssessmentText.innerHTML = "🧹 Đã lọc sạch phần thừa &amp; đưa văn bản về câu chữ chuẩn sách.";
           return raw;
         }
 
@@ -2806,35 +3241,226 @@
         });
 
         const { nhanDinhSentence, commentary } = buildAiNhanDinhClient(raw, persona);
-        const shouldAppendNhanDinh = !includeNhanDinhCheckbox || includeNhanDinhCheckbox.checked;
+        const shouldAppendNhanDinh = Boolean(includeNhanDinhCheckbox && includeNhanDinhCheckbox.checked);
         if (shouldAppendNhanDinh && nhanDinhSentence) {
           countInsight++;
           outParas.push(`[nhận định] [nhấn khoản cuối] ${nhanDinhSentence}`);
         }
 
         if (aiEmotionStatsBadge) {
-          aiEmotionStatsBadge.textContent = `✨ Diễn xuất: ${countDramatic + countHappy + countSad} câu · 🧠 Câu kết Nhận định: ${countInsight}`;
+          aiEmotionStatsBadge.textContent = `✨ Diễn xuất: ${countDramatic + countHappy + countSad} câu · 📖 Đã lọc sạch Bookmark`;
         }
         if (aiAssessmentText) {
-          aiAssessmentText.innerHTML = `${commentary} <span style="color:#0369a1;font-weight:800;">💡 Câu kết AI tự thêm:</span> <i>"${nhanDinhSentence}"</i>`;
+          aiAssessmentText.innerHTML = shouldAppendNhanDinh
+            ? `${commentary} <span style="color:#0369a1;font-weight:800;">💡 Câu kết AI tự thêm:</span> <i>"${nhanDinhSentence}"</i>`
+            : `${commentary} <span style="color:#047857;font-weight:800;">📖 Chế độ Đọc Chuẩn Sách:</span> AI đã tự xoá Bookmark/phần thừa, wordings lại câu văn và chỉ đọc đúng nội dung sách.`;
         }
 
         const paraB = (persona && persona.paraBreak) || "0.48s";
         return outParas.join(`\n[breaktime=${paraB}]\n`);
       }
 
-      // Zero-Click Auto-Thinking on Paste & Typing!
-      // Keeps the textbox clean and readable by default unless "Hiện thẻ kỹ thuật trong ô chữ" is checked!
+      function saveDraftToLocalStorage() {
+        try {
+          const draft = {
+            title: recordTitle.value || "",
+            text: ttsInput.value || "",
+            voiceId: activeVoice ? activeVoice.id : "",
+            speed: speedSlider.value,
+            pitch: pitchSlider.value,
+            personaId: selectedPersonaId,
+            preset: currentPreset,
+            updatedAt: Date.now()
+          };
+          localStorage.setItem("vnievoices_draft_state_v2", JSON.stringify(draft));
+        } catch (_) {}
+      }
+
+      function restoreDraftFromLocalStorage() {
+        try {
+          const raw = localStorage.getItem("vnievoices_draft_state_v2");
+          if (!raw) return false;
+          const d = JSON.parse(raw);
+          if (d && typeof d.text === "string" && d.text.trim()) {
+            ttsInput.value = d.text;
+          }
+          if (d && d.title) recordTitle.value = d.title;
+          if (d && d.speed) {
+            speedSlider.value = d.speed;
+            document.getElementById("speedVal").textContent = Number(d.speed).toFixed(2).replace(/\.00$/, ".0") + "x";
+          }
+          if (d && d.pitch) {
+            pitchSlider.value = d.pitch;
+            document.getElementById("pitchVal").textContent = d.pitch + " st";
+          }
+          if (d && d.personaId) selectedPersonaId = d.personaId;
+          if (d && d.preset) currentPreset = d.preset;
+          return true;
+        } catch (_) {
+          return false;
+        }
+      }
+
+      // Import TXT & PDF File Extraction + Auto Book Clean & Rewording
+      async function extractPdfTextInBrowser(arrayBuffer) {
+        if (!window.pdfjsLib) throw new Error("PDF.js chưa sẵn sàng");
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pageTexts = [];
+        for (let p = 1; p <= pdf.numPages; p++) {
+          const page = await pdf.getPage(p);
+          const viewport = page.getViewport({ scale: 1.0 });
+          const pageH = viewport.height || 800;
+          const content = await page.getTextContent();
+          const linesMap = new Map();
+          for (const item of content.items) {
+            const str = (item.str || "").trim();
+            if (!str) continue;
+            const y = item.transform ? item.transform[5] : 400;
+            // Skip top/bottom 5.5% margin page numbers or bookmark labels
+            if ((y < pageH * 0.055 || y > pageH * 0.945) && str.length <= 75) {
+              if (/^(?:trang|page|tr\.?|p\.?)?\s*\d{1,5}(?:\s*\/\s*\d{1,5})?$|bookmark|mục lục/i.test(str)) {
+                continue;
+              }
+            }
+            const yBucket = Math.round(y / 6) * 6;
+            if (!linesMap.has(yBucket)) linesMap.set(yBucket, []);
+            linesMap.get(yBucket).push({ x: item.transform ? item.transform[4] : 0, str });
+          }
+          const sortedY = Array.from(linesMap.keys()).sort((a, b) => b - a);
+          const pageLines = sortedY.map(yk => {
+            const row = linesMap.get(yk).sort((a, b) => a.x - b.x);
+            return row.map(r => r.str).join(" ");
+          });
+          if (pageLines.length) pageTexts.push(pageLines.join("\n"));
+        }
+        return { text: pageTexts.join("\n\n"), pages: pdf.numPages };
+      }
+
+      function arrayBufferToBase64(buffer) {
+        let binary = "";
+        const bytes = new Uint8Array(buffer);
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return btoa(binary);
+      }
+
+      async function handleDocumentFileImport(file) {
+        if (!file) return;
+        const hint = document.getElementById("statusHint");
+        const cleanTitle = file.name.replace(/\.(txt|pdf|md|srt|csv)$/i, "").replace(/[_-]+/g, " ").trim();
+        if (cleanTitle) recordTitle.value = cleanTitle;
+
+        const isPdf = /\.pdf$/i.test(file.name) || file.type === "application/pdf";
+        hint.textContent = `⏳ Đang đọc và lọc Bookmark/phần thừa từ file "${file.name}"...`;
+
+        try {
+          const buf = await file.arrayBuffer();
+          let rawExtracted = "";
+          let pageCount = 1;
+          let serverCleaned = null;
+
+          if (isPdf) {
+            try {
+              const browserPdf = await extractPdfTextInBrowser(buf);
+              rawExtracted = browserPdf.text;
+              pageCount = browserPdf.pages;
+            } catch (_) {
+              // Fallback to Cloud Backend /api/extract_document
+              if (!apiBaseUrl) await discoverCompanyServer();
+              const b64 = arrayBufferToBase64(buf);
+              const r = await fetch((apiBaseUrl || "") + "/api/extract_document", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ filename: file.name, content_base64: b64 })
+              });
+              const d = await r.json();
+              if (d && d.ok) {
+                serverCleaned = d;
+              } else {
+                throw new Error((d && d.error) || "Không thể trích xuất file PDF");
+              }
+            }
+          } else {
+            const u8 = new Uint8Array(buf);
+            if (u8.length >= 2 && u8[0] === 0xFF && u8[1] === 0xFE) {
+              rawExtracted = new TextDecoder("utf-16le").decode(buf);
+            } else if (u8.length >= 2 && u8[0] === 0xFE && u8[1] === 0xFF) {
+              rawExtracted = new TextDecoder("utf-16be").decode(buf);
+            } else {
+              rawExtracted = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+            }
+          }
+
+          const res = serverCleaned
+            ? { text: serverCleaned.cleaned_text, removedJunk: serverCleaned.removed_junk || 0, rewordedItems: serverCleaned.reworded_items || 0 }
+            : cleanAndRewordBookTextClient(rawExtracted);
+
+          selectedPersonaId = "AUTO";
+          const formatted = formatTextWithAiProsody(res.text, currentPreset || "human_rewrite");
+          ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : res.text;
+          updateCharCount();
+          saveDraftToLocalStorage();
+          showBookCleanBanner(res.removedJunk, res.rewordedItems, isPdf ? `Đã Import PDF (${pageCount} trang - ${file.name})` : `Đã Import TXT (${file.name})`);
+          hint.textContent = `✅ Đã Import "${file.name}", tự động xoá ${res.removedJunk} Bookmark/phần thừa & wordings lại ${res.rewordedItems} câu văn! Bấm ĐỌC NGAY để nghe!`;
+        } catch (err) {
+          hint.textContent = "⚠️ Lỗi khi đọc file: " + err.message;
+        }
+      }
+
+      document.getElementById("importTxtInput").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) handleDocumentFileImport(f);
+        e.target.value = "";
+      });
+      document.getElementById("importPdfInput").addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) handleDocumentFileImport(f);
+        e.target.value = "";
+      });
+
+      ttsInput.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        ttsInput.classList.add("drag-over");
+      });
+      ttsInput.addEventListener("dragleave", () => {
+        ttsInput.classList.remove("drag-over");
+      });
+      ttsInput.addEventListener("drop", (e) => {
+        e.preventDefault();
+        ttsInput.classList.remove("drag-over");
+        const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) handleDocumentFileImport(f);
+      });
+
+      document.getElementById("btnCleanBookNow").addEventListener("click", () => {
+        const res = cleanAndRewordBookTextClient(ttsInput.value);
+        const formatted = formatTextWithAiProsody(res.text, currentPreset || "human_rewrite");
+        ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : res.text;
+        updateCharCount();
+        saveDraftToLocalStorage();
+        showBookCleanBanner(res.removedJunk, res.rewordedItems, "AI Biên Tập Sách");
+        document.getElementById("statusHint").textContent = `🧹 Đã xoá ${res.removedJunk} Bookmark/phần thừa & wordings lại ${res.rewordedItems} cụm từ chuẩn sách nói!`;
+      });
+
+      // Zero-Click Auto-Clean & Auto-Thinking on Paste & Typing!
       let typingTimer = null;
       ttsInput.addEventListener("paste", () => {
         setTimeout(() => {
           selectedPersonaId = "AUTO";
-          const formatted = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
-          if (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) {
-            ttsInput.value = formatted;
+          let baseText = ttsInput.value;
+          if (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked) {
+            const res = cleanAndRewordBookTextClient(baseText);
+            baseText = res.text;
+            showBookCleanBanner(res.removedJunk, res.rewordedItems, "Tự Động Khi Dán (Paste)");
           }
+          const formatted = formatTextWithAiProsody(baseText, currentPreset || "human_rewrite");
+          ttsInput.value = (autoPasteInjectCheckbox && autoPasteInjectCheckbox.checked) ? formatted : baseText;
           updateCharCount();
-          document.getElementById("statusHint").textContent = "⚡ Đã dán chữ! AI đã tự chọn Vai Diễn phù hợp — Bấm ĐỌC NGAY để nghe!";
+          saveDraftToLocalStorage();
+          document.getElementById("statusHint").textContent = "⚡ Đã dán chữ, tự xoá Bookmark/phần thừa & wordings lại chuẩn sách — Bấm ĐỌC NGAY để nghe!";
         }, 25);
       });
 
@@ -2842,8 +3468,10 @@
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => {
           updateAiThinkingDisplay(ttsInput.value);
+          saveDraftToLocalStorage();
         }, 300);
       });
+      recordTitle.addEventListener("input", saveDraftToLocalStorage);
 
       autoPasteInjectCheckbox.addEventListener("change", () => {
         if (autoPasteInjectCheckbox.checked) {
@@ -2939,6 +3567,9 @@
         document.getElementById("activeVoiceName").textContent = v.name;
         document.getElementById("activeVoiceMeta").textContent = `${v.gender} · ${v.region} · ${v.style}`;
         renderVoiceGrid();
+        if (!opts || !opts.skipSaveDraft) {
+          saveDraftToLocalStorage();
+        }
         if (opts && opts.autoRegenerate && (!instantRegenCheckbox || instantRegenCheckbox.checked)) {
           triggerTtsSynthesis();
         }
@@ -3180,6 +3811,120 @@
         }
       });
 
+      const bgSessionBanner = document.getElementById("bgSessionBanner");
+      const bgSessionIcon = document.getElementById("bgSessionIcon");
+      const bgSessionTitle = document.getElementById("bgSessionTitle");
+      const bgSessionDesc = document.getElementById("bgSessionDesc");
+      const bgSessionProgress = document.getElementById("bgSessionProgress");
+      const btnBgPlayNow = document.getElementById("btnBgPlayNow");
+      const btnBgDownloadMp3 = document.getElementById("btnBgDownloadMp3");
+      const btnBgDismiss = document.getElementById("btnBgDismiss");
+      let lastCompletedRecord = null;
+      const activePollingJobIds = new Set();
+
+      function playCompletionChime() {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          const ctx = new Ctx();
+          const now = ctx.currentTime;
+          [587.33, 880.0].forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, now + idx * 0.14);
+            gain.gain.setValueAtTime(0.001, now + idx * 0.14);
+            gain.gain.exponentialRampToValueAtTime(0.14, now + idx * 0.14 + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.14 + 0.32);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + idx * 0.14);
+            osc.stop(now + idx * 0.14 + 0.34);
+          });
+        } catch (_) {}
+      }
+
+      function loadSavedBgJobs() {
+        try {
+          const raw = localStorage.getItem("vnievoices_bg_jobs_v2");
+          if (!raw) return {};
+          const parsed = JSON.parse(raw);
+          return (parsed && typeof parsed === "object") ? parsed : {};
+        } catch (_) {
+          return {};
+        }
+      }
+
+      function saveBgJobsMap(mapObj) {
+        try {
+          localStorage.setItem("vnievoices_bg_jobs_v2", JSON.stringify(mapObj));
+        } catch (_) {}
+      }
+
+      function upsertBgJob(jobId, patch) {
+        const map = loadSavedBgJobs();
+        map[jobId] = Object.assign({}, map[jobId] || { jobId, createdAt: Date.now() }, patch, { updatedAt: Date.now() });
+        // Keep most recent 10 jobs
+        const keys = Object.keys(map).sort((a, b) => (map[b].createdAt || 0) - (map[a].createdAt || 0));
+        const trimmed = {};
+        keys.slice(0, 10).forEach(k => { trimmed[k] = map[k]; });
+        saveBgJobsMap(trimmed);
+        return trimmed[jobId];
+      }
+
+      function updateBgSessionBannerUI(state, jobObj, rec) {
+        if (!bgSessionBanner) return;
+        if (state === "hidden") {
+          bgSessionBanner.classList.remove("is-active", "is-done");
+          return;
+        }
+        bgSessionBanner.classList.add("is-active");
+        if (state === "running") {
+          bgSessionBanner.classList.remove("is-done");
+          const pct = Math.max(1, Math.min(99, Number((jobObj && jobObj.percent) || 1)));
+          const doneC = (jobObj && jobObj.doneChunks) || 0;
+          const totC = (jobObj && jobObj.totalChunks) || 1;
+          const titleStr = (jobObj && jobObj.title) || recordTitle.value || "Bài đọc";
+          const vName = (jobObj && jobObj.voiceName) || (activeVoice && activeVoice.name) || "AI";
+          const resumedTag = (jobObj && jobObj.resumedAfterReload) ? " (Đã giữ nguyên phiên chạy ngầm sau khi F5/Reload)" : "";
+          bgSessionIcon.textContent = "⏳";
+          bgSessionTitle.textContent = `Đang chạy ngầm${resumedTag}: "${titleStr}" • Tiến độ: ${pct}%` + (totC > 1 ? ` (Đoạn ${doneC}/${totC})` : "");
+          bgSessionDesc.textContent = `Nhân vật: ${vName} • Dù em có bấm F5 hay tải lại trang ở 1%, AI vẫn tự chạy ngầm đến khi xong và báo kết quả!`;
+          if (bgSessionProgress) {
+            bgSessionProgress.style.display = "inline-block";
+            bgSessionProgress.value = pct;
+          }
+          if (btnBgPlayNow) btnBgPlayNow.style.display = "none";
+          if (btnBgDownloadMp3) btnBgDownloadMp3.style.display = "none";
+        } else if (state === "done" && rec) {
+          lastCompletedRecord = rec;
+          bgSessionBanner.classList.add("is-done");
+          bgSessionIcon.textContent = "🎉";
+          bgSessionTitle.textContent = `🔔 THÔNG BÁO ĐÃ XONG: Bài "${rec.title}" đã đọc hoàn tất 100%!`;
+          bgSessionDesc.textContent = `Nhân vật: ${rec.voice} • Thời lượng: ${rec.duration || "00:15"} • Hoàn thành trong ${rec.elapsed_sec || 5}s. Bấm Phát Ngay hoặc tải file MP3 bên cạnh!`;
+          if (bgSessionProgress) bgSessionProgress.style.display = "none";
+          if (btnBgPlayNow) btnBgPlayNow.style.display = "inline-flex";
+          if (btnBgDownloadMp3) {
+            const fullUrl = resolveMediaUrl(rec.audio_url);
+            btnBgDownloadMp3.href = fullUrl + (fullUrl.includes("?") ? "&dl=1" : "?dl=1");
+            btnBgDownloadMp3.style.display = "inline-flex";
+          }
+        }
+      }
+
+      if (btnBgPlayNow) {
+        btnBgPlayNow.addEventListener("click", () => {
+          if (lastCompletedRecord) {
+            playAudioInStickyBar(lastCompletedRecord.audio_url, lastCompletedRecord.title, lastCompletedRecord.voice);
+          }
+        });
+      }
+      if (btnBgDismiss) {
+        btnBgDismiss.addEventListener("click", () => {
+          updateBgSessionBannerUI("hidden");
+        });
+      }
+
       function setCompanionLoadingState(isActive, textMsg, pctVal) {
         const inlineBtn = document.getElementById("btnInlineLoadingCompanion");
         const floatBtn = document.getElementById("btnFloatingLoadingCompanion");
@@ -3197,7 +3942,7 @@
         for (const pr of [prog1, prog2]) {
           if (!pr) continue;
           if (typeof pctVal === "number" && pctVal > 0) {
-            pr.value = Math.min(100, Math.max(5, pctVal));
+            pr.value = Math.min(100, Math.max(1, pctVal));
           } else {
             pr.removeAttribute("value");
           }
@@ -3211,25 +3956,170 @@
         document.getElementById("mainAudioPlayer").scrollIntoView({ behavior: "smooth" });
       });
 
-      async function triggerTtsSynthesis() {
+      async function monitorBackgroundJob(jobId, opts) {
+        if (!jobId || activePollingJobIds.has(jobId)) return;
+        activePollingJobIds.add(jobId);
+
+        const isResumed = Boolean(opts && opts.resumedAfterReload);
         const btn = document.getElementById("btnSubmitTts");
         const spinner = document.getElementById("ttsSpinner");
         const icon = document.getElementById("btnSubmitIcon");
         const lbl = document.getElementById("btnSubmitLabel");
         const hint = document.getElementById("statusHint");
 
-        if (activeTtsController) {
-          try { activeTtsController.abort(); } catch (_) {}
+        const savedJob = loadSavedBgJobs()[jobId] || {};
+        if (isResumed) {
+          savedJob.resumedAfterReload = true;
+          upsertBgJob(jobId, { resumedAfterReload: true });
         }
-        const ctrl = new AbortController();
-        activeTtsController = ctrl;
 
-        const cleanRaw = (ttsInput.value || "").trim();
+        const initialPct = Math.max(1, Number(savedJob.percent || 1));
+        const initMsg = isResumed
+          ? `Đang chạy ngầm sau khi F5 (${initialPct}%)...`
+          : `Đang đọc bài, xin đợi giây lát... (${initialPct}%)`;
+
+        btn.disabled = true;
+        spinner.style.display = "inline-block";
+        icon.style.display = "none";
+        lbl.textContent = initMsg;
+        hint.textContent = `⏳ ${initMsg}`;
+        setCompanionLoadingState(true, initMsg, initialPct);
+        updateBgSessionBannerUI("running", Object.assign({}, savedJob, { percent: initialPct }));
+
+        let missingRetries = 0;
+        try {
+          if (!apiBaseUrl) await discoverCompanyServer();
+          while (true) {
+            await new Promise(r => setTimeout(r, 850));
+            let stRes = null;
+            try {
+              stRes = await fetch((apiBaseUrl || "") + "/api/tts_status?job_id=" + encodeURIComponent(jobId) + "&t=" + Date.now());
+            } catch (_) {
+              continue;
+            }
+
+            if (stRes.status === 404) {
+              missingRetries++;
+              // If user hit F5 right at 1% before the initial POST reached the server, automatically re-dispatch it!
+              const currentSaved = loadSavedBgJobs()[jobId];
+              if (missingRetries === 1 && currentSaved && currentSaved.reqPayload) {
+                try {
+                  await fetch((apiBaseUrl || "") + "/api/tts_async", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(currentSaved.reqPayload)
+                  });
+                  continue;
+                } catch (_) {}
+              }
+              if (missingRetries > 6) {
+                throw new Error("Phiên đọc ngầm đã hết hạn, vui lòng bấm ĐỌC NGAY lại.");
+              }
+              continue;
+            }
+
+            if (!stRes.ok) continue;
+            const stData = await stRes.json();
+            if (stData.status === "running") {
+              const pct = Math.max(1, Number(stData.percent || 1));
+              const doneC = stData.done_chunks || 0;
+              const totC = stData.total_chunks || 1;
+              const progressLabel = totC > 1
+                ? `Đang đọc bài, xin đợi giây lát... (Đoạn ${doneC}/${totC} • ${pct}%)`
+                : `Đang đọc bài, xin đợi giây lát... (${pct}%)`;
+              lbl.textContent = progressLabel;
+              hint.textContent = `⏳ ${progressLabel}`;
+              setCompanionLoadingState(true, progressLabel, pct);
+              const updatedJob = upsertBgJob(jobId, {
+                status: "running",
+                percent: pct,
+                doneChunks: doneC,
+                totalChunks: totC
+              });
+              updateBgSessionBannerUI("running", updatedJob);
+            } else if (stData.status === "done" && stData.record) {
+              const rec = stData.record;
+              upsertBgJob(jobId, {
+                status: "done",
+                percent: 100,
+                notifiedDone: true,
+                record: rec
+              });
+              setCompanionLoadingState(false, "", 100);
+              updateBgSessionBannerUI("done", savedJob, rec);
+              playCompletionChime();
+              hint.textContent = `🎉 ĐÃ XONG 100%! Bài "${rec.title}" (${rec.duration}) đã đọc xong và đang phát bên dưới!`;
+              playAudioInStickyBar(rec.audio_url, rec.title, rec.voice);
+              try {
+                if ("Notification" in window && Notification.permission === "granted") {
+                  new Notification("VnieVoices: Đã đọc xong bài!", {
+                    body: `Bài "${rec.title}" (${rec.voice} • ${rec.duration}) đã hoàn thành 100%!`
+                  });
+                }
+              } catch (_) {}
+              discoverCompanyServer();
+              return;
+            } else if (stData.status === "error") {
+              upsertBgJob(jobId, { status: "error", error: stData.error || "Lỗi tổng hợp" });
+              throw new Error(stData.error || "Không thể tổng hợp bài đọc");
+            }
+          }
+        } catch (err) {
+          setCompanionLoadingState(false, "", 0);
+          updateBgSessionBannerUI("hidden");
+          hint.textContent = "⚠️ Máy chủ Cloud đang bận xử lý bài dài, em vui lòng bấm ĐỌC NGAY BÀI NÀY lại nhé! (" + err.message + ")";
+        } finally {
+          activePollingJobIds.delete(jobId);
+          btn.disabled = false;
+          spinner.style.display = "none";
+          icon.style.display = "inline";
+          lbl.textContent = "ĐỌC NGAY BÀI NÀY!";
+        }
+      }
+
+      async function resumeBackgroundJobsOnLoad() {
+        const map = loadSavedBgJobs();
+        const now = Date.now();
+        const entries = Object.values(map).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        for (const item of entries) {
+          if (!item || !item.jobId) continue;
+          // Ignore jobs older than 30 minutes
+          if (now - (item.createdAt || 0) > 30 * 60 * 1000) continue;
+          if (item.status === "running") {
+            monitorBackgroundJob(item.jobId, { resumedAfterReload: true });
+            return;
+          }
+          if (item.status === "done" && item.record && !item.notifiedDone) {
+            upsertBgJob(item.jobId, { notifiedDone: true });
+            updateBgSessionBannerUI("done", item, item.record);
+            playCompletionChime();
+            playAudioInStickyBar(item.record.audio_url, item.record.title, item.record.voice);
+            return;
+          }
+        }
+      }
+
+      async function triggerTtsSynthesis() {
+        const hint = document.getElementById("statusHint");
+        let cleanRaw = (ttsInput.value || "").trim();
         if (!cleanRaw) {
-          hint.textContent = "⚠️ Em hãy nhập hoặc dán văn bản vào ô chữ trước khi bấm ĐỌC NGAY nhé!";
+          hint.textContent = "⚠️ Em hãy nhập, dán văn bản hoặc Import file TXT/PDF trước khi bấm ĐỌC NGAY nhé!";
           ttsInput.focus();
           return;
         }
+
+        // MANDATORY PRE-READ SANITIZATION & RE-WORDING:
+        // Strip all bookmarks, page numbers, TOC lines, non-book junk and re-word before reading!
+        if (!autoBookCleanCheckbox || autoBookCleanCheckbox.checked) {
+          const bookRes = cleanAndRewordBookTextClient(cleanRaw);
+          cleanRaw = bookRes.text;
+          if (!autoPasteInjectCheckbox || !autoPasteInjectCheckbox.checked) {
+            ttsInput.value = cleanRaw;
+          }
+          showBookCleanBanner(bookRes.removedJunk, bookRes.rewordedItems, "Tự Động Chuẩn Hoá Trước Khi Đọc");
+          updateCharCount();
+        }
+        saveDraftToLocalStorage();
 
         // Compile acting triggers invisibly in the background so the user's text stays clean!
         const payloadText = (!autoAiCheckbox || autoAiCheckbox.checked)
@@ -3237,14 +4127,10 @@
           : cleanRaw;
 
         const curSpeed = parseFloat(speedSlider.value) || 1.0;
-        btn.disabled = true;
-        spinner.style.display = "inline-block";
-        icon.style.display = "none";
-        lbl.textContent = "Đang đọc bài, xin đợi giây lát...";
-        hint.textContent = `⏳ Đang đọc bài với giọng "${activeVoice.name}", xin đợi giây lát...`;
-        setCompanionLoadingState(true, "Đang đọc bài, xin đợi giây lát...", 10);
+        const clientJobId = "job_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
 
         const reqPayload = {
+          job_id: clientJobId,
           title: recordTitle.value,
           text: payloadText,
           voice: activeVoice.id,
@@ -3256,82 +4142,52 @@
           auto_preset: currentPreset
         };
 
+        // Immediately persist at 1% BEFORE fetch awaits so even an instant F5 / Reload at 1% keeps the background session alive!
+        upsertBgJob(clientJobId, {
+          jobId: clientJobId,
+          title: recordTitle.value || "Bài đọc VnieVoices",
+          voiceId: activeVoice.id,
+          voiceName: activeVoice.name,
+          status: "running",
+          percent: 1,
+          doneChunks: 0,
+          totalChunks: 1,
+          notifiedDone: false,
+          reqPayload
+        });
+
+        updateBgSessionBannerUI("running", {
+          jobId: clientJobId,
+          title: recordTitle.value,
+          voiceName: activeVoice.name,
+          percent: 1,
+          doneChunks: 0,
+          totalChunks: 1
+        });
+        setCompanionLoadingState(true, "Đang đọc bài, xin đợi giây lát... (1%)", 1);
+
         try {
           if (!apiBaseUrl) await discoverCompanyServer();
-          const startRes = await fetch((apiBaseUrl || "") + "/api/tts_async", {
+          const bodyStr = JSON.stringify(reqPayload);
+          const fetchOpts = {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            signal: ctrl.signal,
-            body: JSON.stringify(reqPayload)
-          });
-
+            body: bodyStr
+          };
+          // Use keepalive when payload < 55KB so browser completes the POST even if user presses F5 mid-request!
+          if (bodyStr.length < 55000) {
+            fetchOpts.keepalive = true;
+          }
+          const startRes = await fetch((apiBaseUrl || "") + "/api/tts_async", fetchOpts);
           if (startRes.ok) {
             const startData = await startRes.json();
-            if (startData && startData.ok && startData.job_id) {
-              const jobId = startData.job_id;
-              while (!ctrl.signal.aborted) {
-                await new Promise(r => setTimeout(r, 850));
-                if (ctrl.signal.aborted) return;
-                const stRes = await fetch((apiBaseUrl || "") + "/api/tts_status?job_id=" + encodeURIComponent(jobId) + "&t=" + Date.now(), {
-                  signal: ctrl.signal
-                });
-                if (!stRes.ok) continue;
-                const stData = await stRes.json();
-                if (stData.status === "running") {
-                  const pct = stData.percent || 20;
-                  const doneC = stData.done_chunks || 0;
-                  const totC = stData.total_chunks || 1;
-                  const progressLabel = totC > 1
-                    ? `Đang đọc bài, xin đợi giây lát... (Đoạn ${doneC}/${totC} • ${pct}%)`
-                    : `Đang đọc bài, xin đợi giây lát... (${pct}%)`;
-                  lbl.textContent = progressLabel;
-                  hint.textContent = `⏳ ${progressLabel}`;
-                  setCompanionLoadingState(true, progressLabel, pct);
-                } else if (stData.status === "done" && stData.record) {
-                  const rec = stData.record;
-                  setCompanionLoadingState(false, "", 100);
-                  hint.textContent = `✅ Đã đọc xong toàn bộ bài trong ${rec.elapsed_sec}s (Thời lượng: ${rec.duration}) — Đang phát ngay bên dưới!`;
-                  playAudioInStickyBar(rec.audio_url, rec.title, rec.voice);
-                  discoverCompanyServer();
-                  return;
-                } else if (stData.status === "error") {
-                  throw new Error(stData.error || "Không thể tổng hợp bài đọc");
-                }
-              }
-              return;
-            }
-          }
-
-          // Fallback to synchronous /api/tts if /api/tts_async is unavailable
-          const res = await fetch((apiBaseUrl || "") + "/api/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            signal: ctrl.signal,
-            body: JSON.stringify(reqPayload)
-          });
-          const data = await res.json();
-          if (data && data.ok && data.record) {
-            const rec = data.record;
-            setCompanionLoadingState(false, "", 100);
-            hint.textContent = `✅ Đã đọc xong toàn bộ bài trong ${rec.elapsed_sec}s (Thời lượng: ${rec.duration}) — Đang phát ngay bên dưới!`;
-            playAudioInStickyBar(rec.audio_url, rec.title, rec.voice);
-            discoverCompanyServer();
-          } else {
-            throw new Error((data && data.error) || "Lỗi tổng hợp giọng nói");
+            const actualJobId = (startData && startData.job_id) || clientJobId;
+            await monitorBackgroundJob(actualJobId, { resumedAfterReload: false });
+            return;
           }
         } catch (err) {
-          if (err && err.name === "AbortError") return;
-          // NEVER play the 8-second default character preview when the user clicked ĐỌC NGAY BÀI NÀY!
-          setCompanionLoadingState(false, "", 0);
-          hint.textContent = "⚠️ Máy chủ Cloud đang bận xử lý bài dài, em vui lòng bấm ĐỌC NGAY BÀI NÀY lại nhé! (" + err.message + ")";
-        } finally {
-          if (activeTtsController === ctrl) {
-            setCompanionLoadingState(false, "", 0);
-            btn.disabled = false;
-            spinner.style.display = "none";
-            icon.style.display = "inline";
-            lbl.textContent = "ĐỌC NGAY BÀI NÀY!";
-          }
+          // Monitor will still attempt recovery or report cleanly
+          await monitorBackgroundJob(clientJobId, { resumedAfterReload: false });
         }
       }
 
@@ -3386,8 +4242,9 @@
       document.getElementById("btnQuickClear").addEventListener("click", () => {
         ttsInput.value = "";
         updateCharCount();
+        saveDraftToLocalStorage();
         ttsInput.focus();
-        document.getElementById("statusHint").textContent = "🗑️ Đã xóa trắng! Em hãy dán hoặc gõ bài mới vào nhé.";
+        document.getElementById("statusHint").textContent = "🗑️ Đã xóa trắng! Em hãy dán, gõ bài mới hoặc Import TXT/PDF vào nhé.";
       });
       document.getElementById("btnQuickPaste").addEventListener("click", async () => {
         try {
@@ -3420,12 +4277,24 @@
         d.scrollIntoView({ behavior: "smooth" });
       });
 
-      const kthVoice = DEFAULT_VOICES.find(v => v.enrolled_key === "kth23" || v.id.includes("Huỳnh Tấn Khang")) || DEFAULT_VOICES[1];
-      selectVoice(kthVoice, { autoRegenerate: false });
+      const savedDraft = restoreDraftFromLocalStorage();
+      let initialVoice = DEFAULT_VOICES.find(v => v.enrolled_key === "kth23" || v.id.includes("Huỳnh Tấn Khang")) || DEFAULT_VOICES[1];
+      if (savedDraft && savedDraft.voiceId) {
+        const matchedV = voicesList.find(v => v.id === savedDraft.voiceId);
+        if (matchedV) initialVoice = matchedV;
+      }
+      selectVoice(initialVoice, { autoRegenerate: false, skipSaveDraft: true });
       updateAiThinkingDisplay(ttsInput.value);
       updateCharCount();
       renderHistory([]);
-      discoverCompanyServer();
+      resumeBackgroundJobsOnLoad();
+      discoverCompanyServer().then(() => {
+        if (savedDraft && savedDraft.voiceId) {
+          const matchedV = voicesList.find(v => v.id === savedDraft.voiceId);
+          if (matchedV) selectVoice(matchedV, { autoRegenerate: false, skipSaveDraft: true });
+        }
+        resumeBackgroundJobsOnLoad();
+      });
     })();
   </script>
 </body>
