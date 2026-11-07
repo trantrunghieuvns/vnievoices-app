@@ -1,0 +1,14 @@
+{
+  "name": "VnieVoices App 100% GitHub Cloud Compute",
+  "postCreateCommand": "pip install -r requirements.txt",
+  "postStartCommand": "nohup python3 vbee_server.py > cloud_server.log 2>&1 &",
+  "forwardPorts": [
+    8890
+  ],
+  "portsAttributes": {
+    "8890": {
+      "label": "VnieVoices Cloud TTS API",
+      "onAutoForward": "silent"
+    }
+  }
+}

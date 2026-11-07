@@ -1030,6 +1030,119 @@
         gap: 6px;
       }
     }
+
+    :root, html, body, input, textarea, select, button {
+      color-scheme: light only !important;
+    }
+
+    input[type="text"], textarea, select {
+      background-color: #ffffff !important;
+      background: #ffffff !important;
+      color: #0f0720 !important;
+      -webkit-text-fill-color: #0f0720 !important;
+      color-scheme: light only !important;
+    }
+
+    .editor-header {
+      padding: 16px 22px !important;
+      border-bottom: 2px solid #e9d5ff !important;
+      background: linear-gradient(90deg, #faf5ff 0%, #fdf2f8 100%) !important;
+    }
+
+    .title-input {
+      border: 2px solid #c084fc !important;
+      background: #ffffff !important;
+      background-color: #ffffff !important;
+      font-size: 15.5px !important;
+      font-weight: 800 !important;
+      color: #0f0720 !important;
+      -webkit-text-fill-color: #0f0720 !important;
+      padding: 9px 14px !important;
+      border-radius: 12px !important;
+      width: 520px !important;
+      max-width: 100% !important;
+      box-shadow: 0 2px 6px rgba(139, 92, 246, 0.08) !important;
+    }
+
+    .tts-textarea {
+      width: calc(100% - 40px) !important;
+      margin: 16px 20px !important;
+      min-height: 215px !important;
+      field-sizing: content;
+      border: 2.5px solid #d8b4fe !important;
+      border-radius: 16px !important;
+      padding: 18px 22px !important;
+      background: #ffffff !important;
+      background-color: #ffffff !important;
+      color: #0f0720 !important;
+      -webkit-text-fill-color: #0f0720 !important;
+      font-size: 16.5px !important;
+      font-weight: 600 !important;
+      line-height: 1.8 !important;
+      resize: vertical;
+      outline: none;
+      box-shadow: inset 0 2px 8px rgba(88, 28, 135, 0.06), 0 4px 14px rgba(139, 92, 246, 0.07) !important;
+    }
+
+    .tts-textarea:focus {
+      border-color: #ff2a85 !important;
+      box-shadow: 0 0 0 4px rgba(255, 42, 133, 0.18) !important;
+    }
+
+    .tts-textarea::placeholder {
+      color: #6b21a8 !important;
+      -webkit-text-fill-color: #6b21a8 !important;
+      opacity: 0.72 !important;
+    }
+
+    .sample-pill {
+      padding: 7px 14px !important;
+      border-radius: 999px !important;
+      font-size: 12.5px !important;
+      font-weight: 800 !important;
+      border: 2px solid #c084fc !important;
+      background: #ffffff !important;
+      color: #2e1065 !important;
+      cursor: pointer;
+      transition: all 0.14s ease;
+    }
+
+    .sample-pill:hover {
+      background: #120924 !important;
+      border-color: #ff2a85 !important;
+      color: #00e5ff !important;
+      transform: translateY(-1px);
+    }
+
+    .editor-footer {
+      padding: 16px 22px !important;
+      border-top: 2px solid #e9d5ff !important;
+      background: #faf5ff !important;
+    }
+
+    .char-counter {
+      font-size: 14px !important;
+      color: #1e1035 !important;
+      font-weight: 800 !important;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #statusHint {
+      display: inline-block;
+      background: #120924 !important;
+      color: #00e5ff !important;
+      -webkit-text-fill-color: #00e5ff !important;
+      padding: 6px 14px !important;
+      border-radius: 999px !important;
+      border: 1.5px solid #ff2a85 !important;
+      font-size: 13px !important;
+      font-weight: 800 !important;
+      box-shadow: 0 3px 10px rgba(18, 9, 36, 0.18) !important;
+    }
+
   </style>
 </head>
 <body>
@@ -1068,10 +1181,10 @@
       </div>
 
       <div class="server-status-box">
-        <div><span class="srv-dot" id="srvDot"></span><strong id="srvHostLabel">Máy Công Ty: HCM-TK-HIEU-PC</strong></div>
+        <div><span class="srv-dot" id="srvDot"></span><strong id="srvHostLabel">☁️ GitHub Cloud Compute (100% Cloud)</strong></div>
         <div style="color:#94a3b8;margin-top:4px;">Engine: VieNeu-TTS v3 Turbo 48kHz + Auto AI Prosody</div>
         <div style="color:#fbbf24;margin-top:4px;font-size:11px;word-break:break-all;" id="srvUrlLabel">Đang kết nối Server...</div>
-        <button type="button" id="btnSetServer" style="margin-top:8px;width:100%;padding:6px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:11px;cursor:pointer;">⚙️ Cấu hình IP / Tunnel Server</button>
+        <button type="button" id="btnSetServer" style="margin-top:8px;width:100%;padding:6px;border-radius:6px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:11px;cursor:pointer;">☁️ Cấu hình GitHub Cloud Endpoint</button>
       </div>
     </aside>
 
@@ -1164,38 +1277,65 @@
         </div>
 
         <!-- 2. Auto AI Prosody, Emotional Rhythm (Vui/Buồn) & AI Khoản Nhận Định Card -->
-        <div class="auto-ai-card" id="autoAiSection">
-          <div class="auto-ai-top">
-            <label class="auto-ai-toggle-label" for="autoAiCheckbox">
+        <div class="auto-ai-card" id="autoAiSection" style="background:linear-gradient(135deg,#ffffff 0%,#faf5ff 55%,#fdf2f8 100%);border:2.5px solid #c084fc;border-radius:20px;padding:18px 22px;box-shadow:0 10px 28px rgba(139,92,246,0.12);">
+          <div class="auto-ai-top" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+            <label class="auto-ai-toggle-label" for="autoAiCheckbox" style="font-size:14px;font-weight:900;color:#1e1035;">
               <input type="checkbox" id="autoAiCheckbox" checked>
-              <span>🤖 Chế Độ AI Phân Tích Nhịp Điệu Thật Lúc Vui [vui] · Lúc Buồn [buồn] · Nhấn Ý Hay & Điểm Rơi Khoản Cuối</span>
+              <span>🧠 AI Tự Động Tư Duy Văn Bản &amp; Nhập Vai Ngay Khi Paste (Không Cần Bấm Nút AI Feel)</span>
             </label>
-            <label class="auto-ai-toggle-label" for="includeNhanDinhCheckbox" style="background:#e0f2fe;padding:4px 10px;border-radius:999px;border:1px solid #7dd3fc;color:#0369a1;font-size:12px;">
+            <label class="auto-ai-toggle-label" for="autoPasteInjectCheckbox" style="background:#fdf2f8;padding:5px 12px;border-radius:999px;border:1.5px solid #f472b6;color:#9d174d;font-size:12px;font-weight:800;">
+              <input type="checkbox" id="autoPasteInjectCheckbox" checked>
+              <span>⚡ Paste Text → Tự động gắn Kích Ngòi Cảm Xúc &amp; Vai Diễn vào văn bản</span>
+            </label>
+            <label class="auto-ai-toggle-label" for="includeNhanDinhCheckbox" style="background:#e0f2fe;padding:5px 12px;border-radius:999px;border:1.5px solid #38bdf8;color:#0369a1;font-size:12px;font-weight:800;">
               <input type="checkbox" id="includeNhanDinhCheckbox" checked>
-              <span>🧠 Tự động thêm "Khoản Nhận Định" đúc kết cuối bài khi bấm AI viết lại</span>
+              <span>💡 Tự động thêm "Khoản Nhận Định" cuối bài</span>
             </label>
-            <label class="auto-ai-toggle-label" for="instantRegenCheckbox" style="background:#ecfdf5;padding:4px 10px;border-radius:999px;border:1px solid #6ee7b7;color:#065f46;font-size:12px;">
+            <label class="auto-ai-toggle-label" for="instantRegenCheckbox" style="background:#ecfdf5;padding:5px 12px;border-radius:999px;border:1.5px solid #34d399;color:#065f46;font-size:12px;font-weight:800;">
               <input type="checkbox" id="instantRegenCheckbox" checked>
-              <span>⚡ Nhấp chọn giọng → Lập tức Regenerate ngay</span>
+              <span>🎤 Nhấp chọn giọng → Đọc ngay</span>
             </label>
-            <span style="font-size:12px;color:#065f46;font-weight:700;" id="autoAiStatusBadge">✓ Đang bật: Nhịp Vui/Buồn thật + Khoản Nhận Định AI</span>
+            <span style="font-size:12px;color:#065f46;font-weight:800;" id="autoAiStatusBadge">✓ Đang bật: 108 Tư Duy Văn Bản + Auto-Decode Khi Paste</span>
           </div>
-          <div class="preset-buttons-row">
-            <span style="font-size:12px;font-weight:800;color:#78350f;">Presets AI Regenerate Text + Nhận Định:</span>
-            <button type="button" class="btn-preset active" data-preset="human_rewrite">🗣️ AI Viết Lại Theo Nhịp Đọc Người Thật (Vui · Buồn · Khoản Nhận Định Cuối)</button>
-            <button type="button" class="btn-preset" data-preset="auto_human">✨ Auto AI Tự Nhiên (Nhấn Ý Hay & Khoản Nhận Định)</button>
-            <button type="button" class="btn-preset" data-preset="tvc_energetic">🔥 TVC Hào Hứng & Bùng Nổ</button>
-            <button type="button" class="btn-preset" data-preset="tvc_luxury">💎 TVC Sang Trọng & Bất Động Sản</button>
-            <button type="button" class="btn-preset" data-preset="news_vtv_htv">📺 Bản Tin Công Nghệ & Tài Chính</button>
-            <button type="button" class="btn-preset" data-preset="story_healing">🌙 Kể Chuyện Huỳnh Tấn Khang (Vui · Buồn · Chiêm Nghiệm)</button>
+
+          <!-- 108 Script Thinking & Acting Personas Browser -->
+          <div style="margin-top:14px;padding:14px 16px;background:#ffffff;border:2px solid #e9d5ff;border-radius:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:13.5px;font-weight:900;color:#2e1065;">🎭 KHO 108 TƯ DUY VĂN BẢN &amp; VAI DIỄN (VĂN BẢN LÀ KÍCH NGÒI CHO MODEL AI HIỂU):</span>
+                <span id="activePersonaBadge" style="background:linear-gradient(90deg,#ff2a85,#8b5cf6);color:#ffffff;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;">🤖 Tự động nhận diện theo văn bản (Auto-Detect)</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="personaSearchInput" placeholder="🔍 Tìm trong 108 tư duy (VD: Châu Tinh Trì, Trường Giang, Nguyễn Ngọc Ngạn, kinh kịch...)" style="padding:7px 14px;border-radius:999px;border:2px solid #c084fc;font-size:12.5px;font-weight:700;min-width:310px;background:#ffffff !important;color:#0f0720 !important;">
+                <button type="button" id="btnResetAutoPersona" class="sample-pill" style="padding:6px 12px !important;font-size:11.5px !important;">🔄 Để AI Tự Chọn Theo Text</button>
+              </div>
+            </div>
+
+            <!-- 9 Category Filter Pills -->
+            <div id="personaCategoryTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+
+            <!-- Scrollable Grid of 108 Persona Chips -->
+            <div id="personaGrid108" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:8px;max-height:195px;overflow-y:auto;padding:4px;"></div>
+          </div>
+
+          <div class="preset-buttons-row" style="margin-top:12px;">
+            <span style="font-size:12px;font-weight:900;color:#4c1d95;">Chế độ Kích Ngòi Văn Bản:</span>
+            <button type="button" class="btn-preset active" data-preset="human_rewrite">🗣️ AI Tự Tư Duy &amp; Gắn Kích Ngòi Vai Diễn (108 Moods)</button>
+            <button type="button" class="btn-preset" data-preset="stephen_chow">🎬 Phong Cách Châu Tinh Trì (Hài Tỉnh Bơ &amp; Lầy)</button>
+            <button type="button" class="btn-preset" data-preset="truong_giang">🤣 Phong Cách Trường Giang (Vô Duyên Duyên Dáng)</button>
+            <button type="button" class="btn-preset" data-preset="ngoc_ngan_horror">👻 Phong Cách Nguyễn Ngọc Ngạn (Truyện Ma Rùng Rợn)</button>
+            <button type="button" class="btn-preset" data-preset="chinh_kich">🎭 Chính Kịch Điện Ảnh &amp; Cao Trào</button>
+            <button type="button" class="btn-preset" data-preset="kinh_kich">⚔️ Kinh Kịch &amp; Sử Thi Cổ Trang</button>
             <button type="button" class="btn-preset clean-btn" data-preset="clean">🧹 Xóa Thẻ (Về Văn Bản Gốc)</button>
           </div>
-          <div id="aiAssessmentBox" style="margin-top:12px;padding:12px 16px;background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 100%);border:1px solid #f59e0b;border-radius:10px;font-size:13px;color:#78350f;line-height:1.55;">
-            <div style="font-weight:800;color:#92400e;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-              <span>🧠 KHOẢN NHẬN ĐỊNH CỦA AI VỀ KỊCH BẢN &amp; NHỊP ĐIỆU ĐỌC (LÚC VUI · LÚC BUỒN · NHẬN ĐỊNH CUỐI):</span>
-              <span id="aiEmotionStatsBadge" style="background:#fde68a;color:#92400e;padding:2px 10px;border-radius:999px;font-size:11.5px;">🎭 Sẵn sàng phân tích nhịp Vui / Buồn / Nhận Định</span>
+
+          <!-- Live Zero-Click AI Script Thinking Readout -->
+          <div id="aiAssessmentBox" style="margin-top:12px;padding:14px 18px;background:linear-gradient(135deg,#fffbeb 0%,#fdf2f8 100%);border:2px solid #f59e0b;border-radius:14px;font-size:13.5px;color:#1e1035;line-height:1.6;">
+            <div style="font-weight:900;color:#78350f;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>🧠 TƯ DUY VĂN BẢN &amp; CHỈ ĐẠO DIỄN XUẤT TỰ ĐỘNG CỦA AI (ZERO-CLICK AUTO-THINKING):</span>
+              <span id="aiEmotionStatsBadge" style="background:#120924;color:#00e5ff;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;">🎭 Tự động phân tích ngay khi Paste / Gõ phím</span>
             </div>
-            <div id="aiAssessmentText">💡 Khi bạn bấm <b>"🗣️ Chuẩn Hóa Luật Đọc Người Thật"</b> hoặc chọn bất kỳ <b>Preset AI Regenerate Text</b> bên trên, AI sẽ tự động phân tích từng câu thuộc nhịp <b>[vui]</b> (nảy sáng, tươi tắn), <b>[buồn]</b> (trầm lắng, ngân sâu, nghỉ nhịp sâu) hay <b>[nhận định]</b> (đĩnh đạc, nhấn từ khóa đắt giá) và tự động bổ sung <b>Khoản Nhận Định đúc kết</b> ở cuối văn bản!</div>
+            <div id="aiAssessmentText" style="color:#1e1035;font-weight:600;">💡 Chỉ cần <b>Paste (Dán)</b> hoặc gõ kịch bản vào ô bên dưới — <b>không cần bấm bất kỳ nút nào</b> — AI sẽ lập tức đọc hiểu nội dung, tự chọn 1 trong <b>108 Tư Duy Văn Bản &amp; Vai Diễn</b> (Châu Tinh Trì, Trường Giang, Nguyễn Ngọc Ngạn, Chính kịch, Kinh kịch, Tin vui, Tin buồn...) và biến văn bản thành <b>kích ngòi diễn xuất</b> cho giọng đọc!</div>
           </div>
         </div>
 
@@ -1203,17 +1343,21 @@
         <form class="editor-card" id="ttsForm">
           <div class="editor-header">
             <label for="recordTitle" style="display:flex;align-items:center;gap:8px;">
-              <span style="font-size:12px;font-weight:700;color:#64748b;">TIÊU ĐỀ:</span>
+              <span style="font-size:13px;font-weight:900;color:#2e1065;">📝 TIÊU ĐỀ BẢN THU:</span>
               <input type="text" id="recordTitle" class="title-input" value="TVC Quảng Cáo & Bản Tin Truyền Hình (48kHz)">
             </label>
             <div class="sample-scripts-bar">
-              <span style="font-size:12px;color:#64748b;font-weight:600;">Kịch bản mẫu:</span>
+              <span style="font-size:13px;color:#2e1065;font-weight:900;">🎬 Kịch bản mẫu:</span>
               <button type="button" class="sample-pill" data-tpl="kth23_claude" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;font-weight:800;">🎭 Huỳnh Tấn Khang: Bản Tin AI Tài Chính (Đủ Nhịp Vui · Buồn · Nhận Định)</button>
               <button type="button" class="sample-pill" data-tpl="story">📖 Truyện Bi Kịch &amp; Cao Trào (Nhịp Buồn · Nhận Định)</button>
               <button type="button" class="sample-pill" data-tpl="htv_news">🌴 Điểm Tin Sài Gòn (Huỳnh Gia Mẫn)</button>
               <button type="button" class="sample-pill" data-tpl="vtv_news">🌸 Bản Tin Hà Nội (Nguyễn Hà Khuê)</button>
               <button type="button" class="sample-pill" data-tpl="tvc_luxury">💎 TVC Bất Động Sản &amp; Spa</button>
               <button type="button" class="sample-pill" data-tpl="tvc_sale">🔥 TVC Siêu Thị Khuyến Mãi</button>
+              <button type="button" class="sample-pill" data-tpl="stephen_chow" style="border-color:#f59e0b !important;background:#fffbeb !important;color:#b45309 !important;">🎬 Hài Châu Tinh Trì (Tỉnh Bơ &amp; Lầy)</button>
+              <button type="button" class="sample-pill" data-tpl="truong_giang" style="border-color:#ec4899 !important;background:#fdf2f8 !important;color:#be185d !important;">🤣 Hài Trường Giang (Vô Duyên Duyên Dáng)</button>
+              <button type="button" class="sample-pill" data-tpl="ngoc_ngan_ghost" style="border-color:#6366f1 !important;background:#eef2ff !important;color:#3730a3 !important;">👻 Truyện Ma Nguyễn Ngọc Ngạn</button>
+              <button type="button" class="sample-pill" data-tpl="kinh_kich_epic" style="border-color:#dc2626 !important;background:#fef2f2 !important;color:#991b1b !important;">⚔️ Kinh Kịch &amp; Sử Thi Cổ Trang</button>
             </div>
           </div>
 
@@ -1309,7 +1453,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <div>
               <h3 style="margin:0;font-size:15px;font-weight:800;color:#92400e;">🧬 AI Học & Tái Tạo Thêm Giọng TVC Quảng Cáo Mới (Zero-Shot 48kHz)</h3>
-              <p style="margin:4px 0 0 0;font-size:12.5px;color:#78350f;">Nhập từ khóa hoặc dán link YouTube của bất kỳ TVC quảng cáo nào — Server Công Ty sẽ tự tách giọng sạch và tạo Model mới trong 10 giây.</p>
+              <p style="margin:4px 0 0 0;font-size:12.5px;color:#78350f;">Nhập từ khóa hoặc dán link YouTube của bất kỳ TVC quảng cáo nào — GitHub Cloud Compute sẽ tự tách giọng sạch và tạo Model mới trên Cloud.</p>
             </div>
           </div>
           <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
@@ -2330,6 +2474,34 @@
 ];
 
       const TEMPLATES = {
+        stephen_chow: {
+          title: "Tuyệt Đỉnh Công Phu Đời Thường — Phong Cách Châu Tinh Trì (Hài Tỉnh Bơ & Lầy Lội)",
+          voice: "Huỳnh Tấn Khang — Nam Kể Chuyện & Tâm Sự Đời Sống (Miền Nam)",
+          preset: "stephen_chow",
+          personaId: "P001",
+          text: "Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi. Đợi ta uống miếng trà đá xong là ngươi biết tay!"
+        },
+        truong_giang: {
+          title: "Chuyện Nhà Xóm Nhỏ — Phong Cách Trường Giang (Hài Đời Thường Vô Duyên Duyên Dáng)",
+          voice: "Lê Minh Khôi — Nam Giải Trí & Gameshow Sài Gòn",
+          preset: "truong_giang",
+          personaId: "P013",
+          text: "Trời đất ơi bà con cô bác coi kìa, mới sáng sớm chưa kịp súc miệng mà cổ đã qua mượn tiền đi làm móng tay rồi đó! Tui nói thiệt chớ không phải tui nhiều chuyện đâu nghen, mà cái tính cổ ngộ lắm, ai khen đẹp là cười tít mắt quên luôn tiền nợ tháng trước. Bởi vậy người ta nói cái nết đánh chết cái đẹp, mà cổ thì cái nết đi chơi xa chưa thấy về!"
+        },
+        ngoc_ngan_ghost: {
+          title: "Đêm Mưa Căn Nhà Cuối Hẻm — Phong Cách Truyện Ma Nguyễn Ngọc Ngạn",
+          voice: "Trần Bảo Sơn — Nam Truyện Đêm Khuya Hà Nội",
+          preset: "ngoc_ngan_horror",
+          personaId: "P025",
+          text: "Đêm hôm ấy, cơn mưa rừng đổ xuống lạnh buốt cả sống lưng. Căn nhà gỗ cuối con dốc đã bỏ hoang suốt mười năm nay, bỗng nhiên phát ra tiếng kẽo kẹt từ chiếc võng cũ kỹ trong buồng tối. Ông Tư cầm chiếc đèn dầu bước chậm từng bước, ngọn bấc leo lét chiếu vào tấm gương mờ đục... và rồi ông chết lặng khi thấy bóng một người đàn bà tóc xõa dài đang đứng ngay sau lưng mình."
+        },
+        kinh_kich_epic: {
+          title: "Hào Khí Sơn Hà — Phong Cách Kinh Kịch & Sử Thi Cổ Trang",
+          voice: "Đặng Quốc Khánh — Nam Ký Sự & Tài Liệu Bắc",
+          preset: "kinh_kich",
+          personaId: "P061",
+          text: "Trống trận đã vang rền khắp bốn cõi sơn hà! Đại quân nghe lệnh: giữ vững thành trì, một tấc đất của tổ tiên quyết không lùi bước! Dù cho giáo gãy tên bay, chí đại trượng phu ngàn thu vẫn sáng mãi cùng nhật nguyệt!"
+        },
         kth23_claude: {
           title: "Bản Tin AI & Tài Chính Cá Nhân — Huỳnh Tấn Khang (Đủ Nhịp Vui · Buồn · Nhận Định)",
           voice: "Huỳnh Tấn Khang — Nam Kể Chuyện & Tâm Sự Đời Sống (Miền Nam)",
@@ -2448,13 +2620,275 @@
         autoAiStatusBadge.style.color = autoAiCheckbox.checked ? "#065f46" : "#64748b";
       });
 
+      // ══════════════════════════════════════════════════════════════════════════
+      // KHO 108 TƯ DUY VĂN BẢN & VAI DIỄN (108 SCRIPT THINKING & ACTING PERSONAS)
+      // Văn bản là cái kích ngòi để Model AI tự hiểu tâm lý, nhịp thở, nhấn nhá!
+      // ══════════════════════════════════════════════════════════════════════════
+      const PERSONA_CATEGORIES = [
+        { id: "all", name: "🌟 Tất cả (108 Tư Duy)" },
+        { id: "chow", name: "🎬 Hài Châu Tinh Trì (12)" },
+        { id: "giang", name: "🤣 Hài Trường Giang & Đời Thường (12)" },
+        { id: "horror", name: "👻 Truyện Ma Nguyễn Ngọc Ngạn (12)" },
+        { id: "drama", name: "🎭 Chính Kịch & Điện Ảnh (12)" },
+        { id: "tragedy", name: "🥺 Bi Kịch & Tâm Sự Nước Mắt (12)" },
+        { id: "epic", name: "⚔️ Kinh Kịch & Sử Thi Cổ Trang (12)" },
+        { id: "mc", name: "📺 MC Truyền Hình & Gameshow (12)" },
+        { id: "healing", name: "🌙 Podcast Chữa Lành & Triết Lý (12)" },
+        { id: "tvc_koc", name: "🔥 TVC Luxury & KOC Gen Z (12)" }
+      ];
+
+      const RAW_PERSONA_GROUPS = [
+        {
+          cat: "chow",
+          tag: "[châu tinh trì]",
+          cue: "[cười]",
+          paraBreak: "0.42s",
+          regex: /(châu tinh trì|tuyệt kỹ|võ học|như lai|thần chưởng|ăn hiếp|sư phụ|tiểu nhị|tỉnh bơ|lầy lội|bá đạo|nội công|cao thủ|vô địch|hài|cười|nhảm|bựa)/i,
+          items: [
+            ["Hài Châu Tinh Trì — Tỉnh Bơ Nói Chuyện Vô Lý", "Nhịp nhanh 1.06x xen kẽ dừng đột ngột, giọng nghiêm túc giả bộ rồi bật cười [cười]"],
+            ["Hài Châu Tinh Trì — Anh Hùng Rơm Khoác Lác", "Tông giọng hùng hồn phóng đại quá mức rồi bất ngờ tụt hơi thực tế cực kỳ hài hước"],
+            ["Hài Châu Tinh Trì — Tự Trào Nghèo Mà Sĩ Diện", "Nhấn mạnh các từ tự tôn cao ngất nhưng kết câu chùng nhẹ kiểu tự thương thân"],
+            ["Hài Châu Tinh Trì — Đấu Khẩu Chợ Búa Siêu Tốc", "Bắn chữ liên thanh, ngắt nhịp dồn dập, nhấn trọng âm sắc lẹm vào từ khóa cà khịa"],
+            ["Hài Châu Tinh Trì — Tỏ Tình Lầy Lội Mà Chân Thành", "Nửa đầu bông đùa [cười], nửa sau bất ngờ lắng lại cực kỳ tình cảm"],
+            ["Hài Châu Tinh Trì — Cao Thủ Ẩn Danh Giả Ngơ", "Giọng đều đều ngây ngô như không biết gì nhưng câu chốt đanh thép bất ngờ"],
+            ["Hài Châu Tinh Trì — Khóc Cười Lẫn Lộn (Bi Hài Kịch)", "Vừa than thở [thở dài] câu trước đã lập tức bật cười [cười] tự an ủi ở câu sau"],
+            ["Hài Châu Tinh Trì — Tuyệt Đỉnh Kungfu Hô Chiêu Thức", "Lấy hơi sâu [hắng giọng], hô vang tên chiêu thức rồi hạ giọng bình phẩm đời thường"],
+            ["Hài Châu Tinh Trì — Tiểu Nhị Lanh Chanh Miệng Lưỡi", "Nhịp nảy tưng bừng, lên giọng cuối câu tạo cảm giác đon đả hoạt ngôn"],
+            ["Hài Châu Tinh Trì — Quan Xử Án Cà Khịa", "Giọng uy nghiêm giả tạo [hắng giọng] pha lẫn nhịp điệu châm biếm sâu cay"],
+            ["Hài Châu Tinh Trì — Phản Diện Ngốc Nghếch Đáng Yêu", "Cười đắc ý [cười] đầu câu nhưng cuối câu hốt hoảng vì kế hoạch phản tác dụng"],
+            ["Hài Châu Tinh Trì — Triết Lý Vỉa Hè Sâu Cay", "Nhịp đọc chậm rãi như giảng đạo lý lớn nhưng ví dụ toàn chuyện ăn uống đời thường"]
+          ]
+        },
+        {
+          cat: "giang",
+          tag: "[trường giang]",
+          cue: "[cười]",
+          paraBreak: "0.44s",
+          regex: /(trường giang|mười khó|bà con|cô bác|trời đất ơi|tui nói thiệt|vô duyên|nhiều chuyện|hàng xóm|vợ chồng|mượn tiền|cà khịa|tưng tửng|ngộ lắm|xóm nhỏ|quê mình)/i,
+          items: [
+            ["Hài Trường Giang — Tưng Tửng Vô Duyên Duyên Dáng", "Nhịp đời thường rủ rỉ, nhấn nhá chữ 'Trời đất ơi', thả câu tỉnh queo làm người nghe bật cười"],
+            ["Hài Trường Giang — Ông Mười Khó Khó Tính Mà Thương Người", "Giọng cằn nhằn [hắng giọng] đầu câu nhưng câu kết lại mềm lòng ấm áp"],
+            ["Hài Trường Giang —Bóc Phốt Hàng Xóm Duyên Dáng", "Nhịp kể chuyện buôn dưa lê rộn ràng, hạ giọng thì thầm chỗ bí mật rồi bật cười [cười]"],
+            ["Hài Trường Giang — Sợ Vợ Mà Hay Ra Dẻ", "Đầu câu tuyên bố cứng rắn, cuối câu nhỏ giọng rụt rè khi nhắc tới nóc nhà"],
+            ["Hài Trường Giang — Tung Hứng Gameshow Nhanh Trí", "Nhịp nảy chữ linh hoạt, bắt lỗi câu chữ cực nhanh, tạo tiếng cười [cười] tự nhiên"],
+            ["Hài Trường Giang — Kể Chuyện Quê Hương Mộc Mạc", "Giọng thân tình gần gũi như đang ngồi uống trà đá kể chuyện xóm giềng"],
+            ["Hài Trường Giang — Chặt Chém Bạn Diễn Tỉnh Rụi", "Đặt câu hỏi tu từ ngắn gọn, nghỉ 0.3s rồi tung câu chốt hạ không kịp đỡ"],
+            ["Hài Trường Giang — Than Nghèo Kể Khổ Kiểu Hài Hước", "Thở dài nhẹ [thở dài] rồi kể lể chi tiết vụn vặt bằng nhịp điệu lạc quan"],
+            ["Hài Trường Giang — Ông Chủ Quán Ăn Bình Dân", "Giọng mời chào đon đả, miêu tả món ăn dân dã nghe là thèm ngay"],
+            ["Hài Trường Giang — Khuyên Nhủ Đời Thường Hài Mà Thấm", "Pha trò nhẹ nhàng để dẫn vào lời khuyên chân tình cho người trẻ"],
+            ["Hài Trường Giang — Giả Giọng Điệu Đà Trêu Chọc", "Kéo dài nguyên âm cuối câu tạo nét duyên ngầm hóm hỉnh"],
+            ["Hài Trường Giang — Chốt Hạ Bất Ngờ (Twist Cuối Câu)", "Dẫn dắt nghiêm túc suốt cả đoạn rồi bẻ lái cực gắt ở 5 chữ cuối cùng"]
+          ]
+        },
+        {
+          cat: "horror",
+          tag: "[nguyễn ngọc ngạn]",
+          cue: "[thở dài]",
+          paraBreak: "0.75s",
+          regex: /(nguyễn ngọc ngạn|truyện ma|bóng đen|đêm mưa|nghĩa địa|bỏ hoang|lạnh buốt|rùng rợn|ma mị|kẽo kẹt|tiếng bước chân|gương mờ|kinh dị|ám ảnh|hồn ma|căn nhà hoang|nửa đêm)/i,
+          items: [
+            ["Nguyễn Ngọc Ngạn — Truyện Ma Đêm Khuya Kinh Điển", "Nhịp chậm 0.91x, trầm ấm ma mị, ngắt nghỉ sâu 0.75s trước chi tiết rùng mình"],
+            ["Nguyễn Ngọc Ngạn — Miêu Tả Không Gian Hoang Vắng", "Hạ thấp âm lượng, kéo dài các từ tượng thanh ('kẽo kẹt', 'lạnh buốt') gây sởn gai ốc"],
+            ["Nguyễn Ngọc Ngạn — Cao Trào Phát Hiện Bóng Ma", "Đang chậm rãi bỗng dồn nhịp gấp gáp ở mệnh đề cuối khi chạm mặt bí ẩn"],
+            ["Nguyễn Ngọc Ngạn — Kể Chuyện Tâm Linh Nhân Quả", "Giọng điềm đạm, chiêm nghiệm sâu sắc về nghiệp báo và lòng người"],
+            ["Nguyễn Ngọc Ngạn — Hồi Ức Làng Quê Xưa Ám Ảnh", "Nhịp kể trầm buồn, gợi hình ảnh ngọn đèn dầu và tiếng mưa rơi đêm vắng"],
+            ["Nguyễn Ngọc Ngạn — Trinh Thám Điều Tra Vụ Án Đêm", "Giọng sắc lạnh, phân tích từng manh mối với độ căng thẳng tăng dần"],
+            ["Nguyễn Ngọc Ngạn — Tiếng Thì Thầm Trong Căn Phòng Kín", "Giọng nhỏ, sát micro, có tiếng thở dài [thở dài] lạnh lẽo giữa câu"],
+            ["Nguyễn Ngọc Ngạn — Giải Mã Bí Ẩn Dân Gian", "Giọng học giả uyên bác dẫn dắt người nghe vào truyền thuyết cổ xưa"],
+            ["Nguyễn Ngọc Ngạn — Độc Thoại Kẻ Bị Ám Ảnh", "Nhịp thở gấp, câu ngắn đứt quãng thể hiện tâm lý hoang mang tột độ"],
+            ["Nguyễn Ngọc Ngạn — Bước Chân Nửa Đêm Ngoài Hành Lang", "Nhịp đều đặn như tiếng đồng hồ tích tắc, tạo áp lực tâm lý nghẹt thở"],
+            ["Nguyễn Ngọc Ngạn — Lời Cảnh Báo Trước Khi Trời Tối", "Nhấn trầm các động từ cấm kỵ, tạo dư âm ám ảnh kéo dài"],
+            ["Nguyễn Ngọc Ngạn — Kết Truyện Mở Đầy Ám Ảnh", "Hạ giọng thật khẽ ở câu cuối cùng rồi để khoảng lặng sâu hun hút"]
+          ]
+        },
+        {
+          cat: "drama",
+          tag: "[chính kịch]",
+          cue: "[hắng giọng]",
+          paraBreak: "0.54s",
+          regex: /(chính kịch|đối đầu|tổng tài|quyền lực|thương trường|điện ảnh|danh dự|phản bội|bản lĩnh|tuyên bố|đanh thép|sự thật|công lý|phán quyết)/i,
+          items: [
+            ["Chính Kịch Điện Ảnh — Đối Đầu Căng Thẳng", "Giọng đanh thép, nén cảm xúc, nhấn mạnh từng chữ như đinh đóng cột"],
+            ["Chính Kịch Điện Ảnh — Tổng Tài Lạnh Lùng Quyền Lực", "Tông trầm ổn định, nhịp chậm rãi uy quyền, không cần cao giọng vẫn áp đảo"],
+            ["Chính Kịch Điện Ảnh — Độc Thoại Nội Tâm Giằng Xé", "Nhịp thở sâu [thở dài], chuyển từ trầm tư sang bùng nổ ở câu chất vấn"],
+            ["Chính Kịch Điện Ảnh — Luật Sư Tranh Biện Trước Tòa", "Rõ từng âm tiết, lập luận sắc bén [hắng giọng], nhấn mạnh bằng chứng thép"],
+            ["Chính Kịch Điện Ảnh — Giây Phút Lật Mở Sự Thật", "Ngắt nhịp bất ngờ trước từ khóa, tạo cú sốc tâm lý cho người nghe"],
+            ["Chính Kịch Điện Ảnh — Lời Thề Danh Dự Không Lùi Bước", "Giọng vang, dày, độ nén thanh quản cao tạo sức nặng ngàn cân"],
+            ["Chính Kịch Điện Ảnh — Thương Thuyết Thương Trường Tỷ Đô", "Điềm tĩnh, sắc sảo, nhấn khoản cuối đầy tự tin và bản lĩnh"],
+            ["Chính Kịch Điện Ảnh — Người Cha Nghiêm Khắc Nhưng Bao Dung", "Ngoài lạnh trong ấm, câu đầu nghiêm nghị [hắng giọng], câu sau dịu lại"],
+            ["Chính Kịch Điện Ảnh — Nữ Hoàng Công Sở Bản Lĩnh", "Giọng sang trọng, dứt khoát, làm chủ hoàn toàn nhịp điệu cuộc hội thoại"],
+            ["Chính Kịch Điện Ảnh — Cảnh Báo Nguy Cơ Sinh Tử", "Nhịp nhanh, khẩn trương, cắt gọn các khoảng nghỉ thừa"],
+            ["Chính Kịch Điện Ảnh — Sự Thức Tỉnh Sau Biến Cố", "Bắt đầu trầm lắng rồi vươn lên mạnh mẽ đầy nghị lực ở đoạn kết"],
+            ["Chính Kịch Điện Ảnh — Khoảnh Khắc Tha Thứ Cao Thượng", "Giọng ấm, buông nhẹ nỗi giận dữ, để lại sự bình yên sâu lắng"]
+          ]
+        },
+        {
+          cat: "tragedy",
+          tag: "[bi kịch]",
+          cue: "[thở dài]",
+          paraBreak: "0.68s",
+          regex: /(khóc|nước mắt|buồn|đau|cô đơn|tuyệt vọng|mệt mỏi|viện phí|mất mát|nghẹn ngào|xót xa|chia tay|lạnh nhạt|bi kịch|cay đắng|tủi thân|bơ vơ)/i,
+          items: [
+            ["Bi Kịch Nước Mắt — Nghẹn Ngào Tuyệt Vọng", "Giọng run nhẹ, có tiếng thở dài [thở dài], tốc độ 0.93x ngân sâu cuối câu"],
+            ["Bi Kịch Nước Mắt — Đêm Mưa Chia Ly Không Hẹn Ngày Gặp", "Trầm buồn, nhịp đứt quãng như đang kìm nén tiếng nấc"],
+            ["Bi Kịch Nước Mắt — Nỗi Đau Thầm Lặng Giấu Sau Nụ Cười", "Giọng nhẹ bẫng, cố tỏ ra bình thản nhưng chữ cuối chùng xuống xót xa"],
+            ["Bi Kịch Nước Mắt — Lời Tâm Sự Của Người Con Xa Xứ", "Hoài niệm, ấm áp pha lẫn nỗi nhớ nhà da diết nơi đất khách"],
+            ["Bi Kịch Nước Mắt — Cú Điện Thoại Báo Tin Buồn", "Đứng hình 0.6s giữa câu, giọng lạc đi vì bàng hoàng"],
+            ["Bi Kịch Nước Mắt — Sự Hy Sinh Thầm Lặng Của Mẹ", "Giọng dịu dàng, bao dung, chạm thẳng vào tầng cảm xúc sâu nhất"],
+            ["Bi Kịch Nước Mắt — Hối Hận Muộn Màng", "Câu hỏi tu từ lặp lại đầy day dứt [thở dài], nhịp chậm nặng nề"],
+            ["Bi Kịch Nước Mắt — Cô Độc Giữa Thành Phố Hoa Lệ", "Giọng mảnh, trải dài như tiếng thở đêm khuya"],
+            ["Bi Kịch Nước Mắt — Lá Thư Cuối Cùng Để Lại", "Đọc chậm từng chữ, trân trọng và xúc động nghẹn lời"],
+            ["Bi Kịch Nước Mắt — Vực Dậy Từ Đống Tro Tàn", "Từ tận cùng nỗi buồn [buồn] dần sáng lên tia hy vọng kiên cường"],
+            ["Bi Kịch Nước Mắt — Chuyện Tình Dang Dở Tuổi Thanh Xuân", "Ngọt ngào ở hồi ức đầu câu, man mác tiếc nuối ở mệnh đề kết"],
+            ["Bi Kịch Nước Mắt — Giọt Nước Mắt Hạnh Phúc Ngày Đoànụ", "Vừa khóc [thở dài] vừa mỉm cười [cười] khi vượt qua giông bão"]
+          ]
+        },
+        {
+          cat: "epic",
+          tag: "[kinh kịch]",
+          cue: "[hắng giọng]",
+          paraBreak: "0.50s",
+          regex: /(kinh kịch|cổ trang|sử thi|trống trận|sơn hà|kiếm hiệp|tiên hiệp|cung đấu|hoàng đế|tướng quân|thiên hạ|anh hùng|vạn tuế|giang hồ|chiến trường)/i,
+          items: [
+            ["Kinh Kịch & Cổ Trang — Hào Khí Đại Tướng Quân Xuất Trận", "Lấy hơi bụng [hắng giọng], ngân vang hào sảng, nhịp điệu mạnh mẽ"],
+            ["Kinh Kịch & Cổ Trang — Thánh Chỉ Hoàng Đế Uy Nghiêm", "Nhịp ngắt từng cụm 4 chữ đĩnh đạc, âm sắc rền vang quyền uy"],
+            ["Kinh Kịch & Cổ Trang — Cung Đấu Thâm Sâu Khó Dò", "Giọng êm như nhung nhưng ẩn chứa lưỡi dao sắc lạnh ở từ cuối"],
+            ["Kinh Kịch & Cổ Trang — Kiếm Hiệp Giang Hồ Khoái Ý Ân Cừu", "Nhịp đọc phóng khoáng, hào hiệp, dứt khoát như đường kiếm"],
+            ["Kinh Kịch & Cổ Trang — Tiên Hiệp Độ Kiếp Phi Thăng", "Giọng vang vọng siêu thoát, nhấn mạnh các thuật ngữ tu tiên kỳ vĩ"],
+            ["Kinh Kịch & Cổ Trang — Kể Sử Thi Ngàn Năm Văn Hiến", "Trang trọng, tự hào, ngân dài ở tên đất tên người lịch sử"],
+            ["Kinh Kịch & Cổ Trang — Mỹ Nhân Khuynh Quốc Khuynh Thành", "Giọng mềm mại, đài các, uyển chuyển theo nhịp thơ cổ"],
+            ["Kinh Kịch & Cổ Trang — Quân Sư Bàn Kế Sách Định Thiên Hạ", "Điềm tĩnh, thấu suốt thiên cơ [hắng giọng], nhấn sâu vào chữ 'Kế'"],
+            ["Kinh Kịch & Cổ Trang — Khúc Bi Ca Nơi Chiến Trường Xưa", "Trầm hùng, bi tráng, tưởng niệm những bậc anh hùng vị quốc"],
+            ["Kinh Kịch & Cổ Trang — Tuyệt Tình Cốc Lạnh Giá", "Giọng băng giá, xa xăm, dứt tình đoạn nghĩa"],
+            ["Kinh Kịch & Cổ Trang — Thuyết书 Nhân Kể Chuyện Trà Lầu", "Nhịp gõ quạt kể chuyện hấp dẫn, dừng đúng lúc gay cấn nhất"],
+            ["Kinh Kịch & Cổ Trang — Khải Hoàn Ca Chiến Thắng Trở Về", "Tươi sáng, hùng tráng, tràn ngập niềm tự hào dân tộc"]
+          ]
+        },
+        {
+          cat: "mc",
+          tag: "[vui]",
+          cue: "[hắng giọng]",
+          paraBreak: "0.46s",
+          regex: /(bản tin|thời sự|kính chào|khán giả|chương trình|mc|truyền hình|kinh tế|tài chính|công nghệ|anthropic|claude|điểm tin|phóng sự|vtv|htv)/i,
+          items: [
+            ["MC Lại Văn Sâm — Điềm Đạm, Ấm Áp & Hóm Hỉnh", "Giọng Bắc chuẩn mực, nhấn nhá thông minh, gần gũi với mọi thế hệ"],
+            ["MC Trấn Thành — Giàu Cảm Xúc, Biến Hóa & Chạm Trái Tim", "Chuyển mượt giữa lúc sôi nổi [vui] và lúc lắng đọng triết lý [nhận định]"],
+            ["MC Việt Thảo — Kể Chuyện Đời Thường Cuốn Hút Từng Chữ", "Nhịp chậm rãi, rõ ràng, nhấn chữ cực kỳ duyên dáng và dễ hiểu"],
+            ["BTV Thời Sự VTV 19h — Chính Thống, Đĩnh Đạc & Tin Cậy", "Chuẩn phát thanh quốc gia, tròn vành rõ chữ, nhấn số liệu chính xác"],
+            ["BTV Điểm Tin Sài Gòn HTV — Năng Động, Thân Thiện & Hiện Đại", "Nhịp nhanh vừa phải, giọng Nam Bộ tươi sáng giàu sức sống"],
+            ["MC Bản Tin Tài Chính & AI — Sắc Sảo, Logic & Hiện Đại", "Nhấn rõ các con số, thuật ngữ công nghệ và chốt Khoản Nhận Định đắt giá"],
+            ["MC Gameshow Giải Trí Cuối Tuần — Bùng Nổ Năng Lượng", "Tốc độ 1.05x, giọng tươi vui [vui] khuấy động không khí trường quay"],
+            ["MC Hoa Hậu & Sự Kiện Gala — Sang Trọng, Lịch Lãm", "Giọng vang sáng, ngân chữ trang trọng khi xướng tên vinh danh"],
+            ["BLV Thể Thao Sân Cỏ — Cuồng Nhiệt & Nghẹt Thở", "Dồn nhịp cực nhanh khi bóng vào vòng cấm, bùng nổ cảm xúc"],
+            ["MC Phóng Sự Ký Sự Văn Hóa — Truyền Cảm & Giàu Hình Ảnh", "Đọc như vẽ ra bức tranh phong cảnh và con người Việt Nam"],
+            ["MC Talkshow Khởi Nghiệp — Truyền Cảm Hứng Bứt Phá", "Giọng chắc khỏe, khơi dậy tinh thần dám nghĩ dám làm"],
+            ["MC Dự Báo Thời Tiết & Giao Thông — Dễ Nghe, Rõ Ràng", "Nhịp điệu nhẹ nhàng, nhấn rõ tên địa phương và khung giờ"]
+          ]
+        },
+        {
+          cat: "healing",
+          tag: "[nhận định]",
+          cue: "[thở dài]",
+          paraBreak: "0.62s",
+          regex: /(chữa lành|bình yên|tâm hồn|chiêm nghiệm|podcast|radio|đêm muộn|lắng nghe|thấu hiểu|buông bỏ|hạnh phúc|triết lý|cuộc sống|bài học|nhận định)/i,
+          items: [
+            ["Podcast Chữa Lành 0h — Thủ Thỉ Dịu Dàng Như Gió Đêm", "Giọng ấm sát micro, nhịp chậm 0.94x vỗ về những tâm hồn mỏi mệt"],
+            ["Triết Lý Nhân Sinh — Điềm Nhiên Giữa Dòng Đời Vội Vã", "Nhịp đọc thư thái, mỗi câu đều đọng lại dư vị suy ngẫm [nhận định]"],
+            ["Radio Tâm Sự Đêm Mưa — Lắng Nghe Không Phán Xét", "Đồng cảm sâu sắc, khoảng nghỉ giữa câu êm ái như hơi thở"],
+            ["Sách Nói Self-Help — Đánh Thức Sức Mạnh Nội Tại", "Rõ ràng, ấm áp, truyền động lực tích cực từng bước một"],
+            ["Tản Văn Mùa Thu Hà Nội — Chất Thơ & Hoài Niệm", "Ngân nhẹ các tính từ gợi cảm, nhịp điệu mềm mại lãng mạn"],
+            ["Chuyện Đời Thường Miền Tây — Ngọt Ngào Tình Quê", "Giọng Nam Bộ hiền hòa, mộc mạc, nghe là thấy bình yên"],
+            ["Thiền & Chánh Niệm — Thư Giãn Sâu Từng Hơi Thở", "Nhịp cực chậm, thanh tịnh, hướng dẫn buông thư toàn bộ căng thẳng"],
+            ["Tâm Lý Học Tình Yêu — Thấu Hiểu Trái Tim", "Phân tích tinh tế, dịu dàng gỡ rối những khúc mắc tình cảm"],
+            ["Góc Nhìn Trưởng Thành — Đi Qua Tổn Thương", "Trầm tĩnh, từng trải, nhìn lại quá khứ bằng sự bao dung"],
+            ["Đọc Thư Thính Giả — Chân Thành & Xúc Động", "Đặt mình vào người viết thư, truyền tải trọn vẹn nỗi niềm"],
+            ["Cà Phê Sáng Cuối Tuần — Nhẹ Nhàng & Tươi Mới", "Tông giọng sáng ấm, khởi đầu ngày mới bình an"],
+            ["Đúc Kết Khoản Nhận Định Cuối Bài — Sâu Sắc & Đắt Giá", "Hạ nhịp đĩnh đạc, nhấn trọng âm vào thông điệp cốt lõi cuối cùng"]
+          ]
+        },
+        {
+          cat: "tvc_koc",
+          tag: "[vui]",
+          cue: "[cười]",
+          paraBreak: "0.40s",
+          regex: /(khuyến mãi|giảm giá|chốt đơn|freeship|voucher|tvc|bất động sản|nghỉ dưỡng|thượng lưu|spa|review|tiktok|reels|unbox|săn sale|deal hời)/i,
+          items: [
+            ["TVC Bất Động Sản Thượng Lưu — Sang Trọng & Đẳng Cấp", "Giọng trầm ấm quý phái, nhịp 0.95x tôn vinh giá trị độc bản"],
+            ["KOC Gen Z Chốt Đơn Mega Sale — Năng Lượng 200%", "Tốc độ nhanh, nảy chữ cực sung, kích thích bấm giỏ hàng ngay"],
+            ["Review Mỹ Phẩm & Skincare — Tinh Tế, Thuyết Phục", "Giọng trong trẻo, thân thiện như cô bạn thân chia sẻ bí quyết"],
+            ["TVC Ngân Hàng & Fintech — Hiện Đại, An Toàn, Vững Chãi", "Phát âm chuẩn xác, tạo niềm tin tuyệt đối về tài chính"],
+            ["Food Reviewer Ẩm Thực Đường Phố — Nghe Là Đói Bụng", "Nhấn mạnh các tính từ hương vị ('giòn rụm', 'đậm đà', 'thơm lừng')"],
+            ["TVC Ô Tô & Công Nghệ Tương Lai — Mạnh Mẽ, Đột Phá", "Giọng nam/nữ hiện đại, dứt khoát, giàu chất điện ảnh"],
+            ["TikTok Storytime Bắt Trend — Tự Nhiên Như Nói Chuyện Thật", "Mở đầu bằng câu Hook cực gắt giữ chân người xem trong 3 giây đầu"],
+            ["TVC Gia Đình & Sữa Dinh Dưỡng — Ấm Áp Yêu Thương", "Giọng ngọt ngào, tràn đầy tình mẫu tử và niềm vui gia đình"],
+            ["Unbox Đồ Công Nghệ Flagship — Hào Hứng & Chuyên Sâu", "Nhịp nhanh, nhấn rõ thông số nổi bật và trải nghiệm thực tế"],
+            ["TVC Resort & Du Lịch Biển — Sảng Khoái, Tự Do", "Giọng mở rộng, tươi mát như làn gió biển mùa hè"],
+            ["KOC Chia Sẻ MẹoTài Chính Cá Nhân — Thông Minh, Gần Gũi", "Giải thích chuyện tiền nong phức tạp thành cực kỳ dễ hiểu"],
+            ["TVC Tết Đoàn Viên — Xúc Động & Rộn Ràng Sum Họp", "Kết hợp nhịp rộn ràng ngày xuân với sự ấm áp khi trở về nhà"]
+          ]
+        }
+      ];
+
+      const PERSONAS_108 = [];
+      let pCounter = 1;
+      RAW_PERSONA_GROUPS.forEach(grp => {
+        grp.items.forEach(pair => {
+          const id = "P" + String(pCounter).padStart(3, "0");
+          PERSONAS_108.push({
+            id,
+            num: pCounter,
+            cat: grp.cat,
+            name: pair[0],
+            desc: pair[1],
+            tag: grp.tag,
+            cue: grp.cue,
+            paraBreak: grp.paraBreak,
+            regex: grp.regex
+          });
+          pCounter++;
+        });
+      });
+
+      let selectedPersonaId = "AUTO"; // "AUTO" means AI auto-detects from text
+      let currentPersonaCat = "all";
+
       const SAD_WORDS_RE = /(khóc|nước mắt|buồn|đau|cô đơn|tuyệt vọng|mệt mỏi|hạn chế|khó khăn|xoay sở|viện phí|mất|nghẹn|xót xa|lạnh nhạt|bi kịch|cay đắng|tủi|nhắc lại từ đầu|lo lắng|áp lực|nợ|thiếu|chật vật)/i;
       const HAPPY_WORDS_RE = /(vui|hạnh phúc|tuyệt vời|mở rộng|hỗ trợ|rõ ràng|lâu dài|dễ dàng|chỉ cần hỏi|phần còn lại giúp bạn|tươi|nụ cười|bùng nổ|thành công|đột phá|khuyến mãi|miễn phí|quà tặng|tự hào|thuận tiện|nhanh chóng|hào hứng|sảng khoái|không cần phải nhớ)/i;
       const INSIGHT_WORDS_RE = /(nhận định|tóm lại|nhìn chung|đáng chú ý|có thể thấy|bài học|ý nghĩa|tương lai|chiến lược|cốt lõi|quan trọng nhất|đánh dấu bước ngoặt|mở ra hướng đi)/i;
 
-      function detectSentenceEmotionClient(sent) {
+      function detectBestPersonaFromText(rawText) {
+        if (selectedPersonaId !== "AUTO") {
+          const pinned = PERSONAS_108.find(p => p.id === selectedPersonaId);
+          if (pinned) return pinned;
+        }
+        const clean = (rawText || "").replace(/\s*\[[^\]]+\]\s*/g, " ").trim();
+        let best = PERSONAS_108[65]; // Default: MC Bản Tin Tài Chính & AI (#66)
+        let bestScore = -1;
+        for (const p of PERSONAS_108) {
+          let score = 0;
+          const matches = clean.match(new RegExp(p.regex.source, "gi"));
+          if (matches) score += matches.length * 10;
+          // Boost specific sub-personas based on text keywords
+          const nameWords = p.name.toLowerCase().split(/[\s—,-]+/).filter(w => w.length > 3);
+          for (const nw of nameWords) {
+            if (clean.toLowerCase().includes(nw)) score += 6;
+          }
+          if (score > bestScore) {
+            bestScore = score;
+            best = p;
+          }
+        }
+        return best;
+      }
+
+      function detectSentenceEmotionClient(sent, persona) {
         const s = (sent || "").trim();
         if (INSIGHT_WORDS_RE.test(s)) return "insight";
+        if (persona && persona.cat === "chow") return "chow";
+        if (persona && persona.cat === "giang") return "giang";
+        if (persona && persona.cat === "horror") return "horror";
+        if (persona && persona.cat === "epic") return "epic";
+        if (persona && persona.cat === "drama") return "drama";
         const sadHits = (s.match(new RegExp(SAD_WORDS_RE.source, "gi")) || []).length;
         const happyHits = (s.match(new RegExp(HAPPY_WORDS_RE.source, "gi")) || []).length;
         if (sadHits > happyHits && sadHits > 0) return "sad";
@@ -2462,38 +2896,117 @@
         return "neutral";
       }
 
-      function buildAiNhanDinhClient(rawText) {
+      function buildAiNhanDinhClient(rawText, persona) {
         const clean = (rawText || "").replace(/\s*\[[^\]]+\]\s*/g, " ").trim();
         const low = clean.toLowerCase();
         let nhanDinhSentence = "";
         let commentary = "";
 
-        if (/(claude|anthropic|personal finance|database|trí tuệ nhân tạo|công nghệ|dữ liệu|bộ nhớ mới)/i.test(low)) {
+        if (persona && persona.cat === "chow") {
+          nhanDinhSentence = "Nhận định lại, đằng sau những câu thoại tỉnh bơ và có phần ngông cuồng ấy lại là cái nhìn vừa hài hước vừa rất đời về khát vọng vươn lên của những con người bình dị.";
+          commentary = `🎬 <b>Tư Duy Vai Diễn #${persona.num} (${persona.name}):</b> ${persona.desc}. AI đã tự động gắn kích ngòi <b>${persona.tag}</b> kết hợp tiếng <b>${persona.cue}</b> để model giải mã đúng chất hài Châu Tinh Trì.`;
+        } else if (persona && persona.cat === "giang") {
+          nhanDinhSentence = "Nhận định lại, chính cái nét kể chuyện tưng tửng, mộc mạc như lời ăn tiếng nói ngoài đời ấy lại tạo nên sức hút gần gũi khiến ai nghe cũng phải bật cười.";
+          commentary = `🤣 <b>Tư Duy Vai Diễn #${persona.num} (${persona.name}):</b> ${persona.desc}. AI đã gắn kích ngòi <b>${persona.tag}</b> để tạo nhịp luyến láy đời thường duyên dáng.`;
+        } else if (persona && persona.cat === "horror") {
+          nhanDinhSentence = "Nhận định lại, điều đáng sợ nhất trong câu chuyện không chỉ nằm ở bóng đêm lạnh lẽo, mà chính là những góc khuất tâm linh và nhân quả luôn âm thầm dõi theo mỗi bước chân con người.";
+          commentary = `👻 <b>Tư Duy Vai Diễn #${persona.num} (${persona.name}):</b> ${persona.desc}. AI đã gắn kích ngòi <b>${persona.tag}</b> + <b>[thở dài]</b> và giãn nhịp nghỉ 0.75s đúng chất kể truyện ma Nguyễn Ngọc Ngạn.`;
+        } else if (persona && persona.cat === "epic") {
+          nhanDinhSentence = "Nhận định lại, âm hưởng hào hùng của lời thoại không chỉ khắc họa khí phách bậc trượng phu mà còn khơi dậy tinh thần bất khuất vượt qua mọi nghịch cảnh.";
+          commentary = `⚔️ <b>Tư Duy Vai Diễn #${persona.num} (${persona.name}):</b> ${persona.desc}. AI đã gắn kích ngòi <b>${persona.tag}</b> + <b>[hắng giọng]</b> lấy hơi sâu hào sảng.`;
+        } else if (/(claude|anthropic|personal finance|database|trí tuệ nhân tạo|công nghệ|dữ liệu|bộ nhớ mới)/i.test(low)) {
           nhanDinhSentence = "Nhận định lại, bước tiến này biến trợ lý trí tuệ nhân tạo thành một người quản gia tài chính thực thụ, giúp con người giải phóng khỏi áp lực ghi nhớ số liệu vụn vặt mỗi ngày.";
-          commentary = "📊 <b>Phân tích kịch bản Công Nghệ & Tài Chính:</b> Mở đầu ở nhịp <b>[vui]</b> tươi sáng khi giới thiệu tính năng mới giải phóng người dùng khỏi 5-6 app → Chùng xuống nhịp <b>[buồn]</b> trầm lắng ở câu nhắc về hạn chế phải nhập lại từ đầu trước đây → Bừng sáng trở lại khi tạo được database dài hạn, và khép lại bằng <b>[nhận định]</b> đĩnh đạc, sâu sắc.";
+          commentary = `📊 <b>Tư Duy Vai Diễn #${persona ? persona.num : 66} (${persona ? persona.name : "MC Bản Tin Tài Chính & AI"}):</b> Mở đầu nhịp <b>[vui]</b> tươi sáng → Chùng xuống nhịp <b>[buồn]</b> ở hạn chế cũ → Bừng sáng và chốt bằng <b>[nhận định]</b> đĩnh đạc.`;
         } else if (/(khóc|nước mắt|viện phí|cúp máy|lạnh nhạt|đau|buồn|số dư|cô đơn)/i.test(low)) {
           nhanDinhSentence = "Nhận định lại, chính trong khoảnh khắc tuyệt vọng và cô độc nhất của số phận, sự xuất hiện bất ngờ ấy đã mở ra một bước ngoặt không thể đoán trước cho cả câu chuyện.";
-          commentary = "🎭 <b>Phân tích kịch bản Tự Sự & Bi Kịch:</b> Các câu đầu mang nhịp <b>[buồn]</b> (hạ tốc độ 0.93x, ngân sâu câu hỏi tu từ và giọt nước mắt) → Chuyển sang nhịp <b>[nhấn ý hay]</b> kịch tính khi nhân vật bí ẩn cất tiếng → Kết thúc bằng <b>[nhận định]</b> chiêm nghiệm lắng đọng.";
-        } else if (/(khuyến mãi|giảm giá|siêu thị|bất động sản|thương hiệu|gia đình|ngân hàng|tvc)/i.test(low)) {
-          nhanDinhSentence = "Nhận định chung, thông điệp cốt lõi ở đây không chỉ nằm ở ưu đãi hay tiện ích trước mắt, mà là cam kết đồng hành bền vững và nâng tầm chất lượng sống cho mỗi khách hàng.";
-          commentary = "📢 <b>Phân tích kịch bản TVC & Thương Hiệu:</b> Nhịp đọc <b>[vui]</b> giàu năng lượng tích cực ở các câu lợi ích sản phẩm, kết hợp <b>[nhận định]</b> đĩnh đạc ở câu chốt nhằm tạo độ tin cậy cao cho thương hiệu.";
+          commentary = `🥺 <b>Tư Duy Vai Diễn #${persona ? persona.num : 49} (${persona ? persona.name : "Bi Kịch Nước Mắt"}):</b> Hạ tốc độ 0.93x, gắn kích ngòi <b>[buồn]</b> + <b>[thở dài]</b> và khép lại bằng <b>[nhận định]</b> sâu lắng.`;
         } else {
-          nhanDinhSentence = "Nhận định lại, điểm đắt giá nhất của câu chuyện nằm ở sự chuyển dịch cảm xúc chân thực, giúp người nghe vừa thấu cảm từng chi tiết vừa đọng lại suy ngẫm sâu sắc ở đoạn kết.";
-          commentary = "🎙️ <b>Phân tích kịch bản Đa Cảm Xúc:</b> AI đã tự động gắn nhãn nhịp <b>[vui]</b> (nảy sáng), <b>[buồn]</b> (trầm lắng) theo ngữ cảnh từng câu và bổ sung <b>[nhận định]</b> đúc kết ở cuối bài.";
+          nhanDinhSentence = "Nhận định lại, điểm đắt giá nhất của văn bản nằm ở sự chuyển dịch cảm xúc chân thực qua từng mệnh đề, giúp người nghe thấu cảm trọn vẹn cái hồn của vai diễn.";
+          commentary = `🎭 <b>Tư Duy Vai Diễn #${persona ? persona.num : 1} (${persona ? persona.name : "Đa Cảm Xúc"}):</b> ${persona ? persona.desc : "Tự động phân tích nhịp điệu và gắn kích ngòi cảm xúc cho từng câu."}`;
         }
         return { nhanDinhSentence, commentary };
       }
 
-      // Client-side AI Human Script Regenerator & Emotional Rhythm + Khoản Nhận Định Director
-      function formatTextWithAiProsody(text, preset) {
-        let raw = (text || "").replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán)\]\s*/gi, " ");
+      // Render 108 Personas UI
+      function renderPersonaBrowser() {
+        const tabWrap = document.getElementById("personaCategoryTabs");
+        const gridWrap = document.getElementById("personaGrid108");
+        const searchEl = document.getElementById("personaSearchInput");
+        if (!tabWrap || !gridWrap) return;
+
+        tabWrap.innerHTML = PERSONA_CATEGORIES.map(c => `
+          <button type="button" class="filter-tab ${currentPersonaCat === c.id ? "active" : ""}" data-pcat="${c.id}" style="padding:5px 11px;font-size:11.5px;">${c.name}</button>
+        `).join("");
+
+        tabWrap.querySelectorAll("[data-pcat]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            currentPersonaCat = btn.getAttribute("data-pcat");
+            renderPersonaBrowser();
+          });
+        });
+
+        const q = ((searchEl && searchEl.value) || "").trim().toLowerCase();
+        const filtered = PERSONAS_108.filter(p => {
+          if (currentPersonaCat !== "all" && p.cat !== currentPersonaCat) return false;
+          if (!q) return true;
+          return (`#${p.num} ${p.name} ${p.desc} ${p.tag}`).toLowerCase().includes(q);
+        });
+
+        gridWrap.innerHTML = filtered.map(p => {
+          const isSel = selectedPersonaId === p.id;
+          return `
+            <button type="button" data-pid="${p.id}" style="text-align:left;padding:8px 11px;border-radius:12px;border:2px solid ${isSel ? "#ff2a85" : "#e9d5ff"};background:${isSel ? "linear-gradient(135deg,#fdf2f8,#f5f3ff)" : "#ffffff"};cursor:pointer;transition:all 0.12s;">
+              <div style="font-size:12px;font-weight:900;color:#120924;">#${String(p.num).padStart(2, "0")} · ${p.name}</div>
+              <div style="font-size:11px;color:#581c87;font-weight:600;margin-top:2px;line-height:1.35;">${p.desc}</div>
+            </button>
+          `;
+        }).join("");
+
+        gridWrap.querySelectorAll("[data-pid]").forEach(btn => {
+          btn.addEventListener("click", () => {
+            selectedPersonaId = btn.getAttribute("data-pid");
+            const chosen = PERSONAS_108.find(x => x.id === selectedPersonaId);
+            const badge = document.getElementById("activePersonaBadge");
+            if (badge && chosen) {
+              badge.textContent = `🎭 Đang chọn #${chosen.num}: ${chosen.name}`;
+            }
+            renderPersonaBrowser();
+            ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
+            updateCharCount();
+            if (instantRegenCheckbox && instantRegenCheckbox.checked) {
+              triggerTtsSynthesis();
+            }
+          });
+        });
+      }
+
+      const personaSearchInput = document.getElementById("personaSearchInput");
+      if (personaSearchInput) {
+        personaSearchInput.addEventListener("input", renderPersonaBrowser);
+      }
+      const btnResetAutoPersona = document.getElementById("btnResetAutoPersona");
+      if (btnResetAutoPersona) {
+        btnResetAutoPersona.addEventListener("click", () => {
+          selectedPersonaId = "AUTO";
+          const badge = document.getElementById("activePersonaBadge");
+          if (badge) badge.textContent = "🤖 Tự động nhận diện theo văn bản (Auto-Detect)";
+          renderPersonaBrowser();
+          ttsInput.value = formatTextWithAiProsody(ttsInput.value, "human_rewrite");
+          updateCharCount();
+        });
+      }
+      renderPersonaBrowser();
+
+      // Client-side AI Human Script Regenerator & 108-Persona Text-as-Trigger Director
+      function formatTextWithAiProsody(text, preset, opts) {
+        const onlyAnalyze = opts && opts.onlyAnalyze;
+        let raw = (text || "").replace(/\s*\[(break(?:time)?\s*=\s*[0-9.]+s?|vui|buồn|nhận định|hưng phấn|sôi động|nhấn mạnh|nhấn ý hay|nhấn khoản cuối|cao trào|lắng đọng|trầm ấm|tươi vui|lấy hơi|hắng giọng|cười|thở dài|cảm thán|châu tinh trì|trường giang|nguyễn ngọc ngạn|chính kịch|kinh kịch|bi kịch)\]\s*/gi, " ");
         raw = raw.replace(/(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)/gi, "");
-        // Strip previous auto-appended Nhận định sentence so clicking multiple times never duplicates it
         raw = raw.replace(/\s*Nhận định (?:lại|chung),[^.\n]+\.?\s*$/i, "").trim();
         raw = raw.replace(/[ \t]+/g, " ").trim();
         if (preset === "clean" || !raw) {
           if (aiAssessmentText) {
-            aiAssessmentText.innerHTML = "🧹 Đã đưa văn bản về nguyên gốc (không gắn thẻ nhịp điệu và không thêm Khoản Nhận Định).";
+            aiAssessmentText.innerHTML = "🧹 Đã đưa văn bản về nguyên gốc (không gắn thẻ kích ngòi diễn xuất và không thêm Khoản Nhận Định).";
           }
           if (aiEmotionStatsBadge) {
             aiEmotionStatsBadge.textContent = "🧹 Văn bản gốc";
@@ -2501,19 +3014,30 @@
           return raw;
         }
 
-        const cfgMap = {
-          auto_human: { para_b: "0.52s" },
-          human_rewrite: { para_b: "0.55s" },
-          tvc_energetic: { para_b: "0.42s" },
-          tvc_luxury: { para_b: "0.62s" },
-          news_vtv_htv: { para_b: "0.48s" },
-          story_healing: { para_b: "0.65s" }
-        };
-        const cfg = cfgMap[preset] || cfgMap.human_rewrite;
+        // Map preset button to category if clicked
+        if (preset === "stephen_chow" && selectedPersonaId === "AUTO") {
+          selectedPersonaId = "P001";
+        } else if (preset === "truong_giang" && selectedPersonaId === "AUTO") {
+          selectedPersonaId = "P013";
+        } else if (preset === "ngoc_ngan_horror" && selectedPersonaId === "AUTO") {
+          selectedPersonaId = "P025";
+        } else if (preset === "chinh_kich" && selectedPersonaId === "AUTO") {
+          selectedPersonaId = "P037";
+        } else if (preset === "kinh_kich" && selectedPersonaId === "AUTO") {
+          selectedPersonaId = "P061";
+        }
 
-        let countHappy = 0, countSad = 0, countInsight = 0, countNeutral = 0;
+        const persona = detectBestPersonaFromText(raw);
+        const badge = document.getElementById("activePersonaBadge");
+        if (badge && persona) {
+          badge.textContent = selectedPersonaId === "AUTO"
+            ? `🤖 AI Tự Chọn #${persona.num}: ${persona.name}`
+            : `🎭 Đang chọn #${persona.num}: ${persona.name}`;
+        }
+
+        let countHappy = 0, countSad = 0, countInsight = 0, countDramatic = 0;
         const paras = raw.split(/\n+/).map(p => p.trim()).filter(Boolean);
-        const outParas = paras.map((para, pIdx) => {
+        const outParas = paras.map((para) => {
           const pClean = para
             .replace(/\s*,\s*/g, ", ")
             .replace(/\s*;\s*/g, "; ")
@@ -2521,11 +3045,26 @@
             .trim();
           const sents = pClean.split(/(?<=[.!?…])\s+/).map(s => s.trim()).filter(Boolean);
           const taggedSents = sents.map((s, sIdx) => {
-            const emo = detectSentenceEmotionClient(s);
-            let tag = "[nhấn ý hay]";
-            if (emo === "sad") {
+            const emo = detectSentenceEmotionClient(s, persona);
+            let tag = persona ? persona.tag : "[nhấn ý hay]";
+            if (emo === "chow") {
+              countDramatic++;
+              tag = sIdx === 0 ? `[châu tinh trì] [hắng giọng]` : `[châu tinh trì] [cười]`;
+            } else if (emo === "giang") {
+              countDramatic++;
+              tag = sIdx === 0 ? `[trường giang]` : `[trường giang] [cười]`;
+            } else if (emo === "horror") {
+              countDramatic++;
+              tag = sIdx === sents.length - 1 ? `[nguyễn ngọc ngạn] [thở dài]` : `[nguyễn ngọc ngạn]`;
+            } else if (emo === "epic") {
+              countDramatic++;
+              tag = sIdx === 0 ? `[kinh kịch] [hắng giọng]` : `[kinh kịch]`;
+            } else if (emo === "drama") {
+              countDramatic++;
+              tag = `[chính kịch]`;
+            } else if (emo === "sad") {
               countSad++;
-              tag = "[buồn]";
+              tag = "[buồn] [thở dài]";
             } else if (emo === "happy") {
               countHappy++;
               tag = "[vui]";
@@ -2533,10 +3072,10 @@
               countInsight++;
               tag = "[nhận định]";
             } else {
-              countNeutral++;
+              countDramatic++;
               tag = (sIdx === sents.length - 1) ? "[nhấn khoản cuối]" : "[nhấn ý hay]";
             }
-            if (sIdx === sents.length - 1 && tag !== "[nhấn khoản cuối]") {
+            if (sIdx === sents.length - 1 && !tag.includes("[nhấn khoản cuối]")) {
               tag = tag + " [nhấn khoản cuối]";
             }
             return `${tag} ${s}`;
@@ -2544,7 +3083,7 @@
           return taggedSents.join(" ");
         });
 
-        const { nhanDinhSentence, commentary } = buildAiNhanDinhClient(raw);
+        const { nhanDinhSentence, commentary } = buildAiNhanDinhClient(raw, persona);
         const shouldAppendNhanDinh = !includeNhanDinhCheckbox || includeNhanDinhCheckbox.checked;
         if (shouldAppendNhanDinh && nhanDinhSentence) {
           countInsight++;
@@ -2552,14 +3091,41 @@
         }
 
         if (aiEmotionStatsBadge) {
-          aiEmotionStatsBadge.textContent = `😊 Vui: ${countHappy} câu · 🥺 Buồn: ${countSad} câu · 💥 Nhấn ý: ${countNeutral} câu · 🧠 Nhận định: ${countInsight} câu`;
+          aiEmotionStatsBadge.textContent = `🎭 Vai diễn #${persona ? persona.num : 1} · 😊 Vui: ${countHappy} · 🥺 Buồn: ${countSad} · 🎬 Diễn xuất: ${countDramatic} · 🧠 Nhận định: ${countInsight}`;
         }
         if (aiAssessmentText) {
-          aiAssessmentText.innerHTML = `${commentary}<br><span style="color:#0369a1;font-weight:700;">💡 Câu Khoản Nhận Định đúc kết cuối bài:</span> <i>"${nhanDinhSentence}"</i>`;
+          aiAssessmentText.innerHTML = `${commentary}<br><span style="color:#0369a1;font-weight:800;">💡 Câu Khoản Nhận Định đúc kết cuối bài:</span> <i>"${nhanDinhSentence}"</i>`;
         }
 
-        return outParas.join(`\n[breaktime=${cfg.para_b}]\n`);
+        if (onlyAnalyze) return text;
+        const paraB = (persona && persona.paraBreak) || "0.48s";
+        return outParas.join(`\n[breaktime=${paraB}]\n`);
       }
+
+      // ── ZERO-CLICK AUTO-THINKING ON PASTE & TYPING (NO NEED TO CLICK AI FEEL BUTTON!) ──
+      const autoPasteInjectCheckbox = document.getElementById("autoPasteInjectCheckbox");
+      let typingThinkTimer = null;
+
+      ttsInput.addEventListener("paste", () => {
+        setTimeout(() => {
+          selectedPersonaId = "AUTO";
+          if (!autoPasteInjectCheckbox || autoPasteInjectCheckbox.checked) {
+            ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
+            updateCharCount();
+            document.getElementById("statusHint").textContent = "⚡ Đã Paste: AI tự động phân tích Tư Duy Văn Bản (108 Vai Diễn) & gắn kích ngòi diễn xuất ngay lập tức!";
+          } else {
+            formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite", { onlyAnalyze: true });
+            updateCharCount();
+          }
+        }, 25);
+      });
+
+      ttsInput.addEventListener("input", () => {
+        clearTimeout(typingThinkTimer);
+        typingThinkTimer = setTimeout(() => {
+          formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite", { onlyAnalyze: true });
+        }, 350);
+      });
 
       document.querySelectorAll(".btn-preset").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -2567,18 +3133,25 @@
           btn.classList.add("active");
           const preset = btn.getAttribute("data-preset");
           if (preset !== "clean") currentPreset = preset;
+          if (preset === "human_rewrite") selectedPersonaId = "AUTO";
+          else if (preset === "stephen_chow") selectedPersonaId = "P001";
+          else if (preset === "truong_giang") selectedPersonaId = "P013";
+          else if (preset === "ngoc_ngan_horror") selectedPersonaId = "P025";
+          else if (preset === "chinh_kich") selectedPersonaId = "P037";
+          else if (preset === "kinh_kich") selectedPersonaId = "P061";
+          renderPersonaBrowser();
           ttsInput.value = formatTextWithAiProsody(ttsInput.value, preset);
           updateCharCount();
           document.getElementById("statusHint").textContent = preset === "clean"
-            ? "🧹 Đã xóa toàn bộ thẻ ngắt nghỉ về văn bản gốc."
-            : "🧠 AI đã gắn nhịp điệu thật Lúc Vui [vui], Lúc Buồn [buồn] và thêm Khoản Nhận Định cuối bài!";
+            ? "🧹 Đã xóa toàn bộ thẻ kích ngòi về văn bản gốc."
+            : "🧠 AI đã gắn kích ngòi Tư Duy Vai Diễn & Khoản Nhận Định cuối bài!";
         });
       });
 
       document.getElementById("btnAutoFormatNow").addEventListener("click", () => {
         ttsInput.value = formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite");
         updateCharCount();
-        document.getElementById("statusHint").textContent = "🧠 AI đã phân tích nhịp điệu Lúc Vui [vui], Lúc Buồn [buồn] & thêm Khoản Nhận Định cuối kịch bản!";
+        document.getElementById("statusHint").textContent = "🧠 AI đã phân tích Tư Duy Văn Bản (108 Vai Diễn) & gắn kích ngòi diễn xuất!";
       });
 
       // Insert breaktime / emotion tags at cursor
@@ -2601,6 +3174,8 @@
           if (!tpl) return;
           recordTitle.value = tpl.title;
           currentPreset = tpl.preset || "human_rewrite";
+          selectedPersonaId = tpl.personaId || "AUTO";
+          renderPersonaBrowser();
           document.querySelectorAll(".btn-preset").forEach(b => {
             b.classList.toggle("active", b.getAttribute("data-preset") === currentPreset);
           });
@@ -2830,35 +3405,29 @@
       }
 
       async function discoverCompanyServer() {
+        try { localStorage.removeItem("vbee_pc_server_url"); } catch (_) {}
         const qs = new URLSearchParams(window.location.search);
         const paramApi = qs.get("api");
         if (paramApi) {
-          localStorage.setItem("vbee_pc_server_url", paramApi);
+          localStorage.setItem("vnievoices_github_cloud_url", paramApi);
         }
 
         const candidates = [];
         if (paramApi) candidates.push(paramApi);
-        if (window.location.origin && window.location.origin.startsWith("http")) {
-          candidates.push(window.location.origin);
-        }
-        const saved = localStorage.getItem("vbee_pc_server_url");
-        if (saved) candidates.push(saved);
 
         try {
-          const r = await fetch("https://ntfy.sh/vbee_velvet_hieu_pc_8890/raw?poll=1&since=all&t=" + Date.now());
+          const r = await fetch("https://ntfy.sh/vnievoices_github_cloud_compute/raw?poll=1&since=all&t=" + Date.now());
           if (r.ok) {
             const lines = (await r.text()).trim().split(/\r?\n/).filter(x => x.startsWith("https://"));
             for (let i = lines.length - 1; i >= 0; i--) {
-              candidates.unshift(lines[i].trim());
+              candidates.push(lines[i].trim());
             }
           }
         } catch (_) {}
 
-        candidates.push("https://gay-giants-tony-boutique.trycloudflare.com", "https://poker-event-perception-website.trycloudflare.com");
-
-        if (window.location.protocol === "http:") {
-          candidates.push("http://100.68.114.94:8890", "http://192.168.100.164:8890", "http://127.0.0.1:8890");
-        }
+        candidates.push("https://gay-giants-tony-boutique.trycloudflare.com");
+        const saved = localStorage.getItem("vnievoices_github_cloud_url");
+        if (saved) candidates.push(saved);
 
         const seen = new Set();
         for (const base of candidates) {
@@ -2866,14 +3435,14 @@
           seen.add(base);
           try {
             const ctrl = new AbortController();
-            const timer = setTimeout(() => ctrl.abort(), 3500);
+            const timer = setTimeout(() => ctrl.abort(), 4500);
             const res = await fetch(base + "/api/voices?t=" + Date.now(), { signal: ctrl.signal });
             clearTimeout(timer);
             if (res.ok) {
               const data = await res.json();
               apiBaseUrl = base;
-              localStorage.setItem("vbee_pc_server_url", base);
-              document.getElementById("srvUrlLabel").textContent = "☁️ Đã kết nối Cloud Compute: " + base;
+              localStorage.setItem("vnievoices_github_cloud_url", base);
+              document.getElementById("srvUrlLabel").textContent = "☁️ GitHub Cloud Active: " + base;
               if (data.voices && data.voices.length) {
                 voicesList = data.voices;
                 renderVoiceGrid();
@@ -2885,16 +3454,16 @@
             }
           } catch (_) {}
         }
-        document.getElementById("srvUrlLabel").textContent = "⚡ Chế độ Demo Previews (Bấm Cấu hình nếu đổi Tunnel)";
+        document.getElementById("srvUrlLabel").textContent = "☁️ Chế độ GitHub Cloud Static Previews";
         renderHistory([]);
       }
 
       document.getElementById("btnSetServer").addEventListener("click", () => {
-        const cur = apiBaseUrl || localStorage.getItem("vbee_pc_server_url") || "https://";
-        const inp = prompt("Nhập URL Server Máy Công Ty (Cloudflare Tunnel hoặc http://100.68.114.94:8890):", cur);
+        const cur = apiBaseUrl || localStorage.getItem("vnievoices_github_cloud_url") || "https://gay-giants-tony-boutique.trycloudflare.com";
+        const inp = prompt("Nhập URL GitHub Cloud Compute Endpoint:", cur);
         if (inp && inp.trim()) {
           apiBaseUrl = inp.trim().replace(/\/+$/, "");
-          localStorage.setItem("vbee_pc_server_url", apiBaseUrl);
+          localStorage.setItem("vnievoices_github_cloud_url", apiBaseUrl);
           discoverCompanyServer();
         }
       });
@@ -2986,7 +3555,7 @@
         }
         const btn = document.getElementById("btnCloneNow");
         btn.disabled = true;
-        msgEl.textContent = `⏳ Server Công Ty đang tách giọng TVC "${name}" và huấn luyện Speaker Embedding 48kHz...`;
+        msgEl.textContent = `⏳ GitHub Cloud Compute đang tách giọng TVC "${name}" và huấn luyện Speaker Embedding 48kHz trên Cloud...`;
         try {
           const res = await fetch((apiBaseUrl || "") + "/api/clone_youtube", {
             method: "POST",
@@ -3002,7 +3571,7 @@
             msgEl.textContent = "⚠️ Lỗi: " + ((data && data.error) || "Không thể học giọng");
           }
         } catch (e) {
-          msgEl.textContent = "⚠️ Không kết nối được tới Server Công Ty: " + e.message;
+          msgEl.textContent = "⚠️ Không kết nối được tới GitHub Cloud Compute: " + e.message;
         } finally {
           btn.disabled = false;
         }

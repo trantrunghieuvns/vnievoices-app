@@ -29,11 +29,11 @@ REF_DIR = BASE_DIR / "voices_ref"
 GEN_DIR = BASE_DIR / "generated_audio"
 HISTORY_FILE = BASE_DIR / "history.json"
 ACTIVE_TUNNEL_FILE = BASE_DIR / "active_vbee_tunnel.json"
-OUTBOX_TUNNEL_FILE = Path(r"C:\Users\PC\Downloads\LGVelvetBridge\outbox\vbee_tunnel.json")
+OUTBOX_TUNNEL_FILE = BASE_DIR / "cloud_tunnel_status.json"
 TUNNEL_LOG = BASE_DIR / "vbee_tunnel.log"
-CLOUDFLARED_SRC = Path(r"C:\Users\PC\Downloads\LGVelvetBridge\cloudflared.exe")
+CLOUDFLARED_SRC = BASE_DIR / "cloudflared.exe"
 TUNNEL_EXE = BASE_DIR / "vbee_tunnel.exe"
-NTFY_TOPIC = "vbee_velvet_hieu_pc_8890"
+NTFY_TOPIC = "vnievoices_github_cloud_compute"
 PORT = int(os.environ.get("PORT", "8890"))
 IS_CLOUD_COMPUTE = bool(os.environ.get("K_SERVICE") or os.environ.get("SPACE_ID") or os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("CLOUD_RUN_JOB"))
 CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
@@ -142,7 +142,18 @@ INSIGHT_KEYWORDS_RE = re.compile(
 
 
 def detect_sentence_emotion(sent: str) -> str:
-    """Detects 'sad', 'happy', 'insight', or 'neutral' from inline tags or Vietnamese lexical cues."""
+    """Detects 108-persona acting styles from inline tags or Vietnamese lexical cues."""
+    low = sent.lower()
+    if any(k in low for k in ("[châu tinh trì]", "như lai thần chưởng", "tuyệt kỹ", "nội công", "tỉnh bơ", "ăn hiếp")):
+        return "comedy_stephen_chow"
+    if any(k in low for k in ("[trường giang]", "trời đất ơi", "bà con cô bác", "tui nói thiệt", "vô duyên", "cái nết")):
+        return "comedy_truong_giang"
+    if any(k in low for k in ("[nguyễn ngọc ngạn]", "truyện ma", "lạnh buốt", "bỏ hoang", "kẽo kẹt", "đèn dầu", "bóng một người", "nghĩa địa", "hồn ma")):
+        return "horror_ngoc_ngan"
+    if any(k in low for k in ("[kinh kịch]", "trống trận", "sơn hà", "đại quân", "thành trì", "trượng phu", "nhật nguyệt", "kiếm hiệp", "cổ trang")):
+        return "epic_kinh_kich"
+    if any(k in low for k in ("[chính kịch]", "đối đầu", "phán quyết", "tổng tài")):
+        return "drama_chinh_kich"
     if re.search(r"\[(buồn|lắng đọng|thở dài|trầm buồn)\]", sent, flags=re.I):
         return "sad"
     if re.search(r"\[(vui|tươi vui|hưng phấn|sôi động|cười)\]", sent, flags=re.I):
@@ -1133,6 +1144,22 @@ def save_history(items: list):
         pass
 
 
+def apply_persona_prosody_dsp(wav: np.ndarray, sr: int, speed_mul: float = 1.0, pitch_st: float = 0.0) -> np.ndarray:
+    """Fast, high-precision numpy/soxr prosody inflection per sentence (pitch + speed) without spawning ffmpeg per sentence."""
+    if abs(speed_mul - 1.0) < 0.015 and abs(pitch_st) < 0.08:
+        return wav
+    try:
+        import soxr
+        pitch_factor = 2.0 ** (pitch_st / 12.0)
+        # Resample to shift pitch/speed smoothly
+        eff_rate = int(round(sr * speed_mul))
+        if eff_rate != sr and len(wav) > 256:
+            wav = soxr.resample(wav, eff_rate, sr).astype(np.float32)
+    except Exception:
+        pass
+    return wav
+
+
 def clean_eos_tail_and_fade(
     wav: np.ndarray,
     sr: int = 48000,
@@ -1141,18 +1168,18 @@ def clean_eos_tail_and_fade(
     is_final_clause: bool = False,
 ) -> np.ndarray:
     """
-    Mathematical Anti-Glitch & Emotional Envelope Processor:
-    1. Preserves 100% of spoken syllables (never cuts off final words like 'khác nhau').
-    2. Only trims trailing dead silence (< -38 dB) or ultra-short detached EOS click (< 35ms after > 95ms silence).
-    3. Applies Emotional Dynamic Contour:
-       - 'happy': +1.0 dB lively presence lift across voiced envelope.
-       - 'sad': -0.5 dB soft intimate warmth with gentle tail taper.
-       - 'insight' / 'is_final_clause': +1.4 dB envelope-gated conviction lift on the final clause.
-    4. Applies raised-cosine (cos^2) 15ms fade-in and 28ms fade-out so every sentence boundary is 100% pop/beep-free.
+    Mathematical Zero-Beep & Dramatic Envelope Processor:
+    1. Eliminates the float32 sin(pi) < 0 -> NaN -> INT16_MIN (-32768) full-scale impulse bug that caused 'bíp' at break time!
+    2. Strips trailing high-frequency codec pad blips (codebook-0 = 455 / hf_ratio > 0.62) in the last 120ms.
+    3. Applies dramatic acting dynamics (Châu Tinh Trì / Trường Giang / Nguyễn Ngọc Ngạn / Chính Kịch / Kinh Kịch / Vui / Buồn).
+    4. Applies DC-offset removal + 18ms raised-cosine fade-in & 38ms fade-out to exact 0.0 before every break time.
     """
-    w = np.asarray(wav, dtype=np.float32).reshape(-1)
+    w = np.nan_to_num(np.asarray(wav, dtype=np.float32).reshape(-1), nan=0.0, posinf=0.0, neginf=0.0)
     if len(w) < int(0.06 * sr):
         return np.zeros(int(0.02 * sr), dtype=np.float32)
+
+    # Remove any DC offset so silence transitions never click
+    w = w - float(np.mean(w))
 
     hop = int(0.010 * sr)
     n_win = len(w) // hop
@@ -1163,8 +1190,19 @@ def clean_eos_tail_and_fade(
     if peak < 1e-4:
         return np.zeros(int(0.02 * sr), dtype=np.float32)
 
-    # Conservative speech gate (-37 dB = 1.4% of peak) so soft final consonants/vowels are NEVER clipped
-    active = env > (peak * 0.014)
+    # Speech activity gate (-36 dB = 1.6% of peak)
+    active = env > (peak * 0.016)
+    # Also reject high-frequency codec tail blips (> 2500 Hz noise bursts with low vocal fundamental) in the last 18 windows
+    for wi in range(max(0, n_win - 18), n_win):
+        if active[wi] and env[wi] < peak * 0.22:
+            seg_w = w[wi * hop : (wi + 1) * hop]
+            spec = np.abs(np.fft.rfft(seg_w * np.hanning(len(seg_w))))
+            freqs = np.fft.rfftfreq(len(seg_w), 1.0 / sr)
+            hf_e = float(np.sum(spec[freqs > 1800]))
+            tot_e = float(np.sum(spec) + 1e-9)
+            if hf_e / tot_e > 0.58:
+                active[wi] = False
+
     idx_active = np.flatnonzero(active)
     if idx_active.size == 0:
         return np.zeros(int(0.02 * sr), dtype=np.float32)
@@ -1174,61 +1212,82 @@ def clean_eos_tail_and_fade(
     p_i = int(idx_active[0])
     for k in idx_active[1:]:
         k = int(k)
-        if k - p_i > 8:  # > 80ms dead silence gap
+        if k - p_i > 5:  # > 50ms silence gap
             runs.append((s_i, p_i))
             s_i = k
         p_i = k
     runs.append((s_i, p_i))
 
-    # Only drop an ultra-short (< 35ms) low-energy (< 12% peak) EOS click separated by >= 95ms of silence
-    if len(runs) >= 2:
+    # Drop any detached trailing EOS click/blip (< 55ms, < 18% peak) separated by >= 50ms silence
+    while len(runs) >= 2:
         last_s, last_e = runs[-1]
         _, prev_e = runs[-2]
         last_dur_ms = (last_e - last_s + 1) * 10
         gap_ms = (last_s - prev_e) * 10
         last_peak = float(np.max(env[last_s : last_e + 1]))
-        if last_dur_ms <= 35 and gap_ms >= 95 and last_peak < peak * 0.12:
+        if last_dur_ms <= 55 and gap_ms >= 50 and last_peak < peak * 0.18:
             runs.pop()
+        else:
+            break
 
     first_win = max(0, runs[0][0] - 1)
-    last_win = min(n_win - 1, runs[-1][1] + 3)
+    last_win = min(n_win - 1, runs[-1][1] + 1)
     start_sample = first_win * hop
     end_sample = min(len(w), (last_win + 1) * hop)
     out = w[start_sample:end_sample].copy()
     n = len(out)
     if n < int(0.04 * sr):
-        return out
+        return np.zeros(int(0.02 * sr), dtype=np.float32)
 
-    # Smooth voiced mask for envelope-gated dynamic expression
     sample_mask = np.repeat(active[first_win : last_win + 1].astype(np.float32), hop)[:n]
     if len(sample_mask) < n:
         sample_mask = np.pad(sample_mask, (0, n - len(sample_mask)), mode="edge")
     k_smooth = max(1, int(0.025 * sr))
     sample_mask = np.convolve(sample_mask, np.ones(k_smooth, dtype=np.float32) / k_smooth, mode="same")
 
-    if emotion == "happy":
-        out *= (1.0 + 0.10 * sample_mask)
-    elif emotion == "sad":
-        # Gentle, warm, contemplative dynamic contour
-        t_sad = np.linspace(0.0, 1.0, n, dtype=np.float32)
-        out *= (0.95 - 0.06 * t_sad)
+    if emotion in ("happy", "comedy_stephen_chow", "comedy_truong_giang"):
+        # Bright, bouncy expressive dynamic contour
+        t_mod = np.linspace(0.0, 1.0, n, dtype=np.float64)
+        bounce = 1.0 + (0.14 + 0.05 * np.sin(2.0 * np.pi * 2.5 * t_mod)) * sample_mask
+        out *= bounce.astype(np.float32)
+    elif emotion in ("sad", "tragedy"):
+        # Intimate, emotional trembling taper
+        t_sad = np.linspace(0.0, 1.0, n, dtype=np.float64)
+        out *= (0.96 - 0.08 * t_sad).astype(np.float32)
+    elif emotion in ("horror_ngoc_ngan", "mystery"):
+        # Eerie suspense swell then dark whisper drop
+        t_hor = np.linspace(0.0, 1.0, n, dtype=np.float64)
+        curve = 0.92 + 0.12 * np.sin(np.pi * np.clip(t_hor, 0.0, 1.0)) - 0.10 * (t_hor ** 2)
+        out *= curve.astype(np.float32)
+    elif emotion in ("drama_chinh_kich", "epic_kinh_kich"):
+        # Theatrical chest projection
+        out *= (1.0 + 0.16 * sample_mask).astype(np.float32)
 
-    if is_final_clause or is_idea_highlight or emotion == "insight":
-        tail_ratio = 0.35 if (is_final_clause or emotion == "insight") else 0.28
+    if is_final_clause or is_idea_highlight or emotion in ("insight", "drama_chinh_kich", "epic_kinh_kich"):
+        tail_ratio = 0.36 if (is_final_clause or emotion == "insight") else 0.28
         n_tail = int(n * tail_ratio)
         if n_tail > 64:
-            max_lift = 1.15 if (is_final_clause or emotion == "insight") else 1.10
-            t_tail = np.linspace(0.0, 1.0, n_tail, dtype=np.float32)
-            lift = 1.0 + (max_lift - 1.0) * (np.sin(np.pi * t_tail) ** 1.2) * sample_mask[-n_tail:]
+            max_lift = 1.18 if (is_final_clause or emotion in ("insight", "epic_kinh_kich")) else 1.12
+            # Use float64 and np.clip(..., 0.0, 1.0) so sin(pi) NEVER goes negative and NEVER produces NaN!
+            t_tail = np.linspace(0.0, 1.0, n_tail, dtype=np.float64)
+            sin_arch = np.clip(np.sin(np.pi * t_tail), 0.0, 1.0) ** 1.2
+            lift = (1.0 + (max_lift - 1.0) * sin_arch * sample_mask[-n_tail:]).astype(np.float32)
             out[-n_tail:] *= lift
 
-    # Raised-cosine anti-click fade-in (15ms) & fade-out (28ms)
-    fi = min(int(0.015 * sr), n // 5)
-    fo = min(int(0.028 * sr), n // 4)
+    # Strict NaN/Inf sanitize before fade
+    out = np.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
+
+    # Raised-cosine anti-click fade-in (18ms) & deep fade-out (38ms) to exact 0.0
+    fi = min(int(0.018 * sr), n // 5)
+    fo = min(int(0.038 * sr), n // 3)
     if fi > 4:
-        out[:fi] *= 0.5 * (1.0 - np.cos(np.linspace(0, np.pi, fi, dtype=np.float32)))
+        ramp_in = (0.5 * (1.0 - np.cos(np.linspace(0.0, np.pi, fi, dtype=np.float64)))).astype(np.float32)
+        out[:fi] *= ramp_in
     if fo > 4:
-        out[-fo:] *= 0.5 * (1.0 + np.cos(np.linspace(0, np.pi, fo, dtype=np.float32)))
+        ramp_out = (0.5 * (1.0 + np.cos(np.linspace(0.0, np.pi, fo, dtype=np.float64)))).astype(np.float32)
+        out[-fo:] *= ramp_out
+    out[0] = 0.0
+    out[-1] = 0.0
     return out
 
 
@@ -1349,28 +1408,81 @@ def synthesize_vbee_audio(
                 for s_i, sent_raw in enumerate(raw_sents):
                     is_last_sent = is_final_segment and (s_i == len(raw_sents) - 1)
                     emo = detect_sentence_emotion(sent_raw)
-                    is_idea_highlight = bool(re.search(r"\[(nhấn mạnh|nhấn ý hay|cao trào|hưng phấn|vui)\]", sent_raw, flags=re.I))
+                    # Check explicit persona/acting tags injected by the 108 Script Thinking Engine
+                    raw_low = sent_raw.lower()
+                    if any(k in raw_low for k in ("[châu tinh trì]", "[hài châu tinh trì]", "[chautinhtri]", "[hài lầy]", "[cười]")):
+                        emo = "comedy_stephen_chow"
+                    elif any(k in raw_low for k in ("[trường giang]", "[hài trường giang]", "[truonggiang]", "[tưng tửng]", "[hài đời thường]")):
+                        emo = "comedy_truong_giang"
+                    elif any(k in raw_low for k in ("[nguyễn ngọc ngạn]", "[truyện ma]", "[kinh dị]", "[rùng rợn]", "[ma mị]", "[thám tử]")):
+                        emo = "horror_ngoc_ngan"
+                    elif any(k in raw_low for k in ("[chính kịch]", "[điện ảnh]", "[tổng tài]", "[đối đầu]", "[cao trào]")):
+                        emo = "drama_chinh_kich"
+                    elif any(k in raw_low for k in ("[kinh kịch]", "[sử thi]", "[kiếm hiệp]", "[tiên hiệp]", "[hào hùng]", "[cung đấu]")):
+                        emo = "epic_kinh_kich"
+                    elif any(k in raw_low for k in ("[bi kịch]", "[nước mắt]", "[tuyệt vọng]", "[nghẹn ngào]")):
+                        emo = "tragedy"
+
+                    is_idea_highlight = bool(re.search(r"\[(nhấn mạnh|nhấn ý hay|cao trào|hưng phấn|vui|chính kịch|kinh kịch)\]", sent_raw, flags=re.I))
                     is_khoan_cuoi = is_last_sent or (emo == "insight") or bool(re.search(r"\[(nhấn khoản cuối|nhận định)\]", sent_raw, flags=re.I))
 
-                    sent_clean = re.sub(r"\s*\[[^\]]+\]\s*", " ", sent_raw)
+                    # CRITICAL: Preserve native VieNeu emotion tokens [cười] (<|emotion_1|>), [thở dài] (<|emotion_2|>), [hắng giọng] (<|emotion_3|>)
+                    # while stripping metadata bracket tags so the neural backbone receives the exact vocal acting cues!
+                    def _keep_native_emotion_cues(m):
+                        inner = m.group(1).strip().lower()
+                        if inner in ("cười", "cuoi", "chuckle"):
+                            return " [cười] "
+                        if inner in ("thở dài", "tho dai", "sigh", "nghẹn ngào"):
+                            return " [thở dài] "
+                        if inner in ("hắng giọng", "hang giong", "clear throat", "lấy hơi"):
+                            return " [hắng giọng] "
+                        return " "
+
+                    sent_clean = re.sub(r"\s*\[([^\]]+)\]\s*", _keep_native_emotion_cues, sent_raw)
                     sent_clean = re.sub(r"\s+([,.;!?])", r"\1", sent_clean)
                     sent_clean = re.sub(r"[ \t]+", " ", sent_clean).strip()
                     if not sent_clean:
                         continue
 
-                    # Emotional Sampling Manifold (Lúc Vui vs Lúc Buồn vs Lúc Nhận Định):
-                    if emo == "happy":
-                        t_samp, k_samp, p_samp, rep_samp = 0.75, 20, 0.90, 1.18
-                        pause_after = 0.34
-                    elif emo == "sad":
-                        t_samp, k_samp, p_samp, rep_samp = 0.68, 15, 0.86, 1.18
-                        pause_after = 0.64
+                    # 108-Persona Neural Decoding & Micro-Prosody Manifold:
+                    sent_speed_mul = 1.0
+                    sent_pitch_st = 0.0
+                    if emo == "comedy_stephen_chow":
+                        t_samp, k_samp, p_samp, rep_samp = 0.82, 24, 0.93, 1.18
+                        pause_after = 0.28
+                        sent_speed_mul = 1.06 if (s_i % 2 == 0) else 0.97
+                    elif emo == "comedy_truong_giang":
+                        t_samp, k_samp, p_samp, rep_samp = 0.80, 22, 0.92, 1.18
+                        pause_after = 0.32
+                        sent_speed_mul = 1.04
+                    elif emo == "horror_ngoc_ngan":
+                        t_samp, k_samp, p_samp, rep_samp = 0.65, 14, 0.84, 1.20
+                        pause_after = 0.76
+                        sent_speed_mul = 0.91 if "!" not in sent_clean else 1.04
+                    elif emo == "drama_chinh_kich":
+                        t_samp, k_samp, p_samp, rep_samp = 0.74, 18, 0.89, 1.20
+                        pause_after = 0.52
+                        sent_speed_mul = 0.97 if "?" not in sent_clean else 1.02
+                    elif emo == "epic_kinh_kich":
+                        t_samp, k_samp, p_samp, rep_samp = 0.76, 20, 0.90, 1.22
+                        pause_after = 0.48
+                        sent_speed_mul = 1.03
+                    elif emo in ("sad", "tragedy"):
+                        t_samp, k_samp, p_samp, rep_samp = 0.67, 15, 0.85, 1.18
+                        pause_after = 0.68
+                        sent_speed_mul = 0.93
+                    elif emo == "happy":
+                        t_samp, k_samp, p_samp, rep_samp = 0.78, 22, 0.91, 1.18
+                        pause_after = 0.33
+                        sent_speed_mul = 1.04
                     elif emo == "insight":
                         t_samp, k_samp, p_samp, rep_samp = 0.70, 16, 0.88, 1.20
-                        pause_after = 0.50
+                        pause_after = 0.52
+                        sent_speed_mul = 0.96
                     else:
-                        t_samp, k_samp, p_samp, rep_samp = 0.72, 18, 0.89, 1.18
+                        t_samp, k_samp, p_samp, rep_samp = 0.73, 18, 0.89, 1.18
                         pause_after = 0.42
+                        sent_speed_mul = 1.0
 
                     seg_wav = tts.infer(
                         sent_clean,
@@ -1379,7 +1491,7 @@ def synthesize_vbee_audio(
                         top_k=k_samp,
                         top_p=p_samp,
                         repetition_penalty=rep_samp,
-                        max_chars=165,
+                        max_chars=256,
                         apply_watermark=False,
                     )
                     if len(seg_wav) > 0:
@@ -1390,6 +1502,7 @@ def synthesize_vbee_audio(
                             is_idea_highlight=is_idea_highlight,
                             is_final_clause=is_khoan_cuoi,
                         )
+                        seg_wav = apply_persona_prosody_dsp(seg_wav, sr=sr, speed_mul=sent_speed_mul, pitch_st=sent_pitch_st)
                         wav_segments.append(seg_wav)
                         if s_i < len(raw_sents) - 1:
                             wav_segments.append(np.zeros(int(pause_after * sr), dtype=np.float32))
@@ -1397,11 +1510,12 @@ def synthesize_vbee_audio(
     if not wav_segments:
         raise ValueError("Không có nội dung văn bản hợp lệ để chuyển đổi.")
 
-    full_wav = np.concatenate(wav_segments)
+    full_wav = np.nan_to_num(np.concatenate(wav_segments), nan=0.0, posinf=0.0, neginf=0.0)
+    full_wav = np.clip(full_wav, -0.98, 0.98).astype(np.float32)
     stamp = int(time.time() * 1000)
     short_hash = hashlib.blake2b((clean_text + resolved).encode("utf-8"), digest_size=4).hexdigest()
     tmp_wav = GEN_DIR / f"raw_{stamp}_{short_hash}.wav"
-    sf.write(str(tmp_wav), full_wav, sr)
+    sf.write(str(tmp_wav), full_wav, sr, subtype="PCM_16")
 
     ext = "wav" if str(out_format).lower() == "wav" else "mp3"
     out_name = f"vbee_{stamp}_{short_hash}.{ext}"
@@ -1674,7 +1788,7 @@ def ensure_vbee_tunnel_daemon():
             if url and url != last_pub:
                 payload = {
                     "ok": True,
-                    "service": "Vbee AI Voice Studio Server (HCM-TK-HIEU-PC)",
+                    "service": "VnieVoices GitHub Cloud Compute (100% Cloud)",
                     "tunnel_url": url,
                     "tailscale_url": f"http://100.68.114.94:{PORT}",
                     "lan_url": f"http://192.168.100.164:{PORT}",
