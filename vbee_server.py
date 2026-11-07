@@ -1061,7 +1061,7 @@ def _deref_hf_symlinks():
     hf_hub = Path.home() / ".cache" / "huggingface" / "hub"
     if not hf_hub.exists():
         return
-    for p in hf_hub.glob("models--*/snapshots/*/*"):
+    for p in hf_hub.rglob("*"):
         if p.is_symlink():
             try:
                 target = p.resolve(strict=True)

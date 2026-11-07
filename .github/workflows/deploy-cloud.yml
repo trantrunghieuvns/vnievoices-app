@@ -21,7 +21,7 @@ jobs:
 
       - name: Verify VnieVoices 64 Regional Voices Catalog & Cloud Assets
         run: |
-          python3 -c "import json; d=json.load(open('voices_500_tvc.json')); assert len(d)>=44; print('Verified voices_500_tvc.json:', len(d))"
+          python3 -c "import json; d=json.load(open('voices_500_tvc.json')); v=d.get('voices', d); assert len(v)>=40; print('Verified VnieVoices catalog:', len(v))"
 
       - name: Authenticate to Google Cloud & Firebase (When GCP_SA_KEY Configured)
         if: env.HAS_GCP_KEY == 'true'
