@@ -654,14 +654,291 @@
       font-weight: 800;
     }
     #statusHint {
+      --hint-bg: #0f766e;
       display: inline-block;
-      background: #120924;
-      color: #00e5ff;
+      background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
+      color: #ffffff;
+      color: contrast-color(var(--hint-bg));
       padding: 6px 14px;
       border-radius: 999px;
       font-size: 13px;
       font-weight: 800;
-      border: 1.5px solid #ff2a85;
+      border: 1.5px solid #06b6d4;
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.22);
+    }
+
+    /* ── Distinct Studio Emerald-Teal & Warm Amber Theme for Acting Tool (Phần Tool Diễn Xuất) ── */
+    .magic-ai-bar {
+      margin-top: 14px !important;
+      padding: 14px 18px !important;
+      border-radius: 18px !important;
+      background: linear-gradient(135deg, #ecfeff 0%, #f0fdfa 58%, #fefce8 100%) !important;
+      border: 2.5px solid #0d9488 !important;
+      box-shadow: 0 6px 20px rgba(13, 148, 136, 0.14) !important;
+    }
+    .persona-pill-active {
+      --badge-bg: #0f766e;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%) !important;
+      color: #ffffff !important;
+      color: contrast-color(var(--badge-bg)) !important;
+      padding: 6px 15px !important;
+      border-radius: 999px !important;
+      font-size: 13.5px !important;
+      font-weight: 900 !important;
+      border: 2px solid #06b6d4 !important;
+      box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);
+    }
+    .btn-open-acting-tool {
+      --btn-act-bg: #ea580c;
+      padding: 6px 14px !important;
+      border-radius: 999px !important;
+      font-size: 12.5px !important;
+      font-weight: 900 !important;
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+      color: #ffffff !important;
+      color: contrast-color(var(--btn-act-bg)) !important;
+      border: 2px solid #b45309 !important;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(234, 88, 12, 0.28);
+      transition: transform 0.15s ease;
+    }
+    .btn-open-acting-tool:hover {
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    details.acting-tool-drawer {
+      margin-top: 14px !important;
+      border: 3px solid #0891b2 !important;
+      border-radius: 18px !important;
+      background: #f0fdfa !important;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(8, 145, 178, 0.14);
+    }
+    details.acting-tool-drawer > summary {
+      --sum-bg: #0f766e;
+      padding: 13px 20px !important;
+      font-size: 15px !important;
+      font-weight: 900 !important;
+      background: linear-gradient(90deg, #0f766e 0%, #0284c7 65%, #0369a1 100%) !important;
+      color: #ffffff !important;
+      color: contrast-color(var(--sum-bg)) !important;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      user-select: none;
+    }
+    details.acting-tool-drawer > summary::-webkit-details-marker {
+      display: none;
+    }
+    details.acting-tool-drawer[open] > summary {
+      border-bottom: 2.5px solid #0891b2 !important;
+    }
+    .acting-drawer-body {
+      padding: 16px 18px !important;
+      background: linear-gradient(180deg, #f0fdfa 0%, #f8fafc 100%) !important;
+    }
+
+    /* High-contrast color-coded quick preset pills inside Acting Tool */
+    .acting-preset-pill {
+      padding: 8px 14px !important;
+      border-radius: 999px !important;
+      font-size: 13px !important;
+      font-weight: 900 !important;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border-width: 2px !important;
+      border-style: solid !important;
+    }
+    .acting-preset-pill[data-preset="human_rewrite"] {
+      background: #ccfbf1 !important; border-color: #0d9488 !important; color: #115e59 !important;
+    }
+    .acting-preset-pill[data-preset="stephen_chow"] {
+      background: #fef3c7 !important; border-color: #d97706 !important; color: #78350f !important;
+    }
+    .acting-preset-pill[data-preset="truong_giang"] {
+      background: #d1fae5 !important; border-color: #059669 !important; color: #064e3b !important;
+    }
+    .acting-preset-pill[data-preset="ngoc_ngan_horror"] {
+      background: #e0e7ff !important; border-color: #4f46e5 !important; color: #1e1b4b !important;
+    }
+    .acting-preset-pill[data-preset="chinh_kich"] {
+      background: #e0f2fe !important; border-color: #0284c7 !important; color: #0c4a6e !important;
+    }
+    .acting-preset-pill[data-preset="kinh_kich"] {
+      background: #fee2e2 !important; border-color: #dc2626 !important; color: #7f1d1d !important;
+    }
+    .acting-preset-pill[data-preset="clean"] {
+      background: #f1f5f9 !important; border-color: #64748b !important; color: #1e293b !important;
+    }
+    .acting-preset-pill.active {
+      --act-pill-bg: #0f766e;
+      background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%) !important;
+      color: #ffffff !important;
+      color: contrast-color(var(--act-pill-bg)) !important;
+      border-color: #0369a1 !important;
+      box-shadow: 0 4px 12px rgba(15, 118, 110, 0.35) !important;
+      transform: translateY(-1px);
+    }
+
+    /* Acting category filter tabs */
+    .acting-cat-tab {
+      padding: 6px 13px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 800;
+      border: 2px solid #99f6e4;
+      background: #ffffff;
+      color: #0f766e;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+    .acting-cat-tab:hover {
+      border-color: #0284c7;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .acting-cat-tab.active {
+      --cat-active-bg: #0284c7;
+      background: linear-gradient(135deg, #0d9488 0%, #0284c7 100%);
+      color: #ffffff;
+      color: contrast-color(var(--cat-active-bg));
+      border-color: transparent;
+      box-shadow: 0 3px 10px rgba(2, 132, 199, 0.28);
+    }
+
+    /* Warm Sunny Amber Sticker Box */
+    .emotion-sticker-box {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%);
+      border: 2px solid #f59e0b;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .sticker-btn {
+      padding: 6px 12px !important;
+      border-radius: 999px !important;
+      font-size: 12.5px !important;
+      font-weight: 900 !important;
+      background: #ffffff !important;
+      color: #92400e !important;
+      border: 2px solid #f59e0b !important;
+      cursor: pointer;
+      transition: all 0.14s;
+    }
+    .sticker-btn:hover {
+      background: #f59e0b !important;
+      color: #ffffff !important;
+      transform: translateY(-1px);
+    }
+
+    /* ── Companion Follow-Along Loading Button & Styled <progress> Bar (modern-web-guidance) ── */
+    .companion-loading-btn {
+      --load-bg: #d97706;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 20px;
+      border-radius: 999px;
+      border: 2.5px solid #fde047;
+      background: linear-gradient(135deg, #f59e0b 0%, #ea580c 55%, #dc2626 100%);
+      color: #ffffff;
+      color: contrast-color(var(--load-bg));
+      font-size: 14.5px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(234, 88, 12, 0.42);
+      animation: pulseLoadingCompanion 1.6s ease-in-out infinite;
+    }
+    .companion-loading-btn.is-active {
+      display: inline-flex;
+    }
+    .floating-companion-btn {
+      position: fixed;
+      bottom: 74px;
+      right: 24px;
+      z-index: 98;
+      padding: 12px 22px;
+      border-radius: 999px;
+      border: 3px solid #fef08a;
+      background: linear-gradient(135deg, #0f766e 0%, #0284c7 50%, #ea580c 100%);
+      color: #ffffff;
+      font-size: 14.5px;
+      font-weight: 900;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .floating-companion-btn.is-active {
+      display: inline-flex;
+    }
+    @keyframes pulseLoadingCompanion {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    /* Native <progress> styling per modern-web-guidance/progress */
+    progress.tts-progress {
+      appearance: none;
+      border: 0 solid;
+      overflow: clip;
+      container-type: inline-size;
+      --progress-bar-radius: 1e5px;
+      --progress-bar-track: rgba(255, 255, 255, 0.28);
+      --progress-bar-fill: #fef08a;
+      --progress-bar-indeterminate-size: 30%;
+      --progress-bar-indeterminate-animation-duration: 1.5s;
+      inline-size: 96px;
+      block-size: 10px;
+      border-radius: var(--progress-bar-radius);
+      background: var(--progress-bar-track);
+      box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.2);
+      vertical-align: middle;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      progress.tts-progress {
+        --progress-bar-indeterminate-animation-duration: 10s;
+      }
+    }
+    progress.tts-progress:indeterminate {
+      --progress-bar-animation: var(
+        --progress-bar-indeterminate-animation,
+        progress-bar-indeterminate var(--progress-bar-indeterminate-animation-duration) infinite linear
+      );
+    }
+    progress.tts-progress::-webkit-progress-bar {
+      background: transparent;
+    }
+    progress.tts-progress::-webkit-progress-value {
+      background: var(--progress-bar-fill);
+      border-radius: var(--progress-bar-radius);
+      transition: inline-size 0.3s;
+      animation: var(--progress-bar-animation, revert-rule);
+    }
+    progress.tts-progress::-moz-progress-bar {
+      background: var(--progress-bar-fill);
+      border-radius: var(--progress-bar-radius);
+      transition: inline-size 0.3s;
+      animation: var(--progress-bar-animation, revert-rule);
+    }
+    @keyframes progress-bar-indeterminate {
+      from, to {
+        inline-size: var(--progress-bar-indeterminate-size);
+        margin-right: auto;
+      }
+      from { translate: -100%; }
+      to { translate: 100cqi; }
     }
   </style>
 </head>
@@ -723,40 +1000,46 @@
       <label for="ttsInput" style="display:none;">Nội dung văn bản</label>
       <textarea id="ttsInput" class="tts-textarea" placeholder="Dán (Ctrl+V) hoặc gõ bất kỳ đoạn văn nào vào đây... AI sẽ tự hiểu nội dung vui, buồn, hài hước hay kể chuyện để diễn xuất ngay!">Ngươi tưởng ta nghèo mà dễ ăn hiếp hả? Nhìn kỹ lại đi, cây chổi quét nhà trong tay ta chính là tuyệt kỹ Như Lai Thần Chưởng thất truyền bảy đời nay đó! Hồi nhỏ thầy bói phán ta là kỳ tài võ học ngàn năm có một, chẳng qua hôm nay chưa ăn sáng nên nội công hơi tụt huyết áp chút xíu thôi.</textarea>
 
-      <!-- Magic AI Auto-Thinking Status Bar (Zero-Click on Paste!) -->
+      <!-- Magic AI Auto-Thinking Status Bar (Distinct Studio Emerald-Teal & Warm Amber Theme!) -->
       <div class="magic-ai-bar" id="aiAssessmentBox">
         <div class="magic-ai-top">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="font-size:13.5px;font-weight:900;color:#78350f;">🧠 AI Tự Hiểu Cảm Xúc:</span>
+            <span style="font-size:14px;font-weight:900;color:#0f766e;">🎭 TOOL DIỄN XUẤT AI:</span>
             <span class="persona-pill-active" id="activePersonaBadge">🎬 #01 Hài Châu Tinh Trì — Tỉnh Bơ Nói Chuyện Vô Lý</span>
-            <button type="button" class="sample-pill" id="btnOpen108Drawer" style="padding:4px 12px !important;font-size:12px !important;">🎭 Đổi vai khác (108 vai) ▾</button>
-            <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:800;color:#4c1d95;background:#f3e8ff;padding:4px 10px;border-radius:999px;">✨ Tự động diễn cảm khi Dán chữ</span>
+            <button type="button" class="btn-open-acting-tool" id="btnOpen108Drawer">🎨 Đổi Vai Diễn Khác (108 Phong Cách) ▾</button>
+            <span id="aiEmotionStatsBadge" style="font-size:12px;font-weight:900;color:#065f46;background:#d1fae5;border:1.5px solid #10b981;padding:4px 11px;border-radius:999px;">✨ Tự động diễn cảm khi Dán chữ</span>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <label style="font-size:12.5px;font-weight:800;color:#0369a1;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label style="font-size:12.5px;font-weight:800;color:#0f766e;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
               <input type="checkbox" id="includeNhanDinhCheckbox" checked>
               <span>💡 Tự thêm câu kết Nhận Định</span>
             </label>
-            <label style="font-size:12.5px;font-weight:800;color:#9d174d;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Bật nếu muốn nhìn thấy các thẻ [cười], [vui], [buồn] trực tiếp trong ô chữ">
+            <label style="font-size:12.5px;font-weight:800;color:#b45309;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Bật nếu muốn nhìn thấy các thẻ [cười], [vui], [buồn] trực tiếp trong ô chữ">
               <input type="checkbox" id="autoPasteInjectCheckbox">
               <span>🔧 Hiện thẻ kỹ thuật trong ô chữ</span>
             </label>
           </div>
         </div>
-        <div id="aiAssessmentText" style="font-size:13px;color:#1e1035;font-weight:600;line-height:1.5;">
+        <div id="aiAssessmentText" style="font-size:13.5px;color:#0f172a;font-weight:700;line-height:1.5;">
           💡 Chỉ cần <b>Dán chữ (Paste)</b> hoặc gõ vào ô trên — không cần bấm nút nào — AI tự động chọn đúng vai diễn trong <b>108 Phong Cách</b> để giọng đọc có hồn như diễn viên thật!
         </div>
       </div>
 
-      <!-- Primary Action Buttons -->
+      <!-- Primary Action Buttons + Companion Loading Button -->
       <div class="big-action-bar">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-size:13.5px;font-weight:800;color:#4c1d95;">Độ dài: <strong id="charCount">0</strong> chữ</span>
-          <span id="statusHint">⚡ Bấm "ĐỌC NGAY" hoặc chạm vào bất kỳ Nhân Vật nào bên dưới!</span>
+          <span style="font-size:13.5px;font-weight:800;color:#0f766e;">Độ dài: <strong id="charCount">0</strong> chữ</span>
+          <span id="statusHint" role="status" aria-live="polite">⚡ Bấm "ĐỌC NGAY BÀI NÀY!" để AI đọc toàn bộ văn bản của em!</span>
         </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button type="button" class="btn-secondary-kid" id="btnPreviewVoice">🔊 Nghe thử giọng này</button>
-          <button type="button" class="btn-secondary-kid" id="btnAutoFormatNow">✨ Chèn thẻ diễn xuất vào chữ</button>
+          <button type="button" class="btn-secondary-kid" id="btnPreviewVoice" title="Chỉ nghe thử 8 giây mẫu giọng của nhân vật">🔊 Nghe thử mẫu giọng (8s)</button>
+          <button type="button" class="btn-secondary-kid" id="btnAutoFormatNow">✨ Hiện thẻ diễn xuất</button>
+          <!-- Inline Companion Button that appears next to ĐỌC NGAY while reading -->
+          <button type="button" class="companion-loading-btn" id="btnInlineLoadingCompanion">
+            <span>⏳</span>
+            <span id="inlineLoadingText">Đang đọc bài, xin đợi giây lát...</span>
+            <progress id="ttsProgressBar" class="tts-progress" max="100" value="12" aria-label="Tiến độ đọc bài"></progress>
+          </button>
           <button type="submit" class="btn-read-now" id="btnSubmitTts">
             <svg class="spinner" id="ttsSpinner" viewBox="0 0 50 50" role="status" aria-label="Loading">
               <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
@@ -767,44 +1050,44 @@
         </div>
       </div>
 
-      <!-- Progressive Disclosure Drawer: 108 Acting Styles & Emotion Stickers -->
-      <details class="kid-drawer" id="autoAiSection">
+      <!-- Progressive Disclosure Drawer: 108 Acting Styles & Emotion Stickers (Distinct Ocean-Teal & Sunny Amber Palette) -->
+      <details class="acting-tool-drawer" id="autoAiSection">
         <summary>
-          <span>🎭 Muốn tự đổi phong cách diễn? Bấm mở Kho 108 Phong Cách (Châu Tinh Trì, Trường Giang, Truyện Ma, Kinh Kịch...)</span>
-          <span style="font-size:12.5px;color:#ff2a85;font-weight:900;">Bấm để mở / đóng ▾</span>
+          <span>🎭 BẢNG TOOL DIỄN XUẤT AI — Kho 108 Phong Cách (Châu Tinh Trì, Trường Giang, Truyện Ma, Kinh Kịch...)</span>
+          <span style="font-size:12.5px;background:#fef08a;color:#0f172a;padding:4px 12px;border-radius:999px;font-weight:900;">🌟 Bấm để mở / đóng ▾</span>
         </summary>
-        <div class="drawer-body">
-          <!-- Quick Style Preset Buttons -->
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-            <span style="font-size:12.5px;font-weight:900;color:#4c1d95;">Chọn nhanh phong cách:</span>
-            <button type="button" class="sample-pill btn-preset active" data-preset="human_rewrite">🤖 Để AI Tự Chọn Theo Bài</button>
-            <button type="button" class="sample-pill btn-preset" data-preset="stephen_chow">🎬 Hài Châu Tinh Trì</button>
-            <button type="button" class="sample-pill btn-preset" data-preset="truong_giang">🤣 Hài Trường Giang</button>
-            <button type="button" class="sample-pill btn-preset" data-preset="ngoc_ngan_horror">👻 Truyện Ma Bác Ngạn</button>
-            <button type="button" class="sample-pill btn-preset" data-preset="chinh_kich">🎭 Chính Kịch Điện Ảnh</button>
-            <button type="button" class="sample-pill btn-preset" data-preset="kinh_kich">⚔️ Kinh Kịch Cổ Trang</button>
-            <button type="button" class="sample-pill btn-preset clean-btn" data-preset="clean">🧹 Làm Sạch Thẻ Trong Ô Chữ</button>
+        <div class="acting-drawer-body">
+          <!-- Quick Style Preset Buttons (Color-Coded High Contrast) -->
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:#ffffff;border:2px solid #99f6e4;border-radius:14px;">
+            <span style="font-size:13px;font-weight:900;color:#0f766e;">🎨 Chọn nhanh vai diễn:</span>
+            <button type="button" class="acting-preset-pill btn-preset active" data-preset="human_rewrite">🤖 Tự Động Theo Bài</button>
+            <button type="button" class="acting-preset-pill btn-preset" data-preset="stephen_chow">🎬 Hài Châu Tinh Trì</button>
+            <button type="button" class="acting-preset-pill btn-preset" data-preset="truong_giang">🤣 Hài Trường Giang</button>
+            <button type="button" class="acting-preset-pill btn-preset" data-preset="ngoc_ngan_horror">👻 Truyện Ma Bác Ngạn</button>
+            <button type="button" class="acting-preset-pill btn-preset" data-preset="chinh_kich">🎭 Chính Kịch Điện Ảnh</button>
+            <button type="button" class="acting-preset-pill btn-preset" data-preset="kinh_kich">⚔️ Kinh Kịch Cổ Trang</button>
+            <button type="button" class="acting-preset-pill btn-preset clean-btn" data-preset="clean">🧹 Xóa Thẻ Kỹ Thuật</button>
           </div>
 
           <!-- Search + 9 Category Tabs + 108 Persona Cards -->
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-            <input type="text" id="personaSearchInput" placeholder="🔍 Tìm trong 108 phong cách (VD: Châu Tinh Trì, Trường Giang, truyện ma, tổng tài...)" style="flex:1;min-width:260px;padding:8px 14px;border-radius:999px;border:2px solid #c084fc;font-size:13px;font-weight:700;">
-            <button type="button" id="btnResetAutoPersona" class="sample-pill">🔄 Để AI Tự Chọn Theo Nội Dung</button>
+            <input type="text" id="personaSearchInput" placeholder="🔍 Tìm trong 108 vai diễn (VD: Châu Tinh Trì, Trường Giang, truyện ma, tổng tài...)" style="flex:1;min-width:260px;padding:9px 16px;border-radius:999px;border:2px solid #0891b2;font-size:13.5px;font-weight:700;">
+            <button type="button" id="btnResetAutoPersona" class="acting-preset-pill" data-preset="human_rewrite">🔄 Để AI Tự Chọn Theo Nội Dung</button>
           </div>
-          <div id="personaCategoryTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
-          <div id="personaGrid108" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;max-height:210px;overflow-y:auto;padding:4px;border:1.5px solid #f3e8ff;border-radius:12px;"></div>
+          <div id="personaCategoryTabs" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px;"></div>
+          <div id="personaGrid108" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:10px;max-height:230px;overflow-y:auto;padding:8px;background:#ffffff;border:2px solid #99f6e4;border-radius:14px;"></div>
 
-          <!-- Fun Emotion Stickers for Kids -->
-          <div style="margin-top:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-            <span style="font-size:12.5px;font-weight:900;color:#4c1d95;">Chèn sticker cảm xúc vào chỗ con trỏ:</span>
-            <button type="button" class="sample-pill" data-insert="[cười]">😂 Tiếng cười</button>
-            <button type="button" class="sample-pill" data-insert="[thở dài]">😮‍💨 Thở dài</button>
-            <button type="button" class="sample-pill" data-insert="[hắng giọng]">🗣️ Hắng giọng</button>
-            <button type="button" class="sample-pill" data-insert="[vui]">😊 Đọc vui tươi</button>
-            <button type="button" class="sample-pill" data-insert="[buồn]">🥺 Đọc trầm buồn</button>
-            <button type="button" class="sample-pill" data-insert="[nhận định]">🧠 Đọc đĩnh đạc</button>
-            <button type="button" class="sample-pill" data-insert="[breaktime=0.50s]">⏸️ Nghỉ 0.5 giây</button>
-            <label style="margin-left:auto;font-size:12px;font-weight:800;color:#065f46;">
+          <!-- Fun Emotion Stickers in Warm Sunny Amber Box -->
+          <div class="emotion-sticker-box">
+            <span style="font-size:13px;font-weight:900;color:#92400e;">✨ Chèn cảm xúc người thật vào chỗ con trỏ:</span>
+            <button type="button" class="sticker-btn" data-insert="[cười]">😂 Tiếng cười</button>
+            <button type="button" class="sticker-btn" data-insert="[thở dài]">😮‍💨 Thở dài</button>
+            <button type="button" class="sticker-btn" data-insert="[hắng giọng]">🗣️ Hắng giọng</button>
+            <button type="button" class="sticker-btn" data-insert="[vui]">😊 Đọc vui tươi</button>
+            <button type="button" class="sticker-btn" data-insert="[buồn]">🥺 Đọc trầm buồn</button>
+            <button type="button" class="sticker-btn" data-insert="[nhận định]">🧠 Đọc đĩnh đạc</button>
+            <button type="button" class="sticker-btn" data-insert="[breaktime=0.50s]">⏸️ Nghỉ 0.5 giây</button>
+            <label style="margin-left:auto;font-size:12.5px;font-weight:900;color:#0f766e;cursor:pointer;">
               <input type="checkbox" id="autoAiCheckbox" checked> Tự động đạo diễn AI
             </label>
           </div>
@@ -963,6 +1246,13 @@
     </details>
 
   </main>
+
+  <!-- Floating Follow-Along Loading Button (Follows User on Scroll During Reading Synthesis) -->
+  <button type="button" class="floating-companion-btn" id="btnFloatingLoadingCompanion" title="Bấm để xem trạng thái đọc bài">
+    <span style="font-size:18px;">⏳</span>
+    <span id="floatingLoadingText">Đang đọc bài, xin đợi giây lát...</span>
+    <progress id="ttsFloatingProgressBar" class="tts-progress" max="100" value="12" aria-label="Tiến độ đọc bài đang chạy"></progress>
+  </button>
 
   <!-- Sticky Bottom Audio Player -->
   <div class="sticky-player">
@@ -2378,8 +2668,20 @@
         const searchEl = document.getElementById("personaSearchInput");
         if (!tabWrap || !gridWrap) return;
 
+        const CAT_THEME_MAP = {
+          chow:    { accent: "#d97706", bg: "#fffbeb", badgeBg: "#f59e0b", title: "#78350f" },
+          giang:   { accent: "#059669", bg: "#ecfdf5", badgeBg: "#10b981", title: "#064e3b" },
+          horror:  { accent: "#4f46e5", bg: "#eef2ff", badgeBg: "#6366f1", title: "#1e1b4b" },
+          drama:   { accent: "#0284c7", bg: "#f0f9ff", badgeBg: "#0ea5e9", title: "#0c4a6e" },
+          tragedy: { accent: "#e11d48", bg: "#fff1f2", badgeBg: "#f43f5e", title: "#881337" },
+          epic:    { accent: "#dc2626", bg: "#fef2f2", badgeBg: "#ef4444", title: "#7f1d1d" },
+          mc:      { accent: "#0891b2", bg: "#ecfeff", badgeBg: "#06b6d4", title: "#164e63" },
+          podcast: { accent: "#0d9488", bg: "#f0fdfa", badgeBg: "#14b8a6", title: "#134e4a" },
+          tvc:     { accent: "#ea580c", bg: "#fff7ed", badgeBg: "#f97316", title: "#7c2d12" }
+        };
+
         tabWrap.innerHTML = PERSONA_CATEGORIES.map(c => `
-          <button type="button" class="filter-tab ${currentPersonaCat === c.id ? "active" : ""}" data-pcat="${c.id}" style="padding:5px 11px;font-size:12px;">${c.name}</button>
+          <button type="button" class="acting-cat-tab ${currentPersonaCat === c.id ? "active" : ""}" data-pcat="${c.id}">${c.name}</button>
         `).join("");
 
         tabWrap.querySelectorAll("[data-pcat]").forEach(btn => {
@@ -2398,10 +2700,15 @@
 
         gridWrap.innerHTML = filtered.map(p => {
           const isSel = selectedPersonaId === p.id;
+          const th = CAT_THEME_MAP[p.cat] || { accent: "#0d9488", bg: "#f0fdfa", badgeBg: "#0d9488", title: "#0f172a" };
           return `
-            <button type="button" data-pid="${p.id}" style="text-align:left;padding:8px 11px;border-radius:12px;border:2px solid ${isSel ? "#ff2a85" : "#e9d5ff"};background:${isSel ? "linear-gradient(135deg,#fdf2f8,#f5f3ff)" : "#ffffff"};cursor:pointer;">
-              <div style="font-size:12.5px;font-weight:900;color:#120924;">#${String(p.num).padStart(2, "0")} · ${p.name}</div>
-              <div style="font-size:11px;color:#581c87;font-weight:600;margin-top:2px;line-height:1.35;">${p.desc}</div>
+            <button type="button" data-pid="${p.id}" style="text-align:left;padding:10px 12px;border-radius:12px;border:2px solid ${isSel ? "#0284c7" : th.accent};border-left:6px solid ${th.accent};background:${isSel ? "#e0f2fe" : th.bg};cursor:pointer;box-shadow:${isSel ? "0 4px 12px rgba(2,132,199,0.22)" : "0 1px 3px rgba(0,0,0,0.05)"};">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span style="font-size:11px;font-weight:900;background:${th.badgeBg};color:#ffffff;padding:2px 8px;border-radius:999px;">Vai #${String(p.num).padStart(2, "0")}</span>
+                ${isSel ? '<span style="font-size:11px;font-weight:900;color:#0369a1;">✅ ĐANG CHỌN</span>' : ''}
+              </div>
+              <div style="font-size:13px;font-weight:900;color:${th.title};margin-top:5px;">${p.name}</div>
+              <div style="font-size:11.5px;color:#1e293b;font-weight:600;margin-top:3px;line-height:1.4;">${p.desc}</div>
             </button>
           `;
         }).join("");
@@ -2457,8 +2764,8 @@
         let countHappy = 0, countSad = 0, countInsight = 0, countDramatic = 0;
         const paras = raw.split(/\n+/).map(p => p.trim()).filter(Boolean);
         const outParas = paras.map((para) => {
-          const pClean = para.replace(/\s*,\s*/g, ", ").replace(/\s*;\s*/g, "; ").replace(/\s*\.\s*/g, ". ").trim();
-          const sents = pClean.split(/(?<=[.!?…])\s+/).map(s => s.trim()).filter(Boolean);
+          const pClean = para.replace(/\s*,\s*/g, ", ").replace(/\s*;\s*/g, "; ").replace(/(?<![0-9.])\.(?![0-9.a-zA-Z])\s*/g, ". ").trim();
+          const sents = pClean.split(/(?<=[!?…])\s+|(?<![0-9.])(?<=\.)\s+(?=[A-ZÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ"“])/u).map(s => s.trim()).filter(Boolean);
           const taggedSents = sents.map((s, sIdx) => {
             const emo = detectSentenceEmotionClient(s, persona);
             let tag = persona ? persona.tag : "[nhấn ý hay]";
@@ -2863,6 +3170,37 @@
         }
       });
 
+      function setCompanionLoadingState(isActive, textMsg, pctVal) {
+        const inlineBtn = document.getElementById("btnInlineLoadingCompanion");
+        const floatBtn = document.getElementById("btnFloatingLoadingCompanion");
+        const inlineTxt = document.getElementById("inlineLoadingText");
+        const floatTxt = document.getElementById("floatingLoadingText");
+        const prog1 = document.getElementById("ttsProgressBar");
+        const prog2 = document.getElementById("ttsFloatingProgressBar");
+
+        if (inlineBtn) inlineBtn.classList.toggle("is-active", Boolean(isActive));
+        if (floatBtn) floatBtn.classList.toggle("is-active", Boolean(isActive));
+        if (textMsg) {
+          if (inlineTxt) inlineTxt.textContent = textMsg;
+          if (floatTxt) floatTxt.textContent = textMsg;
+        }
+        for (const pr of [prog1, prog2]) {
+          if (!pr) continue;
+          if (typeof pctVal === "number" && pctVal > 0) {
+            pr.value = Math.min(100, Math.max(5, pctVal));
+          } else {
+            pr.removeAttribute("value");
+          }
+        }
+      }
+
+      document.getElementById("btnFloatingLoadingCompanion").addEventListener("click", () => {
+        document.getElementById("ttsForm").scrollIntoView({ behavior: "smooth" });
+      });
+      document.getElementById("btnInlineLoadingCompanion").addEventListener("click", () => {
+        document.getElementById("mainAudioPlayer").scrollIntoView({ behavior: "smooth" });
+      });
+
       async function triggerTtsSynthesis() {
         const btn = document.getElementById("btnSubmitTts");
         const spinner = document.getElementById("ttsSpinner");
@@ -2876,40 +3214,96 @@
         const ctrl = new AbortController();
         activeTtsController = ctrl;
 
+        const cleanRaw = (ttsInput.value || "").trim();
+        if (!cleanRaw) {
+          hint.textContent = "⚠️ Em hãy nhập hoặc dán văn bản vào ô chữ trước khi bấm ĐỌC NGAY nhé!";
+          ttsInput.focus();
+          return;
+        }
+
         // Compile acting triggers invisibly in the background so the user's text stays clean!
         const payloadText = (!autoAiCheckbox || autoAiCheckbox.checked)
-          ? formatTextWithAiProsody(ttsInput.value, currentPreset || "human_rewrite")
-          : ttsInput.value;
+          ? formatTextWithAiProsody(cleanRaw, currentPreset || "human_rewrite")
+          : cleanRaw;
 
         const curSpeed = parseFloat(speedSlider.value) || 1.0;
         btn.disabled = true;
         spinner.style.display = "inline-block";
         icon.style.display = "none";
-        lbl.textContent = `Đang đọc (${curSpeed}x)...`;
-        hint.textContent = `⚡ AI đang tạo giọng đọc "${activeVoice.name}"...`;
+        lbl.textContent = "Đang đọc bài, xin đợi giây lát...";
+        hint.textContent = `⏳ Đang đọc bài với giọng "${activeVoice.name}", xin đợi giây lát...`;
+        setCompanionLoadingState(true, "Đang đọc bài, xin đợi giây lát...", 10);
+
+        const reqPayload = {
+          title: recordTitle.value,
+          text: payloadText,
+          voice: activeVoice.id,
+          speed: curSpeed,
+          pitch: parseFloat(pitchSlider.value),
+          gain: 0.0,
+          format: "mp3",
+          auto_ai_mode: !autoAiCheckbox || autoAiCheckbox.checked,
+          auto_preset: currentPreset
+        };
 
         try {
           if (!apiBaseUrl) await discoverCompanyServer();
+          const startRes = await fetch((apiBaseUrl || "") + "/api/tts_async", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: ctrl.signal,
+            body: JSON.stringify(reqPayload)
+          });
+
+          if (startRes.ok) {
+            const startData = await startRes.json();
+            if (startData && startData.ok && startData.job_id) {
+              const jobId = startData.job_id;
+              while (!ctrl.signal.aborted) {
+                await new Promise(r => setTimeout(r, 850));
+                if (ctrl.signal.aborted) return;
+                const stRes = await fetch((apiBaseUrl || "") + "/api/tts_status?job_id=" + encodeURIComponent(jobId) + "&t=" + Date.now(), {
+                  signal: ctrl.signal
+                });
+                if (!stRes.ok) continue;
+                const stData = await stRes.json();
+                if (stData.status === "running") {
+                  const pct = stData.percent || 20;
+                  const doneC = stData.done_chunks || 0;
+                  const totC = stData.total_chunks || 1;
+                  const progressLabel = totC > 1
+                    ? `Đang đọc bài, xin đợi giây lát... (Đoạn ${doneC}/${totC} • ${pct}%)`
+                    : `Đang đọc bài, xin đợi giây lát... (${pct}%)`;
+                  lbl.textContent = progressLabel;
+                  hint.textContent = `⏳ ${progressLabel}`;
+                  setCompanionLoadingState(true, progressLabel, pct);
+                } else if (stData.status === "done" && stData.record) {
+                  const rec = stData.record;
+                  setCompanionLoadingState(false, "", 100);
+                  hint.textContent = `✅ Đã đọc xong toàn bộ bài trong ${rec.elapsed_sec}s (Thời lượng: ${rec.duration}) — Đang phát ngay bên dưới!`;
+                  playAudioInStickyBar(rec.audio_url, rec.title, rec.voice);
+                  discoverCompanyServer();
+                  return;
+                } else if (stData.status === "error") {
+                  throw new Error(stData.error || "Không thể tổng hợp bài đọc");
+                }
+              }
+              return;
+            }
+          }
+
+          // Fallback to synchronous /api/tts if /api/tts_async is unavailable
           const res = await fetch((apiBaseUrl || "") + "/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             signal: ctrl.signal,
-            body: JSON.stringify({
-              title: recordTitle.value,
-              text: payloadText,
-              voice: activeVoice.id,
-              speed: curSpeed,
-              pitch: parseFloat(pitchSlider.value),
-              gain: 0.0,
-              format: "mp3",
-              auto_ai_mode: !autoAiCheckbox || autoAiCheckbox.checked,
-              auto_preset: currentPreset
-            })
+            body: JSON.stringify(reqPayload)
           });
           const data = await res.json();
           if (data && data.ok && data.record) {
             const rec = data.record;
-            hint.textContent = `✅ Đã đọc xong trong ${rec.elapsed_sec}s (${rec.duration}) — Đang phát ở thanh nghe nhạc bên dưới!`;
+            setCompanionLoadingState(false, "", 100);
+            hint.textContent = `✅ Đã đọc xong toàn bộ bài trong ${rec.elapsed_sec}s (Thời lượng: ${rec.duration}) — Đang phát ngay bên dưới!`;
             playAudioInStickyBar(rec.audio_url, rec.title, rec.voice);
             discoverCompanyServer();
           } else {
@@ -2917,12 +3311,12 @@
           }
         } catch (err) {
           if (err && err.name === "AbortError") return;
-          hint.textContent = "⚠️ Đang phát giọng mẫu: " + err.message;
-          if (activeVoice && activeVoice.preview) {
-            playAudioInStickyBar(activeVoice.preview, recordTitle.value, activeVoice.name);
-          }
+          // NEVER play the 8-second default character preview when the user clicked ĐỌC NGAY BÀI NÀY!
+          setCompanionLoadingState(false, "", 0);
+          hint.textContent = "⚠️ Máy chủ Cloud đang bận xử lý bài dài, em vui lòng bấm ĐỌC NGAY BÀI NÀY lại nhé! (" + err.message + ")";
         } finally {
           if (activeTtsController === ctrl) {
+            setCompanionLoadingState(false, "", 0);
             btn.disabled = false;
             spinner.style.display = "none";
             icon.style.display = "inline";

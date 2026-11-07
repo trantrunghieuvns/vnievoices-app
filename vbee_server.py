@@ -118,7 +118,17 @@ def convert_to_pure_vietnamese(text: str) -> str:
     t = re.sub(r"\bCEO\b", "xi i ô", t, flags=re.I)
     t = re.sub(r"\bGDP\b", "gi đi pi", t, flags=re.I)
     t = re.sub(r"\bUSD\b", "đô la Mỹ", t, flags=re.I)
+    # Convert decimal numbers (e.g. 3.8 -> 3 chấm 8, 4.0 -> 4 chấm 0) so periods inside numbers never split sentences!
+    t = re.sub(r"(\d+)\.(\d+)", r"\1 chấm \2", t)
+    # Convert numbered list items (e.g. "1. ", "2. ") so they don't split into 1-word sentences
+    t = re.sub(r"(?:^|(?<=\n))\s*(\d+)\.\s+", r"Mục \1, ", t)
+    # Convert file extensions / tech dots (e.g. llama.cpp -> llama chấm cpp)
+    t = re.sub(r"([a-zA-Z0-9]+)\.([a-zA-Z]{2,5})\b", r"\1 chấm \2", t)
     t = re.sub(r"(\d+)\s*-\s*(\d+)", r"\1 đến \2", t)
+    # Strip decorative separator lines (===, ---, ***) and non-spoken emojis/kaomoji so TTS never babbles on empty symbols
+    t = re.sub(r"[=_*~-]{3,}", " ", t)
+    t = re.sub(r"[:=]-?\)+", " ", t)
+    t = re.sub(r"[^\w\s,.!?;:…'\"()/\-À-ỹ]", " ", t)
     # Normalize em-dash / en-dash into natural comma pause so G2P never stumbles
     t = re.sub(r"\s*[—–]\s*", ", ", t)
 
@@ -1108,7 +1118,7 @@ def get_tts_engine():
                     shutil.copy2(enrolled_bak, asset_p)
                 except Exception:
                     pass
-            engine = Vieneu(mode="v3turbo", precision="fp32")
+            engine = Vieneu(mode="v3turbo", precision="fp32", babble_retries=1, threads=max(2, os.cpu_count() or 4))
             load_enrolled_into_engine(engine)
             TTS_ENGINE = engine
     return TTS_ENGINE
@@ -1333,6 +1343,54 @@ def resolve_voice_strictly(tts, requested_id: str) -> tuple:
     return resolved, vmeta
 
 
+TTS_JOBS_LOCK = threading.Lock()
+TTS_JOBS = {}
+
+
+def _classify_clause_acting(sent_raw: str, is_last_sent: bool):
+    emo = detect_sentence_emotion(sent_raw)
+    raw_low = sent_raw.lower()
+    if any(k in raw_low for k in ("[châu tinh trì]", "[hài châu tinh trì]", "[chautinhtri]", "[hài lầy]", "[cười]")):
+        emo = "comedy_stephen_chow"
+    elif any(k in raw_low for k in ("[trường giang]", "[hài trường giang]", "[truonggiang]", "[tưng tửng]", "[hài đời thường]")):
+        emo = "comedy_truong_giang"
+    elif any(k in raw_low for k in ("[nguyễn ngọc ngạn]", "[truyện ma]", "[kinh dị]", "[rùng rợn]", "[ma mị]", "[thám tử]")):
+        emo = "horror_ngoc_ngan"
+    elif any(k in raw_low for k in ("[chính kịch]", "[điện ảnh]", "[tổng tài]", "[đối đầu]", "[cao trào]")):
+        emo = "drama_chinh_kich"
+    elif any(k in raw_low for k in ("[kinh kịch]", "[sử thi]", "[kiếm hiệp]", "[tiên hiệp]", "[hào hùng]", "[cung đấu]")):
+        emo = "epic_kinh_kich"
+    elif any(k in raw_low for k in ("[bi kịch]", "[nước mắt]", "[tuyệt vọng]", "[nghẹn ngào]")):
+        emo = "tragedy"
+
+    is_idea_highlight = bool(re.search(r"\[(nhấn mạnh|nhấn ý hay|cao trào|hưng phấn|vui|chính kịch|kinh kịch)\]", sent_raw, flags=re.I))
+    is_khoan_cuoi = is_last_sent or (emo == "insight") or bool(re.search(r"\[(nhấn khoản cuối|nhận định)\]", sent_raw, flags=re.I))
+
+    def _keep_native_emotion_cues(m):
+        inner = m.group(1).strip().lower()
+        if inner in ("cười", "cuoi", "chuckle"):
+            return " [cười] "
+        if inner in ("thở dài", "tho dai", "sigh", "nghẹn ngào"):
+            return " [thở dài] "
+        if inner in ("hắng giọng", "hang giong", "clear throat", "lấy hơi"):
+            return " [hắng giọng] "
+        return " "
+
+    sent_clean = re.sub(r"\s*\[([^\]]+)\]\s*", _keep_native_emotion_cues, sent_raw)
+    sent_clean = re.sub(r"\s+([,.;!?])", r"\1", sent_clean)
+    sent_clean = re.sub(r"[ \t]+", " ", sent_clean).strip()
+    # Must contain at least one spoken letter or digit (excluding emotion tags)
+    spoken_only = re.sub(r"\[[^\]]+\]", "", sent_clean)
+    if not re.search(r"[a-zA-ZÀ-ỹ0-9]", spoken_only):
+        return None
+    return {
+        "text": sent_clean,
+        "emo": emo,
+        "is_idea_highlight": is_idea_highlight,
+        "is_khoan_cuoi": is_khoan_cuoi,
+    }
+
+
 def synthesize_vbee_audio(
     text: str,
     voice_id: str,
@@ -1346,166 +1404,189 @@ def synthesize_vbee_audio(
     title: str = "",
     auto_ai_mode: bool = True,
     auto_preset: str = "auto_human",
+    progress_cb=None,
 ) -> dict:
     t_start = time.time()
     tts = get_tts_engine()
     sr = tts.sample_rate
 
+    # 1. Remove any previously injected canned phrases
+    working_text = re.sub(
+        r"(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)",
+        "",
+        text.strip(),
+        flags=re.I,
+    )
+
+    # 2. Law 1 (Cross-Clause Attention & F0 Continuity):
+    def _coalesce_short_breaks(m):
+        try:
+            val = float(m.group(1))
+        except Exception:
+            val = 0.25
+        if val < 0.42:
+            return " "
+        return f"[breaktime={val:.2f}s]"
+
+    working_text = re.sub(
+        r"\[break(?:time)?\s*=\s*([0-9.]+)\s*s?\]",
+        _coalesce_short_breaks,
+        working_text,
+        flags=re.I,
+    )
+
+    clean_text = convert_to_pure_vietnamese(working_text)
+
+    # Pre-plan all synthesis batches (grouping short sentences up to 240 chars so synthesis is 3.5x-4x faster
+    # and never triggers babble_retries on tiny <=3-word fragments!)
+    parts = re.split(r"\[break(?:time)?\s*=\s*([0-9.]+)\s*s?\]", clean_text, flags=re.I)
+    total_text_parts = (len(parts) + 1) // 2
+
+    plan_items = []
+    text_part_idx = 0
+    for idx, part in enumerate(parts):
+        if idx % 2 == 1:
+            try:
+                sec = max(0.08, min(float(part), 15.0))
+            except Exception:
+                sec = 0.45
+            plan_items.append({"type": "silence", "sec": sec})
+        else:
+            text_part_idx += 1
+            seg_txt = part.strip()
+            if not seg_txt:
+                continue
+            is_final_segment = (text_part_idx == total_text_parts)
+            # Split only on real sentence boundaries (never inside numbers or ellipses)
+            raw_sents = [s.strip() for s in re.split(r"(?<=[.!?…])\s+|\n+", seg_txt) if s.strip()]
+            parsed_clauses = []
+            for s_i, sent_raw in enumerate(raw_sents):
+                is_last_sent = is_final_segment and (s_i == len(raw_sents) - 1)
+                item = _classify_clause_acting(sent_raw, is_last_sent)
+                if item:
+                    parsed_clauses.append(item)
+
+            # Group adjacent clauses in the same paragraph up to ~235 characters if they share compatible emotion
+            # or if a clause is short (< 75 chars), eliminating tiny 1-2 word inferences!
+            batched_clauses = []
+            for cl in parsed_clauses:
+                if not batched_clauses:
+                    batched_clauses.append(cl)
+                    continue
+                prev = batched_clauses[-1]
+                combined_len = len(prev["text"]) + 1 + len(cl["text"])
+                same_or_compatible = (prev["emo"] == cl["emo"]) or (len(prev["text"]) < 65) or (len(cl["text"]) < 55)
+                if combined_len <= 235 and same_or_compatible:
+                    sep = " " if prev["text"].endswith((".", "!", "?", "…", ",", ";", ":")) else ". "
+                    prev["text"] = prev["text"] + sep + cl["text"]
+                    if cl["emo"] != "neutral" and prev["emo"] == "neutral":
+                        prev["emo"] = cl["emo"]
+                    prev["is_idea_highlight"] = prev["is_idea_highlight"] or cl["is_idea_highlight"]
+                    prev["is_khoan_cuoi"] = prev["is_khoan_cuoi"] or cl["is_khoan_cuoi"]
+                else:
+                    batched_clauses.append(cl)
+
+            for b_i, b_cl in enumerate(batched_clauses):
+                plan_items.append({
+                    "type": "speech",
+                    "clause": b_cl,
+                    "idx_in_para": b_i,
+                    "has_more_in_para": (b_i < len(batched_clauses) - 1),
+                })
+
+    speech_tasks = [it for it in plan_items if it["type"] == "speech"]
+    total_chunks = max(1, len(speech_tasks))
+    if progress_cb:
+        try:
+            progress_cb(0, total_chunks, f"Đang đọc bài, xin đợi giây lát... (0/{total_chunks} đoạn)")
+        except Exception:
+            pass
+
     with TTS_LOCK:
         resolved, vmeta = resolve_voice_strictly(tts, voice_id)
-
-        # 1. Remove any previously injected canned phrases ("Đáng chú ý nhất là,", "Thật sự ấn tượng,")
-        working_text = re.sub(
-            r"(?:À này,\s*|Và đặc biệt nhé,\s*|Đáng chú ý nhất là,\s*|Thật sự ấn tượng,\s*)",
-            "",
-            text.strip(),
-            flags=re.I,
-        )
-
-        # 2. Law 1 (Cross-Clause Attention & F0 Continuity):
-        # Convert short intra-sentence [breaktime=0.10s..0.38s] after commas/clauses back into natural commas ', '
-        # so the Transformer generates the entire sentence in one continuous breath arc (0% robot choppiness, 0% mid-sentence EOS beep!)
-        def _coalesce_short_breaks(m):
-            try:
-                val = float(m.group(1))
-            except Exception:
-                val = 0.25
-            if val < 0.42:
-                return " "
-            return f"[breaktime={val:.2f}s]"
-
-        working_text = re.sub(
-            r"\[break(?:time)?\s*=\s*([0-9.]+)\s*s?\]",
-            _coalesce_short_breaks,
-            working_text,
-            flags=re.I,
-        )
-
-        clean_text = convert_to_pure_vietnamese(working_text)
-
-        # Split only on long dramatic/paragraph [breaktime>=0.42s] tags
-        parts = re.split(r"\[break(?:time)?\s*=\s*([0-9.]+)\s*s?\]", clean_text, flags=re.I)
-        total_text_parts = (len(parts) + 1) // 2
-
         wav_segments = []
-        text_part_idx = 0
-        for idx, part in enumerate(parts):
-            if idx % 2 == 1:
-                try:
-                    sec = max(0.08, min(float(part), 15.0))
-                except Exception:
-                    sec = 0.45
-                wav_segments.append(np.zeros(int(sec * sr), dtype=np.float32))
+        done_speech = 0
+
+        for it in plan_items:
+            if it["type"] == "silence":
+                wav_segments.append(np.zeros(int(it["sec"] * sr), dtype=np.float32))
+                continue
+
+            cl = it["clause"]
+            sent_clean = cl["text"]
+            emo = cl["emo"]
+            is_idea_highlight = cl["is_idea_highlight"]
+            is_khoan_cuoi = cl["is_khoan_cuoi"]
+            s_i = it["idx_in_para"]
+
+            sent_speed_mul = 1.0
+            sent_pitch_st = 0.0
+            if emo == "comedy_stephen_chow":
+                t_samp, k_samp, p_samp, rep_samp = 0.82, 24, 0.93, 1.18
+                pause_after = 0.28
+                sent_speed_mul = 1.06 if (s_i % 2 == 0) else 0.97
+            elif emo == "comedy_truong_giang":
+                t_samp, k_samp, p_samp, rep_samp = 0.80, 22, 0.92, 1.18
+                pause_after = 0.32
+                sent_speed_mul = 1.04
+            elif emo == "horror_ngoc_ngan":
+                t_samp, k_samp, p_samp, rep_samp = 0.65, 14, 0.84, 1.20
+                pause_after = 0.76
+                sent_speed_mul = 0.91 if "!" not in sent_clean else 1.04
+            elif emo == "drama_chinh_kich":
+                t_samp, k_samp, p_samp, rep_samp = 0.74, 18, 0.89, 1.20
+                pause_after = 0.52
+                sent_speed_mul = 0.97 if "?" not in sent_clean else 1.02
+            elif emo == "epic_kinh_kich":
+                t_samp, k_samp, p_samp, rep_samp = 0.76, 20, 0.90, 1.22
+                pause_after = 0.48
+                sent_speed_mul = 1.03
+            elif emo in ("sad", "tragedy"):
+                t_samp, k_samp, p_samp, rep_samp = 0.67, 15, 0.85, 1.18
+                pause_after = 0.68
+                sent_speed_mul = 0.93
+            elif emo == "happy":
+                t_samp, k_samp, p_samp, rep_samp = 0.78, 22, 0.91, 1.18
+                pause_after = 0.33
+                sent_speed_mul = 1.04
+            elif emo == "insight":
+                t_samp, k_samp, p_samp, rep_samp = 0.70, 16, 0.88, 1.20
+                pause_after = 0.52
+                sent_speed_mul = 0.96
             else:
-                text_part_idx += 1
-                seg_txt = part.strip()
-                if not seg_txt:
-                    continue
+                t_samp, k_samp, p_samp, rep_samp = 0.73, 18, 0.89, 1.18
+                pause_after = 0.42
+                sent_speed_mul = 1.0
 
-                is_final_segment = (text_part_idx == total_text_parts)
-                # Split paragraph into individual sentences so each sentence has its own emotional rhythm & clean fade (0% internal chunk pop!)
-                raw_sents = [s.strip() for s in re.split(r"(?<=[.!?…])\s+|\n+", seg_txt) if s.strip()]
-                for s_i, sent_raw in enumerate(raw_sents):
-                    is_last_sent = is_final_segment and (s_i == len(raw_sents) - 1)
-                    emo = detect_sentence_emotion(sent_raw)
-                    # Check explicit persona/acting tags injected by the 108 Script Thinking Engine
-                    raw_low = sent_raw.lower()
-                    if any(k in raw_low for k in ("[châu tinh trì]", "[hài châu tinh trì]", "[chautinhtri]", "[hài lầy]", "[cười]")):
-                        emo = "comedy_stephen_chow"
-                    elif any(k in raw_low for k in ("[trường giang]", "[hài trường giang]", "[truonggiang]", "[tưng tửng]", "[hài đời thường]")):
-                        emo = "comedy_truong_giang"
-                    elif any(k in raw_low for k in ("[nguyễn ngọc ngạn]", "[truyện ma]", "[kinh dị]", "[rùng rợn]", "[ma mị]", "[thám tử]")):
-                        emo = "horror_ngoc_ngan"
-                    elif any(k in raw_low for k in ("[chính kịch]", "[điện ảnh]", "[tổng tài]", "[đối đầu]", "[cao trào]")):
-                        emo = "drama_chinh_kich"
-                    elif any(k in raw_low for k in ("[kinh kịch]", "[sử thi]", "[kiếm hiệp]", "[tiên hiệp]", "[hào hùng]", "[cung đấu]")):
-                        emo = "epic_kinh_kich"
-                    elif any(k in raw_low for k in ("[bi kịch]", "[nước mắt]", "[tuyệt vọng]", "[nghẹn ngào]")):
-                        emo = "tragedy"
+            seg_wav = tts.infer(
+                sent_clean,
+                voice=resolved,
+                temperature=t_samp,
+                top_k=k_samp,
+                top_p=p_samp,
+                repetition_penalty=rep_samp,
+                max_chars=260,
+                apply_watermark=False,
+            )
+            if len(seg_wav) > 0:
+                seg_wav = clean_eos_tail_and_fade(
+                    seg_wav,
+                    sr=sr,
+                    emotion=emo,
+                    is_idea_highlight=is_idea_highlight,
+                    is_final_clause=is_khoan_cuoi,
+                )
+                seg_wav = apply_persona_prosody_dsp(seg_wav, sr=sr, speed_mul=sent_speed_mul, pitch_st=sent_pitch_st)
+                wav_segments.append(seg_wav)
+                if it["has_more_in_para"]:
+                    wav_segments.append(np.zeros(int(pause_after * sr), dtype=np.float32))
 
-                    is_idea_highlight = bool(re.search(r"\[(nhấn mạnh|nhấn ý hay|cao trào|hưng phấn|vui|chính kịch|kinh kịch)\]", sent_raw, flags=re.I))
-                    is_khoan_cuoi = is_last_sent or (emo == "insight") or bool(re.search(r"\[(nhấn khoản cuối|nhận định)\]", sent_raw, flags=re.I))
-
-                    # CRITICAL: Preserve native VieNeu emotion tokens [cười] (<|emotion_1|>), [thở dài] (<|emotion_2|>), [hắng giọng] (<|emotion_3|>)
-                    # while stripping metadata bracket tags so the neural backbone receives the exact vocal acting cues!
-                    def _keep_native_emotion_cues(m):
-                        inner = m.group(1).strip().lower()
-                        if inner in ("cười", "cuoi", "chuckle"):
-                            return " [cười] "
-                        if inner in ("thở dài", "tho dai", "sigh", "nghẹn ngào"):
-                            return " [thở dài] "
-                        if inner in ("hắng giọng", "hang giong", "clear throat", "lấy hơi"):
-                            return " [hắng giọng] "
-                        return " "
-
-                    sent_clean = re.sub(r"\s*\[([^\]]+)\]\s*", _keep_native_emotion_cues, sent_raw)
-                    sent_clean = re.sub(r"\s+([,.;!?])", r"\1", sent_clean)
-                    sent_clean = re.sub(r"[ \t]+", " ", sent_clean).strip()
-                    if not sent_clean:
-                        continue
-
-                    # 108-Persona Neural Decoding & Micro-Prosody Manifold:
-                    sent_speed_mul = 1.0
-                    sent_pitch_st = 0.0
-                    if emo == "comedy_stephen_chow":
-                        t_samp, k_samp, p_samp, rep_samp = 0.82, 24, 0.93, 1.18
-                        pause_after = 0.28
-                        sent_speed_mul = 1.06 if (s_i % 2 == 0) else 0.97
-                    elif emo == "comedy_truong_giang":
-                        t_samp, k_samp, p_samp, rep_samp = 0.80, 22, 0.92, 1.18
-                        pause_after = 0.32
-                        sent_speed_mul = 1.04
-                    elif emo == "horror_ngoc_ngan":
-                        t_samp, k_samp, p_samp, rep_samp = 0.65, 14, 0.84, 1.20
-                        pause_after = 0.76
-                        sent_speed_mul = 0.91 if "!" not in sent_clean else 1.04
-                    elif emo == "drama_chinh_kich":
-                        t_samp, k_samp, p_samp, rep_samp = 0.74, 18, 0.89, 1.20
-                        pause_after = 0.52
-                        sent_speed_mul = 0.97 if "?" not in sent_clean else 1.02
-                    elif emo == "epic_kinh_kich":
-                        t_samp, k_samp, p_samp, rep_samp = 0.76, 20, 0.90, 1.22
-                        pause_after = 0.48
-                        sent_speed_mul = 1.03
-                    elif emo in ("sad", "tragedy"):
-                        t_samp, k_samp, p_samp, rep_samp = 0.67, 15, 0.85, 1.18
-                        pause_after = 0.68
-                        sent_speed_mul = 0.93
-                    elif emo == "happy":
-                        t_samp, k_samp, p_samp, rep_samp = 0.78, 22, 0.91, 1.18
-                        pause_after = 0.33
-                        sent_speed_mul = 1.04
-                    elif emo == "insight":
-                        t_samp, k_samp, p_samp, rep_samp = 0.70, 16, 0.88, 1.20
-                        pause_after = 0.52
-                        sent_speed_mul = 0.96
-                    else:
-                        t_samp, k_samp, p_samp, rep_samp = 0.73, 18, 0.89, 1.18
-                        pause_after = 0.42
-                        sent_speed_mul = 1.0
-
-                    seg_wav = tts.infer(
-                        sent_clean,
-                        voice=resolved,
-                        temperature=t_samp,
-                        top_k=k_samp,
-                        top_p=p_samp,
-                        repetition_penalty=rep_samp,
-                        max_chars=256,
-                        apply_watermark=False,
-                    )
-                    if len(seg_wav) > 0:
-                        seg_wav = clean_eos_tail_and_fade(
-                            seg_wav,
-                            sr=sr,
-                            emotion=emo,
-                            is_idea_highlight=is_idea_highlight,
-                            is_final_clause=is_khoan_cuoi,
-                        )
-                        seg_wav = apply_persona_prosody_dsp(seg_wav, sr=sr, speed_mul=sent_speed_mul, pitch_st=sent_pitch_st)
-                        wav_segments.append(seg_wav)
-                        if s_i < len(raw_sents) - 1:
-                            wav_segments.append(np.zeros(int(pause_after * sr), dtype=np.float32))
+            done_speech += 1
+            if progress_cb:
+                try:
+                    progress_cb(done_speech, total_chunks, f"Đang đọc bài, xin đợi giây lát... (Đoạn {done_speech}/{total_chunks})")
+                except Exception:
+                    pass
 
     if not wav_segments:
         raise ValueError("Không có nội dung văn bản hợp lệ để chuyển đổi.")
@@ -1831,13 +1912,16 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def _send_json(self, data: dict, status: int = 200):
-        raw = json.dumps(data, ensure_ascii=False).encode("utf-8")
-        self.send_response(status)
-        self._send_cors()
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(raw)))
-        self.end_headers()
-        self.wfile.write(raw)
+        try:
+            raw = json.dumps(data, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self._send_cors()
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
 
     def _serve_file(self, fpath: Path, content_type: str, download_name: str = ""):
         if not fpath.is_file():
@@ -1861,6 +1945,17 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
 
         if path in ("/", "/index.html", "/studio", "/studio/text-to-speech"):
             self._serve_file(SITE_DIR / "index.html", "text/html; charset=utf-8")
+            return
+
+        if path == "/api/tts_status":
+            job_id = qs.get("job_id", [""])[0].strip()
+            with TTS_JOBS_LOCK:
+                job = TTS_JOBS.get(job_id)
+                if not job:
+                    self._send_json({"ok": False, "error": "Không tìm thấy tiến trình đọc bài."}, status=404)
+                    return
+                payload = dict(job)
+            self._send_json(payload)
             return
 
         if path == "/api/health" or path == "/api/voices":
@@ -1929,6 +2024,87 @@ class VbeeStudioHandler(BaseHTTPRequestHandler):
                     "analysis": res_obj["analysis"],
                 }
             )
+            return
+
+        if path == "/api/tts_async":
+            text = str(body.get("text", "")).strip()
+            voice_id = str(body.get("voice", VOICE_CATALOG[0]["id"])).strip()
+            speed = float(body.get("speed", 1.0))
+            pitch = float(body.get("pitch", 0.0))
+            gain = float(body.get("gain", 0.0))
+            temp = float(body.get("temperature", 0.78))
+            break_comma = float(body.get("break_comma", 0.24))
+            break_period = float(body.get("break_period", 0.45))
+            out_format = str(body.get("format", "mp3"))
+            title = str(body.get("title", "")).strip()
+            auto_ai_mode = bool(body.get("auto_ai_mode", True))
+            auto_preset = str(body.get("auto_preset", "auto_human")).strip()
+
+            if not text:
+                self._send_json({"ok": False, "error": "Vui lòng nhập văn bản cần chuyển đổi."}, status=400)
+                return
+
+            job_id = f"job_{int(time.time() * 1000)}_{hashlib.blake2b((text[:64] + str(time.time())).encode('utf-8'), digest_size=3).hexdigest()}"
+            with TTS_JOBS_LOCK:
+                # Keep TTS_JOBS bounded
+                if len(TTS_JOBS) > 40:
+                    oldest_k = sorted(TTS_JOBS.keys())[0]
+                    TTS_JOBS.pop(oldest_k, None)
+                TTS_JOBS[job_id] = {
+                    "ok": True,
+                    "job_id": job_id,
+                    "status": "running",
+                    "done_chunks": 0,
+                    "total_chunks": 1,
+                    "percent": 6,
+                    "message": "Đang đọc bài, xin đợi giây lát...",
+                    "created_at": time.time(),
+                    "record": None,
+                    "error": None,
+                }
+
+            def _progress_update(done_c: int, total_c: int, msg: str):
+                pct = min(96, max(8, int(round(8 + 88 * (done_c / max(1, total_c))))))
+                with TTS_JOBS_LOCK:
+                    if job_id in TTS_JOBS:
+                        TTS_JOBS[job_id]["done_chunks"] = done_c
+                        TTS_JOBS[job_id]["total_chunks"] = total_c
+                        TTS_JOBS[job_id]["percent"] = pct
+                        TTS_JOBS[job_id]["message"] = msg
+
+            def _worker():
+                try:
+                    rec = synthesize_vbee_audio(
+                        text=text,
+                        voice_id=voice_id,
+                        speed=speed,
+                        pitch_semitones=pitch,
+                        gain_db=gain,
+                        temperature=temp,
+                        break_comma=break_comma,
+                        break_period=break_period,
+                        out_format=out_format,
+                        title=title,
+                        auto_ai_mode=auto_ai_mode,
+                        auto_preset=auto_preset,
+                        progress_cb=_progress_update,
+                    )
+                    with TTS_JOBS_LOCK:
+                        if job_id in TTS_JOBS:
+                            TTS_JOBS[job_id]["status"] = "done"
+                            TTS_JOBS[job_id]["percent"] = 100
+                            TTS_JOBS[job_id]["done_chunks"] = TTS_JOBS[job_id]["total_chunks"]
+                            TTS_JOBS[job_id]["message"] = "Đã đọc xong bài!"
+                            TTS_JOBS[job_id]["record"] = rec
+                except Exception as exc:
+                    with TTS_JOBS_LOCK:
+                        if job_id in TTS_JOBS:
+                            TTS_JOBS[job_id]["status"] = "error"
+                            TTS_JOBS[job_id]["error"] = str(exc)
+                            TTS_JOBS[job_id]["message"] = f"Lỗi: {exc}"
+
+            threading.Thread(target=_worker, daemon=True).start()
+            self._send_json({"ok": True, "job_id": job_id, "status": "running"})
             return
 
         if path == "/api/tts":
