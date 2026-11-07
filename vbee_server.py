@@ -324,7 +324,7 @@ def clean_and_reword_book_text(text: str) -> dict:
     # Strip inline footnote superscripts attached to words/quotes (e.g. Lincoln1, dây thép1, Nhà Trắng1, Mỹ kim1, tuyết”2., coi lại1”, Al Capone 1,)
     t, n_fn1 = re.subn(r"(?<=[a-zà-ỹ])[1-9](?=[,.;:!?”\"'\s]|$)", "", t)
     t, n_fn2 = re.subn(r"(?<=[”\"'])[1-9](?=[,.;:!?\s]|$)", "", t)
-    t, n_fn3 = re.subn(r"([A-ZÀ-Ỹ][a-zà-ỹ]+)\s+[1-9](?=[,.;:!?])", r"\1", t)
+    t, n_fn3 = re.subn(r"\b([A-Z][a-z]+\s+[A-Z][a-z]+)\s+[1-9](?=[,.;:!?])", r"\1", t)
     t, n_fn4 = re.subn(r"\(\s*\d{1,3}\s*\)", " ", t)
     removed_junk += (n_fn1 + n_fn2 + n_fn3 + n_fn4)
 
