@@ -2840,10 +2840,7 @@
       }
       .step-heading {
         font-size: 13.5px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 145px !important;
+        line-height: 1.3 !important;
       }
       label[for="recordTitle"], #recordTitle, .studio-bar-label {
         display: none !important;
@@ -2997,7 +2994,7 @@
           <input type="file" id="importAllInput" accept=".txt,.md,.srt,.csv,.tsv,.json,.pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.exr" class="visually-hidden">
           <label for="importAllInput" class="btn-hero-import" id="lblImportAll" title="Chọn file TXT, PDF, Word (.DOCX), Excel (.XLSX) hoặc Ảnh (.PNG/.JPG/.EXR) để đọc ngay">
             <span>📂</span>
-            <span>IMPORT FILE (PDF • TXT • WORD • EXCEL • ẢNH)</span>
+            <span>IMPORT FILE<span class="hide-on-mobile"> (PDF • TXT • WORD • EXCEL • ẢNH)</span></span>
           </label>
           <button type="button" class="sample-pill" id="btnQuickPaste" style="height:42px;border-color:#94a3b8 !important;color:#0f172a !important;">📋 Dán chữ</button>
           <button type="button" class="sample-pill" id="btnQuickClear" style="height:42px;border-color:#fca5a5 !important;color:#b91c1c !important;">🗑️ Xóa</button>
