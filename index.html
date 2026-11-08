@@ -6182,20 +6182,26 @@
         const fullUrl = resolveMediaUrl(url);
         document.getElementById("playerTitle").textContent = title;
         document.getElementById("playerVoice").textContent = "Nhân vật: " + voiceName + " • Tốc độ: " + Number(speedSlider.value).toFixed(2).replace(/\.00$/, ".0") + "x";
-        mainPlayer.preservesPitch = true;
-        mainPlayer.mozPreservesPitch = true;
-        mainPlayer.webkitPreservesPitch = true;
-        mainPlayer.playbackRate = 1.0;
-        mainPlayer.preservesPitch = true;
-        mainPlayer.mozPreservesPitch = true;
-        mainPlayer.webkitPreservesPitch = true;
-        mainPlayer.playbackRate = 1.0;
+        mainPlayer.muted = false;
+        mainPlayer.volume = 1.0;
         mainPlayer.preservesPitch = true;
         mainPlayer.mozPreservesPitch = true;
         mainPlayer.webkitPreservesPitch = true;
         mainPlayer.playbackRate = 1.0;
         mainPlayer.src = fullUrl;
-        mainPlayer.play().catch(() => {});
+        try { mainPlayer.load(); } catch (_) {}
+        const playPromise = mainPlayer.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch((err) => {
+            console.warn("Autoplay initial attempt blocked or pending canplay:", err);
+            mainPlayer.addEventListener("canplay", function _retryOnCanPlay() {
+              mainPlayer.removeEventListener("canplay", _retryOnCanPlay);
+              mainPlayer.muted = false;
+              mainPlayer.volume = 1.0;
+              mainPlayer.play().catch(() => {});
+            }, { once: true });
+          });
+        }
         const dlBtn = document.getElementById("playerDownloadBtn");
         const dlTarget = (opts && opts.downloadUrl) ? resolveMediaUrl(opts.downloadUrl) : fullUrl;
         dlBtn.href = dlTarget + (dlTarget.includes("?") ? "&dl=1" : "?dl=1");
@@ -6386,6 +6392,8 @@
           candidates.push(window.location.origin);
         }
 
+        // Priority #0: Direct Localhost Loopback (instant <2ms when running on Company PC, even from https://github.io)
+        candidates.push("http://127.0.0.1:8890");
         // Priority #1: Company PC RTX 5070 12GB CUDA Batch-32 Compute Server (Direct, GitHub & ntfy Live Relay)
         candidates.push("https://foot-west-couples-bacteria.trycloudflare.com");
         try {
@@ -6402,7 +6410,8 @@
         } catch (_) {}
         for (const tJsonUrl of [
           "/active_vietvoice_tunnel.json?t=" + Date.now(),
-          "https://raw.githubusercontent.com/trantrunghieuvns/vnievoices-app/main/active_vietvoice_tunnel.json?t=" + Date.now()
+          "https://raw.githubusercontent.com/trantrunghieuvns/vnievoices-app/main/active_vietvoice_tunnel.json?t=" + Date.now(),
+          "https://raw.githubusercontent.com/trantrunghieuvns/vnievoices-app/main/active_vbee_tunnel.json?t=" + Date.now()
         ]) {
           try {
             const jCtrl = new AbortController();
@@ -6714,7 +6723,7 @@
           } else {
             streamCtrl.sinceCursor = streamCtrl.queue.length;
           }
-          if (!streamCtrl.started && streamCtrl.queue.length > 0 && !isResumed) {
+          if (!streamCtrl.started && streamCtrl.queue.length > 0) {
             playStreamIndex(0);
           } else if (streamCtrl.waitingForWave && streamCtrl.currentIdx + 1 < streamCtrl.queue.length) {
             playStreamIndex(streamCtrl.currentIdx + 1);
@@ -6724,10 +6733,11 @@
         }
 
         let missingRetries = 0;
+        let netErrors = 0;
         try {
           if (!apiBaseUrl) await discoverCompanyServer();
           while (true) {
-            const pollDelay = streamCtrl.started ? 620 : 260;
+            const pollDelay = streamCtrl.started ? 500 : 220;
             await new Promise(r => setTimeout(r, pollDelay));
             let stRes = null;
             try {
@@ -6737,7 +6747,15 @@
                 "&since_chunk=" + streamCtrl.sinceCursor +
                 "&t=" + Date.now()
               );
+              netErrors = 0;
             } catch (_) {
+              netErrors++;
+              if (netErrors === 2) {
+                await discoverCompanyServer();
+              }
+              if (netErrors > 6) {
+                throw new Error("Mất kết nối tạm thời tới máy chủ âm thanh, đang chuyển sang luồng đọc trực tiếp.");
+              }
               continue;
             }
 
@@ -6838,53 +6856,77 @@
           hint.textContent = "⚠️ Máy chủ Cloud đang bận xử lý bài dài, em vui lòng bấm ĐỌC NGAY BÀI NÀY lại nhé! (" + err.message + ")";
         } finally {
           activePollingJobIds.delete(jobId);
-          btn.disabled = false;
-          spinner.style.display = "none";
-          icon.style.display = "inline";
-          lbl.textContent = "ĐỌC NGAY BÀI NÀY!";
+          if (btn) btn.disabled = false;
+          const topBtnEl = document.getElementById("btnTopReadNow");
+          if (topBtnEl) topBtnEl.disabled = false;
+          if (spinner) spinner.style.display = "none";
+          if (icon) icon.style.display = "inline";
+          if (lbl) lbl.textContent = "ĐỌC NGAY BÀI NÀY!";
         }
       }
 
       async function resumeBackgroundJobsOnLoad() {
-        const map = loadSavedBgJobs();
-        const now = Date.now();
-        const entries = Object.values(map).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-        for (const item of entries) {
-          if (!item || !item.jobId) continue;
-          // Ignore jobs older than 30 minutes
-          if (now - (item.createdAt || 0) > 30 * 60 * 1000) continue;
-          if (item.status === "running") {
-            monitorBackgroundJob(item.jobId, { resumedAfterReload: true });
-            return;
+        try {
+          localStorage.removeItem("vnievoices_bg_jobs_v2");
+          const map = loadSavedBgJobs();
+          const now = Date.now();
+          const entries = Object.values(map).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          for (const item of entries) {
+            if (!item || !item.jobId) continue;
+            // Only resume jobs created within the last 45 seconds so stale jobs never freeze the UI
+            if (now - (item.createdAt || 0) > 45 * 1000) continue;
+            if (item.status === "running") {
+              monitorBackgroundJob(item.jobId, { resumedAfterReload: true });
+              return;
+            }
           }
-          if (item.status === "done" && item.record && !item.notifiedDone) {
-            upsertBgJob(item.jobId, { notifiedDone: true });
-            updateBgSessionBannerUI("done", item, item.record);
-            playCompletionChime();
-            playAudioInStickyBar(item.record.audio_url, item.record.title, item.record.voice);
-            return;
-          }
-        }
+          localStorage.removeItem("vietvoice_bg_jobs_v2");
+        } catch (_) {}
       }
 
       async function triggerTtsSynthesis() {
         const hint = document.getElementById("statusHint");
         let cleanRaw = (ttsInput.value || "").trim();
         if (!cleanRaw) {
-          hint.textContent = "⚠️ Em hãy nhập, dán văn bản hoặc Import file TXT/PDF trước khi bấm ĐỌC NGAY nhé!";
+          hint.textContent = "⚠️ Vui lòng nhập, dán văn bản hoặc Import file TXT/PDF trước khi bấm ĐỌC NGAY!";
           ttsInput.focus();
           return;
         }
 
-        // Paint loading feedback in <16ms before running text sanitization on 40k+ words (INP < 50ms)
+        // 1. SYNCHRONOUS USER-GESTURE AUDIO UNLOCK (prevents Browser Autoplay Policy from muting/blocking async TTS chunks!)
+        try {
+          activePollingJobIds.clear();
+          activeStreamController = null;
+          localStorage.removeItem("vnievoices_bg_jobs_v2");
+          localStorage.removeItem("vietvoice_bg_jobs_v2");
+          mainPlayer.muted = false;
+          mainPlayer.volume = 1.0;
+          mainPlayer.preservesPitch = true;
+          mainPlayer.mozPreservesPitch = true;
+          mainPlayer.webkitPreservesPitch = true;
+          mainPlayer.playbackRate = 1.0;
+          const silentWav = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+          mainPlayer.src = silentWav;
+          const unlockPromise = mainPlayer.play();
+          if (unlockPromise && typeof unlockPromise.then === "function") {
+            unlockPromise.then(() => {
+              if (mainPlayer.src === silentWav) mainPlayer.pause();
+            }).catch(() => {});
+          }
+        } catch (_) {}
+
+        // 2. Paint loading feedback in <16ms before running text sanitization on 40k+ words (INP < 50ms)
         const btn = document.getElementById("btnSubmitTts");
+        const topBtn = document.getElementById("btnTopReadNow");
         const spinner = document.getElementById("ttsSpinner");
         const icon = document.getElementById("btnSubmitIcon");
         const lbl = document.getElementById("btnSubmitLabel");
-        btn.disabled = true;
-        spinner.style.display = "inline-block";
-        icon.style.display = "none";
-        lbl.textContent = "Đang nạp: 1%";
+        if (btn) btn.disabled = true;
+        if (topBtn) topBtn.disabled = true;
+        if (spinner) spinner.style.display = "inline-block";
+        if (icon) icon.style.display = "none";
+        if (lbl) lbl.textContent = "Đang nạp: 1%";
+        if (hint) hint.textContent = "⏳ Đang nạp: 1% — Đang khởi tạo giọng đọc Studio 44.1kHz...";
         setCompanionLoadingState(true, "Đang nạp: 1%", 1);
         await yieldToMain();
 
@@ -6961,20 +7003,55 @@
             headers: { "Content-Type": "application/json" },
             body: bodyStr
           };
-          // Use keepalive when payload < 55KB so browser completes the POST even if user presses F5 mid-request!
           if (bodyStr.length < 55000) {
             fetchOpts.keepalive = true;
           }
-          const startRes = await fetch((apiBaseUrl || "") + "/api/tts_async", fetchOpts);
-          if (startRes.ok) {
+          let startRes = null;
+          try {
+            startRes = await fetch((apiBaseUrl || "") + "/api/tts_async", fetchOpts);
+          } catch (_) {
+            await discoverCompanyServer();
+            startRes = await fetch((apiBaseUrl || "") + "/api/tts_async", fetchOpts);
+          }
+          if (startRes && startRes.ok) {
             const startData = await startRes.json();
             const actualJobId = (startData && startData.job_id) || clientJobId;
             await monitorBackgroundJob(actualJobId, { resumedAfterReload: false });
             return;
           }
+          // Direct /api/tts fallback if /api/tts_async returns non-200
+          const syncRes = await fetch((apiBaseUrl || "") + "/api/tts", fetchOpts);
+          if (syncRes && syncRes.ok) {
+            const syncData = await syncRes.json();
+            if (syncData && syncData.record && syncData.record.audio_url) {
+              setCompanionLoadingState(false, "", 100);
+              if (hint) hint.textContent = `🔊 Đang phát: "${syncData.record.title}" (${syncData.record.voice})`;
+              playAudioInStickyBar(syncData.record.audio_url, syncData.record.title, syncData.record.voice);
+              return;
+            }
+          }
         } catch (err) {
-          // Monitor will still attempt recovery or report cleanly
-          await monitorBackgroundJob(clientJobId, { resumedAfterReload: false });
+          try {
+            const syncRes = await fetch((apiBaseUrl || "") + "/api/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(reqPayload)
+            });
+            if (syncRes && syncRes.ok) {
+              const syncData = await syncRes.json();
+              if (syncData && syncData.record && syncData.record.audio_url) {
+                setCompanionLoadingState(false, "", 100);
+                if (hint) hint.textContent = `🔊 Đang phát: "${syncData.record.title}" (${syncData.record.voice})`;
+                playAudioInStickyBar(syncData.record.audio_url, syncData.record.title, syncData.record.voice);
+                return;
+              }
+            }
+          } catch (_) {}
+          setCompanionLoadingState(false, "", 0);
+          if (hint) hint.textContent = "⚠️ Không thể kết nối máy chủ đọc giọng. Vui lòng thử bấm BẤM ĐỌC NGAY! lại.";
+        } finally {
+          if (btn) btn.disabled = false;
+          if (topBtn) topBtn.disabled = false;
         }
       }
 
