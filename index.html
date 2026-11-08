@@ -2166,147 +2166,602 @@
 
   
     /* ══════════════════════════════════════════════════════════════════════════
-       PRO STUDIO 2-COLUMN DASHBOARD OVERHAUL (Fixes Blank Voice Cards & Clutter)
+       PRO STUDIO 2-COLUMN DASHBOARD OVERHAUL (100 Mobile-Friendly Web UI Layouts)
+       Benchmarked on ElevenLabs Studio • Speechify • Linear • Modern Web Guidance
        ══════════════════════════════════════════════════════════════════════════ */
+    :root {
+      --ui-bg: #f1f5f9;
+      --ui-card: #ffffff;
+      --ui-border: #e2e8f0;
+      --ui-border-strong: #cbd5e1;
+      --ui-text: #0f172a;
+      --ui-muted: #475569;
+      --ui-subtle: #64748b;
+      --ui-primary: #2563eb;
+      --ui-primary-soft: #eff6ff;
+      --ui-cta: #ea580c;
+    }
+
+    html {
+      container-type: scroll-state;
+      background: var(--ui-bg) !important;
+    }
+    body {
+      background: var(--ui-bg) !important;
+      color: var(--ui-text) !important;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      margin: 0 !important;
+      padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+
+    /* Fix blank cards: never use content-visibility:auto inside scrollable grids */
     .voice-grid, .voice-card, #personaGrid108, #historySection .drawer-body {
       content-visibility: visible !important;
       contain-intrinsic-size: none !important;
     }
-    /* Hide duplicate bottom floating dock & duplicate bottom action bar import/read buttons */
-    #floatingActionDock {
+
+    /* Hide duplicate bottom floating dock & redundant blocks */
+    #floatingActionDock,
+    #btnActionImportAll,
+    #btnSubmitTts,
+    .big-tabs-grid,
+    #btnToggleDrawer,
+    .voice-control-strip .sliders-wrap,
+    .step-badge {
       display: none !important;
     }
-    #btnActionImportAll, #btnSubmitTts {
+
+    /* 1. Single-Row Compact Sticky Header (< 54px, under 8% viewport height) */
+    .top-bar {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 200 !important;
+      min-height: 54px !important;
+      padding: 6px 18px !important;
+      background: rgba(15, 23, 42, 0.96) !important;
+      backdrop-filter: blur(12px) !important;
+      border-bottom: 1px solid #1e293b !important;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12) !important;
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      flex-wrap: nowrap !important;
+    }
+    .brand-wrap {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      flex-shrink: 0 !important;
+    }
+    .brand-icon {
+      width: 32px !important;
+      height: 32px !important;
+      border-radius: 9px !important;
+      background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
+      font-size: 16px !important;
+      box-shadow: none !important;
+    }
+    .brand-name {
+      font-size: 16px !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      color: #ffffff !important;
+    }
+    .brand-tagline {
       display: none !important;
     }
-    .big-action-bar {
-      margin-top: 10px !important;
-      padding: 10px 14px !important;
-      background: #f8fafc !important;
-      border: 1.5px solid #e2e8f0 !important;
-      border-radius: 12px !important;
+    .top-nav-pills {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    .top-nav-pills::-webkit-scrollbar {
+      display: none !important;
+    }
+    .nav-pill {
+      appearance: none !important;
+      background: rgba(255, 255, 255, 0.07) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #cbd5e1 !important;
+      padding: 6px 12px !important;
+      border-radius: 8px !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+      transition: background 0.15s, color 0.15s, border-color 0.15s !important;
+    }
+    .nav-pill:hover {
+      background: rgba(255, 255, 255, 0.14) !important;
+      color: #ffffff !important;
+    }
+    .nav-pill.is-active-tab {
+      background: #2563eb !important;
+      border-color: #60a5fa !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      box-shadow: 0 1px 4px rgba(37, 99, 235, 0.35) !important;
+    }
+
+    /* 2. Clean Studio Cards (Zero Rainbow Borders, Cohesive Slate & White Surface) */
+    .step-card {
+      background: var(--ui-card) !important;
+      border: 1px solid var(--ui-border) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04) !important;
+      padding: 16px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+    }
+    .step-header {
+      margin: 0 !important;
+      padding: 0 0 8px 0 !important;
+      border-bottom: 1px solid #f1f5f9 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
       gap: 10px !important;
       flex-wrap: wrap !important;
     }
+    .step-heading {
+      font-size: 15.5px !important;
+      font-weight: 800 !important;
+      color: var(--ui-text) !important;
+      letter-spacing: -0.01em !important;
+      margin: 0 !important;
+    }
+    #recordTitle {
+      border: 1px solid var(--ui-border-strong) !important;
+      background: #f8fafc !important;
+      border-radius: 8px !important;
+      padding: 5px 10px !important;
+      font-size: 12.5px !important;
+      font-weight: 600 !important;
+      color: var(--ui-text) !important;
+      width: 210px !important;
+    }
 
-    /* Studio Mode Master Bar & Speed Bar */
+    /* Reorder inside #ttsForm so Paper Textarea sits HIGH and uncluttered, with Studio Controls neatly organized */
+    #ttsForm > .step-header { order: 1; }
+    #ttsForm > #studioModeMasterBar { order: 2; }
+    #ttsForm > .studio-quick-samples-bar { order: 3; }
+    #ttsForm > textarea#ttsInput { order: 4; }
+    #ttsForm > .hero-command-bar { order: 5; }
+    #ttsForm > details.compact-secondary-tools { order: 6; }
+    #ttsForm > .big-action-bar { order: 7; }
+    #ttsForm > #aiAssessmentBox { order: 8; }
+    #ttsForm > #autoAiSection { order: 9; }
+
+    /* 3. Sleek Studio Mode & Speed Strip (Single Cohesive Surface) */
     .studio-mode-master-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      border: 1.5px solid #334155;
-      border-radius: 14px;
-      color: #f8fafc;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+      flex-wrap: wrap !important;
+      padding: 8px 10px !important;
+      margin: 0 !important;
+      background: #f8fafc !important;
+      border: 1px solid var(--ui-border) !important;
+      border-radius: 12px !important;
     }
     .studio-mode-group, .studio-speed-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
+      display: flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+      max-width: 100% !important;
+    }
+    .studio-mode-group::-webkit-scrollbar, .studio-speed-group::-webkit-scrollbar {
+      display: none !important;
     }
     .studio-bar-label {
-      font-size: 11.5px;
-      font-weight: 900;
-      letter-spacing: 0.03em;
-      color: #94a3b8;
-      margin-right: 2px;
-      white-space: nowrap;
+      font-size: 11px !important;
+      font-weight: 800 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.04em !important;
+      color: var(--ui-subtle) !important;
+      margin-right: 2px !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
     }
     .studio-mode-pill {
-      appearance: none;
-      border: 1.5px solid #475569;
-      background: #1e293b;
-      color: #e2e8f0;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 12.5px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: background 0.12s, border-color 0.12s, color 0.12s;
-      white-space: nowrap;
+      appearance: none !important;
+      border: 1px solid var(--ui-border-strong) !important;
+      background: #ffffff !important;
+      color: var(--ui-muted) !important;
+      padding: 5px 10px !important;
+      border-radius: 8px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+      transition: all 0.12s ease !important;
     }
     .studio-mode-pill:hover {
-      background: #334155;
-      border-color: #60a5fa;
-      color: #ffffff;
+      border-color: var(--ui-primary) !important;
+      color: var(--ui-primary) !important;
+      background: var(--ui-primary-soft) !important;
     }
     .studio-mode-pill.active {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-      border-color: #93c5fd;
-      color: #ffffff;
-      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+      background: var(--ui-text) !important;
+      border-color: var(--ui-text) !important;
+      color: #ffffff !important;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2) !important;
     }
     .studio-mode-pill[data-studio-mode="tvc_heroic"].active {
-      background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
-      border-color: #fca5a5;
-      box-shadow: 0 3px 10px rgba(220, 38, 38, 0.35);
+      background: #dc2626 !important;
+      border-color: #dc2626 !important;
     }
     .studio-mode-pill[data-studio-mode="tvc_inspiring"].active {
-      background: linear-gradient(135deg, #d97706 0%, #059669 100%);
-      border-color: #fde68a;
-      box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
+      background: #2563eb !important;
+      border-color: #2563eb !important;
+    }
+    .speed-chip {
+      border: 1px solid var(--ui-border-strong) !important;
+      background: #ffffff !important;
+      color: var(--ui-muted) !important;
+      padding: 4px 8px !important;
+      border-radius: 7px !important;
+      font-size: 11.5px !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
     }
     .speed-chip.is-active-spd {
-      background: #2563eb !important;
-      border-color: #93c5fd !important;
+      background: var(--ui-primary) !important;
+      border-color: var(--ui-primary) !important;
       color: #ffffff !important;
-      font-weight: 900 !important;
     }
     .studio-speed-badge {
-      font-size: 11.5px;
-      font-weight: 800;
-      color: #38bdf8;
-      background: rgba(15, 23, 42, 0.65);
-      border: 1px solid #0284c7;
-      padding: 4px 9px;
-      border-radius: 999px;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
-    .studio-quick-samples-bar {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      flex-wrap: wrap;
-      padding: 8px 12px;
-      margin-bottom: 10px;
-      background: #f8fafc;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 12px;
-    }
-    .studio-quick-samples-bar .studio-bar-label {
-      color: #475569;
-    }
-    .studio-sample-highlight-fire {
-      background: #fef2f2 !important;
-      border-color: #f87171 !important;
-      color: #b91c1c !important;
-      font-weight: 900 !important;
-    }
-    .studio-sample-highlight-gold {
-      background: #fffbeb !important;
-      border-color: #fbbf24 !important;
-      color: #92400e !important;
-      font-weight: 900 !important;
+      display: none !important;
     }
 
-    /* Clean Desktop 2-Column Studio Grid (@media min-width: 1080px) */
-    @media (min-width: 1080px) {
+    /* 4. Compact 1-Line Quick Sample Chips */
+    .studio-quick-samples-bar {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+      padding: 2px 0 !important;
+      margin: 0 !important;
+      background: transparent !important;
+      border: none !important;
+    }
+    .studio-quick-samples-bar::-webkit-scrollbar {
+      display: none !important;
+    }
+    .sample-pill {
+      border: 1px solid var(--ui-border-strong) !important;
+      background: #f8fafc !important;
+      color: var(--ui-muted) !important;
+      padding: 5px 10px !important;
+      border-radius: 999px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+      box-shadow: none !important;
+    }
+    .sample-pill:hover {
+      border-color: var(--ui-primary) !important;
+      color: var(--ui-primary) !important;
+      background: var(--ui-primary-soft) !important;
+    }
+    .studio-sample-highlight-fire {
+      background: #fff1f2 !important;
+      border-color: #fecdd3 !important;
+      color: #be123c !important;
+      font-weight: 700 !important;
+    }
+    .studio-sample-highlight-gold {
+      background: #eff6ff !important;
+      border-color: #bfdbfe !important;
+      color: #1d4ed8 !important;
+      font-weight: 700 !important;
+    }
+
+    /* 5. Spacious Paper Textarea (ElevenLabs / Notion Composer Canvas) */
+    .tts-textarea {
+      width: 100% !important;
+      min-height: 250px !important;
+      padding: 14px 16px !important;
+      margin: 0 !important;
+      border: 1.5px solid var(--ui-border-strong) !important;
+      border-radius: 12px !important;
+      background: #ffffff !important;
+      color: var(--ui-text) !important;
+      font-size: 15.5px !important;
+      line-height: 1.65 !important;
+      font-weight: 500 !important;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+      resize: vertical !important;
+      transition: border-color 0.15s, box-shadow 0.15s !important;
+    }
+    .tts-textarea:focus {
+      outline: none !important;
+      border-color: var(--ui-primary) !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
+    }
+
+    /* 6. Composer Bottom Action Bar (Hero Command Bar moved below Textarea like ChatGPT / ElevenLabs!) */
+    .hero-command-bar {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 10px !important;
+      flex-wrap: wrap !important;
+      padding: 10px 12px !important;
+      margin: 0 !important;
+      background: #f8fafc !important;
+      border: 1px solid var(--ui-border) !important;
+      border-radius: 12px !important;
+    }
+    .btn-hero-import {
+      height: 40px !important;
+      padding: 0 14px !important;
+      border-radius: 10px !important;
+      background: #ffffff !important;
+      border: 1.5px solid var(--ui-primary) !important;
+      color: var(--ui-primary) !important;
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
+      box-shadow: none !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      cursor: pointer !important;
+    }
+    .btn-hero-import:hover {
+      background: var(--ui-primary-soft) !important;
+    }
+    #btnQuickPaste, #btnQuickClear {
+      height: 40px !important;
+      padding: 0 12px !important;
+      border-radius: 10px !important;
+      font-size: 12.5px !important;
+    }
+    #btnTopReadNow {
+      height: 44px !important;
+      min-width: 190px !important;
+      padding: 0 22px !important;
+      border-radius: 10px !important;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      border: 1px solid #1e40af !important;
+      color: #ffffff !important;
+      font-size: 14px !important;
+      font-weight: 800 !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+    }
+    #btnTopReadNow:hover {
+      filter: brightness(1.06) !important;
+    }
+
+    /* Compact Secondary Tools & Status Footer */
+    details.compact-secondary-tools {
+      margin: 0 !important;
+      border: 1px solid var(--ui-border) !important;
+      border-radius: 10px !important;
+      background: #f8fafc !important;
+    }
+    details.compact-secondary-tools > summary {
+      padding: 7px 12px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      color: var(--ui-muted) !important;
+    }
+    .big-action-bar {
+      margin: 0 !important;
+      padding: 6px 10px !important;
+      background: transparent !important;
+      border: none !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 8px !important;
+    }
+
+    /* 7. Right Column: Voice Catalog (Clean Active Strip + 1-Row Filter + Compact 74px Voice Cards) */
+    .voice-control-strip {
+      padding: 10px 12px !important;
+      margin: 0 !important;
+      background: var(--ui-primary-soft) !important;
+      border: 1px solid #bfdbfe !important;
+      border-radius: 12px !important;
+    }
+    .char-avatar-lg {
+      width: 38px !important;
+      height: 38px !important;
+      border-radius: 10px !important;
+      font-size: 13.5px !important;
+      box-shadow: none !important;
+    }
+    #activeVoiceName {
+      font-size: 13.5px !important;
+      font-weight: 800 !important;
+      color: var(--ui-text) !important;
+    }
+    #activeVoiceMeta {
+      font-size: 11.5px !important;
+      color: var(--ui-muted) !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 1 !important;
+      -webkit-box-orient: vertical !important;
+      overflow: clip !important;
+    }
+    .filter-row-bar {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
+      margin: 0 0 8px 0 !important;
+    }
+    .filter-tabs {
+      display: flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      flex-wrap: nowrap !important;
+      overflow-x: auto !important;
+      scrollbar-width: none !important;
+      padding-bottom: 2px !important;
+    }
+    .filter-tabs::-webkit-scrollbar {
+      display: none !important;
+    }
+    .filter-tab {
+      border: 1px solid var(--ui-border-strong) !important;
+      background: #f8fafc !important;
+      color: var(--ui-muted) !important;
+      padding: 5px 10px !important;
+      border-radius: 8px !important;
+      font-size: 12px !important;
+      font-weight: 600 !important;
+      white-space: nowrap !important;
+      flex: 0 0 auto !important;
+    }
+    .filter-tab.active {
+      background: var(--ui-text) !important;
+      border-color: var(--ui-text) !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+    }
+    .search-voice-input {
+      width: 100% !important;
+      padding: 7px 12px !important;
+      border-radius: 9px !important;
+      border: 1px solid var(--ui-border-strong) !important;
+      background: #f8fafc !important;
+      font-size: 12.5px !important;
+    }
+
+    /* Compact Uniform Voice Cards (Murf / ElevenLabs Row-Card Architecture) */
+    .voice-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px !important;
+      max-height: 470px !important;
+      overflow-y: auto !important;
+      scrollbar-gutter: stable !important;
+      overscroll-behavior: contain !important;
+      padding: 2px !important;
+    }
+    .voice-card {
+      padding: 10px 12px !important;
+      border-radius: 12px !important;
+      border: 1px solid var(--ui-border) !important;
+      background: #ffffff !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      gap: 6px !important;
+      box-shadow: none !important;
+    }
+    .voice-card:hover {
+      border-color: #93c5fd !important;
+      background: #f8fafc !important;
+    }
+    .voice-card.selected {
+      border: 1.5px solid var(--ui-primary) !important;
+      background: var(--ui-primary-soft) !important;
+      box-shadow: none !important;
+    }
+    .vc-top {
+      display: flex !important;
+      align-items: center !important;
+      gap: 9px !important;
+    }
+    .vc-avatar {
+      width: 34px !important;
+      height: 34px !important;
+      border-radius: 9px !important;
+      font-size: 12px !important;
+      flex-shrink: 0 !important;
+    }
+    .vc-badge {
+      font-size: 10px !important;
+      padding: 1px 6px !important;
+      border-radius: 4px !important;
+      background: #f1f5f9 !important;
+      color: var(--ui-muted) !important;
+      font-weight: 700 !important;
+    }
+    .vc-name {
+      font-size: 12.5px !important;
+      font-weight: 700 !important;
+      color: var(--ui-text) !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 1 !important;
+      -webkit-box-orient: vertical !important;
+      overflow: clip !important;
+    }
+    .vc-desc {
+      font-size: 11px !important;
+      color: var(--ui-subtle) !important;
+      line-height: 1.35 !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 1 !important;
+      -webkit-box-orient: vertical !important;
+      overflow: clip !important;
+      margin: 0 !important;
+    }
+    .vc-actions {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 6px !important;
+      margin-top: 2px !important;
+    }
+    .btn-sample {
+      padding: 3px 8px !important;
+      border-radius: 6px !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+    }
+
+    /* Mobile Quick Voice Pill (Hidden on Desktop >= 1024px, Shown on Mobile < 1024px) */
+    .mobile-active-voice-pill {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--ui-primary-soft);
+      border: 1px solid #93c5fd;
+      color: var(--ui-primary);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .mav-change {
+      background: var(--ui-primary);
+      color: #ffffff;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10.5px;
+      font-weight: 700;
+    }
+
+    /* 8. Desktop 2-Column Split Layout (@media min-width: 1024px) */
+    @media (min-width: 1024px) {
       .main-wrap {
-        max-width: 1500px !important;
-        margin: 10px auto !important;
-        padding: 0 16px !important;
+        max-width: 1460px !important;
+        margin: 14px auto !important;
+        padding: 0 20px !important;
         display: grid !important;
-        grid-template-columns: minmax(0, 1.12fr) minmax(480px, 0.88fr) !important;
-        gap: 16px !important;
+        grid-template-columns: minmax(0, 1.18fr) minmax(440px, 0.82fr) !important;
+        gap: 18px !important;
         align-items: start !important;
       }
       #bgSessionBanner, #cloneSection, #historySection, #legalComplianceSection {
@@ -2315,126 +2770,109 @@
       #ttsForm {
         grid-column: 1 / 2 !important;
         margin: 0 !important;
-        padding: 14px 16px !important;
       }
       #voiceCatalogSection {
         grid-column: 2 / 3 !important;
         margin: 0 !important;
-        padding: 14px 16px !important;
         position: sticky !important;
-        top: 66px !important;
+        top: 68px !important;
+      }
+    }
+
+    /* 9. Mobile-First Ergonomic App Shell (@media max-width: 1023px) */
+    @media (max-width: 1023px) {
+      #btnActionImportAll, #btnSubmitTts, #floatingActionDock, .big-tabs-grid {
+        display: none !important;
+      }
+      .top-bar {
+        padding: 6px 10px !important;
+        min-height: 48px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+      }
+      .brand-name {
+        font-size: 14.5px !important;
+      }
+      .main-wrap {
+        margin: 8px auto !important;
+        padding: 0 8px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px !important;
+      }
+      .step-card {
+        padding: 12px !important;
+        border-radius: 14px !important;
+        gap: 8px !important;
       }
       .step-header {
-        margin-bottom: 8px !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 0 !important;
         padding-bottom: 6px !important;
       }
+      .step-header > div:last-child {
+        width: auto !important;
+      }
       .step-heading {
-        font-size: 16.5px !important;
+        font-size: 13.5px !important;
       }
-      .hero-command-bar {
-        padding: 8px 12px !important;
-        margin-bottom: 8px !important;
-        flex-wrap: nowrap !important;
+      label[for="recordTitle"], #recordTitle {
+        display: none !important;
       }
-      .btn-hero-import {
-        height: 42px !important;
-        padding: 0 14px !important;
-        font-size: 13px !important;
-      }
-      #btnTopReadNow {
-        height: 42px !important;
-        min-width: 185px !important;
-        padding: 0 18px !important;
-        font-size: 14px !important;
+      .mobile-active-voice-pill {
+        display: inline-flex !important;
       }
       .studio-mode-master-bar {
-        padding: 8px 12px !important;
-        margin-bottom: 8px !important;
+        padding: 6px 8px !important;
         gap: 6px !important;
-      }
-      .studio-quick-samples-bar {
-        padding: 6px 10px !important;
-        margin-bottom: 8px !important;
-      }
-      details.compact-secondary-tools {
-        margin-bottom: 8px !important;
-      }
-      details.compact-secondary-tools > summary {
-        padding: 6px 12px !important;
-        font-size: 12.5px !important;
       }
       .tts-textarea {
-        min-height: 240px !important;
-        height: 240px !important;
-        padding: 12px 14px !important;
-        font-size: 15px !important;
+        min-height: 185px !important;
+        max-height: 240px !important;
+        height: 185px !important;
+        font-size: 16px !important; /* Prevents iOS Safari auto-zoom on focus */
+        padding: 12px !important;
       }
-      /* Compact Right Column Header & Controls so 6-8 Voice Cards are visible above the fold */
-      .voice-control-strip {
-        padding: 8px 12px !important;
-        margin-bottom: 8px !important;
-        gap: 8px !important;
-      }
-      .char-avatar-lg {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 14px !important;
-      }
-      #activeVoiceName {
-        font-size: 14px !important;
-      }
-      #activeVoiceMeta {
-        font-size: 11.5px !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 1 !important;
-        -webkit-box-orient: vertical !important;
-        overflow: hidden !important;
-      }
-      .voice-control-strip .sliders-wrap {
-        display: none !important;
-      }
-      .big-tabs-grid {
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      .hero-command-bar {
+        padding: 8px !important;
         gap: 6px !important;
-        margin-bottom: 8px !important;
       }
-      .big-tab-btn {
-        padding: 7px 8px !important;
-        border-radius: 10px !important;
+      .hero-command-bar > div {
+        width: 100% !important;
+        display: flex !important;
+        gap: 6px !important;
+      }
+      .btn-hero-import {
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+        height: 40px !important;
         font-size: 12px !important;
       }
-      .big-tab-btn div div:nth-child(2) {
-        display: none !important;
+      #btnTopReadNow {
+        width: 100% !important;
+        height: 44px !important;
+        font-size: 14.5px !important;
+        justify-content: center !important;
       }
-      .filter-row-bar {
-        margin-bottom: 8px !important;
-        gap: 6px !important;
+      .big-action-bar {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 4px 6px !important;
       }
-      .filter-tab {
-        padding: 4px 9px !important;
-        font-size: 11.5px !important;
+      .big-action-bar > div {
+        width: auto !important;
       }
-      .search-voice-input {
+      #btnPreviewVoice {
+        flex: 0 0 auto !important;
         padding: 5px 10px !important;
-        font-size: 12px !important;
-        width: 170px !important;
+        font-size: 11.5px !important;
       }
       .voice-grid {
-        max-height: 460px !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        gap: 8px !important;
-        padding: 4px !important;
-      }
-      .voice-card {
-        padding: 10px 12px !important;
-        border-radius: 12px !important;
-      }
-      .vc-desc {
-        font-size: 11.5px !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-        overflow: hidden !important;
+        grid-template-columns: 1fr !important;
+        max-height: calc(100dvh - 230px) !important;
       }
     }
 
@@ -2492,6 +2930,11 @@
           <h1 class="step-heading">✍️ Chuyển Văn Bản Thành Giọng Nói AI Tiếng Việt &amp; Đọc Sách Nói Tự Nhiên</h1>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <button type="button" class="mobile-active-voice-pill" id="btnMobileSwitchVoice" title="Chạm để đổi giọng đọc (64 giọng)">
+            <span class="mav-dot">🎤</span>
+            <span id="mobileActiveVoiceLabel">Huỳnh Tấn Khang</span>
+            <span class="mav-change">Đổi giọng (64) ▾</span>
+          </button>
           <label for="recordTitle" style="font-size:13px;font-weight:800;color:#4c1d95;">Tên bài:</label>
           <input type="text" id="recordTitle" value="Bản Tin &amp; Sách Nói VietVoice AI" style="padding:7px 12px;border-radius:10px;border:2px solid #d8b4fe;font-size:13.5px;font-weight:800;width:260px;">
         </div>
@@ -2775,11 +3218,13 @@
       <div id="voiceDrawerPanel">
         <div class="filter-row-bar">
           <div class="filter-tabs" id="subFilterRow">
-            <button type="button" class="filter-tab active" data-sub="all">🌟 Xem tất cả</button>
-            <button type="button" class="filter-tab" data-sub="Miền Nam">🌴 Giọng Miền Nam</button>
-            <button type="button" class="filter-tab" data-sub="Miền Bắc">🌸 Giọng Miền Bắc</button>
-            <button type="button" class="filter-tab" data-sub="Nữ">👩 Chỉ Nữ</button>
-            <button type="button" class="filter-tab" data-sub="Nam">👨 Chỉ Nam</button>
+            <button type="button" class="filter-tab active" data-sub="all">🌟 Tất cả (64)</button>
+            <button type="button" class="filter-tab" data-sub="tvc">📢 TVC &amp; Bản Tin</button>
+            <button type="button" class="filter-tab" data-sub="podcast">📖 Sách &amp; Kể Chuyện</button>
+            <button type="button" class="filter-tab" data-sub="Miền Nam">🌴 Miền Nam</button>
+            <button type="button" class="filter-tab" data-sub="Miền Bắc">🌸 Miền Bắc</button>
+            <button type="button" class="filter-tab" data-sub="Nữ">👩 Nữ</button>
+            <button type="button" class="filter-tab" data-sub="Nam">👨 Nam</button>
           </div>
           <search style="display:flex;align-items:center;gap:8px;">
             <label for="voiceSearchInput" class="visually-hidden">Tìm tên nhân vật</label>
@@ -5651,6 +6096,8 @@
         av.textContent = initials(v.name);
         av.style.background = v.avatar_color || "#ff2a85";
         document.getElementById("activeVoiceName").textContent = v.name;
+        const mavLbl = document.getElementById("mobileActiveVoiceLabel");
+        if (mavLbl) mavLbl.textContent = v.name.split("—")[0].replace(/\(.*?\)/g, "").trim();
         document.getElementById("activeVoiceMeta").textContent = `${v.gender} · ${v.region} · ${v.style}`;
         renderVoiceGrid();
         if (!opts || !opts.skipSaveDraft) {
@@ -5733,11 +6180,8 @@
         const filtered = voicesList.filter(v => {
           const uc = getVoiceUseCase(v);
           const isClonedStar = (v.badge || "").includes("AI HỌC CẢ CÁI TÌNH") || (v.id || "") === "Xưa cũ";
-          if (currentMainTab === "tvc" && uc !== "tvc" && !isClonedStar) return false;
-          if (currentMainTab === "podcast" && uc !== "podcast" && !isClonedStar) return false;
-          if (currentMainTab === "Nữ" && v.gender !== "Nữ") return false;
-          if (currentMainTab === "Nam" && v.gender !== "Nam") return false;
-
+          if (currentSubFilter === "tvc" && uc !== "tvc" && !isClonedStar) return false;
+          if (currentSubFilter === "podcast" && uc !== "podcast" && !isClonedStar) return false;
           if (currentSubFilter === "Nữ" && v.gender !== "Nữ") return false;
           if (currentSubFilter === "Nam" && v.gender !== "Nam") return false;
           if (currentSubFilter === "Miền Nam" && !(v.region || "").includes("Miền Nam")) return false;
@@ -5774,7 +6218,12 @@
             if (ev.target.closest(".btn-sample")) return;
             const vid = card.getAttribute("data-vid");
             const v = voicesList.find(x => x.id === vid);
-            if (v) selectVoice(v, { autoRegenerate: true });
+            if (v) {
+              selectVoice(v, { autoRegenerate: true });
+              if (window.matchMedia("(max-width: 1023px)").matches) {
+                switchAppTab("main");
+              }
+            }
           });
         });
 
@@ -6604,10 +7053,15 @@
           techDiagEl.classList.toggle("tab-panel-hidden", tabName !== "legal");
         }
 
-        // Main reading & voice selection stay visible on 'main' and 'voices'
-        const showMainWorkspace = (tabName === "main" || tabName === "voices" || tabName === "acting");
-        if (ttsFormEl) ttsFormEl.classList.toggle("tab-panel-hidden", !showMainWorkspace);
-        if (voiceSecEl) voiceSecEl.classList.toggle("tab-panel-hidden", !(tabName === "main" || tabName === "voices"));
+        const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
+        if (isMobileViewport) {
+          if (ttsFormEl) ttsFormEl.classList.toggle("tab-panel-hidden", !(tabName === "main" || tabName === "acting"));
+          if (voiceSecEl) voiceSecEl.classList.toggle("tab-panel-hidden", tabName !== "voices");
+        } else {
+          const showMainWorkspace = (tabName === "main" || tabName === "voices" || tabName === "acting");
+          if (ttsFormEl) ttsFormEl.classList.toggle("tab-panel-hidden", !showMainWorkspace);
+          if (voiceSecEl) voiceSecEl.classList.toggle("tab-panel-hidden", !(tabName === "main" || tabName === "voices"));
+        }
 
         if (tabName === "voices" && voiceSecEl) {
           voiceSecEl.scrollIntoView({ behavior: "smooth" });
@@ -6661,6 +7115,8 @@
 
       document.getElementById("navTts").addEventListener("click", () => switchAppTab("main"));
       document.getElementById("navVoices").addEventListener("click", () => switchAppTab("voices"));
+      const btnMobV = document.getElementById("btnMobileSwitchVoice");
+      if (btnMobV) btnMobV.addEventListener("click", () => switchAppTab("voices"));
       document.getElementById("navAutoAi").addEventListener("click", () => switchAppTab("acting"));
       document.getElementById("navClone").addEventListener("click", () => switchAppTab("clone"));
       document.getElementById("navHistory").addEventListener("click", () => switchAppTab("history"));
