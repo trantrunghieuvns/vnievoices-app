@@ -2301,10 +2301,12 @@
     /* Clean Desktop 2-Column Studio Grid (@media min-width: 1080px) */
     @media (min-width: 1080px) {
       .main-wrap {
-        max-width: 1480px !important;
+        max-width: 1500px !important;
+        margin: 10px auto !important;
+        padding: 0 16px !important;
         display: grid !important;
-        grid-template-columns: minmax(0, 1.15fr) minmax(440px, 0.85fr) !important;
-        gap: 18px !important;
+        grid-template-columns: minmax(0, 1.12fr) minmax(480px, 0.88fr) !important;
+        gap: 16px !important;
         align-items: start !important;
       }
       #bgSessionBanner, #cloneSection, #historySection, #legalComplianceSection {
@@ -2313,19 +2315,126 @@
       #ttsForm {
         grid-column: 1 / 2 !important;
         margin: 0 !important;
+        padding: 14px 16px !important;
       }
       #voiceCatalogSection {
         grid-column: 2 / 3 !important;
         margin: 0 !important;
+        padding: 14px 16px !important;
         position: sticky !important;
-        top: 74px !important;
+        top: 66px !important;
+      }
+      .step-header {
+        margin-bottom: 8px !important;
+        padding-bottom: 6px !important;
+      }
+      .step-heading {
+        font-size: 16.5px !important;
+      }
+      .hero-command-bar {
+        padding: 8px 12px !important;
+        margin-bottom: 8px !important;
+        flex-wrap: nowrap !important;
+      }
+      .btn-hero-import {
+        height: 42px !important;
+        padding: 0 14px !important;
+        font-size: 13px !important;
+      }
+      #btnTopReadNow {
+        height: 42px !important;
+        min-width: 185px !important;
+        padding: 0 18px !important;
+        font-size: 14px !important;
+      }
+      .studio-mode-master-bar {
+        padding: 8px 12px !important;
+        margin-bottom: 8px !important;
+        gap: 6px !important;
+      }
+      .studio-quick-samples-bar {
+        padding: 6px 10px !important;
+        margin-bottom: 8px !important;
+      }
+      details.compact-secondary-tools {
+        margin-bottom: 8px !important;
+      }
+      details.compact-secondary-tools > summary {
+        padding: 6px 12px !important;
+        font-size: 12.5px !important;
       }
       .tts-textarea {
-        min-height: 250px !important;
+        min-height: 240px !important;
+        height: 240px !important;
+        padding: 12px 14px !important;
+        font-size: 15px !important;
+      }
+      /* Compact Right Column Header & Controls so 6-8 Voice Cards are visible above the fold */
+      .voice-control-strip {
+        padding: 8px 12px !important;
+        margin-bottom: 8px !important;
+        gap: 8px !important;
+      }
+      .char-avatar-lg {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 14px !important;
+      }
+      #activeVoiceName {
+        font-size: 14px !important;
+      }
+      #activeVoiceMeta {
+        font-size: 11.5px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+      }
+      .voice-control-strip .sliders-wrap {
+        display: none !important;
+      }
+      .big-tabs-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+      }
+      .big-tab-btn {
+        padding: 7px 8px !important;
+        border-radius: 10px !important;
+        font-size: 12px !important;
+      }
+      .big-tab-btn div div:nth-child(2) {
+        display: none !important;
+      }
+      .filter-row-bar {
+        margin-bottom: 8px !important;
+        gap: 6px !important;
+      }
+      .filter-tab {
+        padding: 4px 9px !important;
+        font-size: 11.5px !important;
+      }
+      .search-voice-input {
+        padding: 5px 10px !important;
+        font-size: 12px !important;
+        width: 170px !important;
       }
       .voice-grid {
-        max-height: 490px !important;
+        max-height: 460px !important;
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        padding: 4px !important;
+      }
+      .voice-card {
+        padding: 10px 12px !important;
+        border-radius: 12px !important;
+      }
+      .vc-desc {
+        font-size: 11.5px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
       }
     }
 
@@ -5578,6 +5687,10 @@
         const fullUrl = resolveMediaUrl(url);
         document.getElementById("playerTitle").textContent = title;
         document.getElementById("playerVoice").textContent = "Nhân vật: " + voiceName + " • Tốc độ: " + Number(speedSlider.value).toFixed(2).replace(/\.00$/, ".0") + "x";
+        mainPlayer.preservesPitch = true;
+        mainPlayer.mozPreservesPitch = true;
+        mainPlayer.webkitPreservesPitch = true;
+        mainPlayer.playbackRate = 1.0;
         mainPlayer.preservesPitch = true;
         mainPlayer.mozPreservesPitch = true;
         mainPlayer.webkitPreservesPitch = true;
