@@ -254,7 +254,8 @@ def clean_and_reword_book_text(text: str) -> dict:
             is_all_caps_line = (len(alpha_chars) >= 4) and all(c.isupper() for c in alpha_chars)
             is_short_title_line = (len(bl) <= 88) and not bl.endswith((",", ";", "–", "—", "-"))
             next_is_heading = (idx_bl + 1 < len(b_lines)) and bool(chapter_heading_re.match(b_lines[idx_bl + 1]))
-            if chapter_heading_re.match(bl) or is_all_caps_line or (is_short_title_line and (idx_bl == 0 or next_is_heading)):
+            prev_was_heading = (idx_bl > 0) and bool(chapter_heading_re.match(b_lines[idx_bl - 1]))
+            if chapter_heading_re.match(bl) or is_all_caps_line or (is_short_title_line and (idx_bl == 0 or next_is_heading or prev_was_heading)):
                 if cur_para:
                     p_prev = " ".join(cur_para)
                     if not p_prev.endswith((".", "!", "?", "…", "”", '"')):
@@ -329,6 +330,12 @@ def clean_and_reword_book_text(text: str) -> dict:
     )
     t = re.sub(r"\b(Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Hiệu\s+đính)\s*:\s*", r"\1, ", t, flags=re.I)
 
+    # Convert ALL-CAPS English words (e.g. HOW TO WIN FRIENDS and INFLUENCE PEOPLE) to Title Case / lowercase
+    # so sea_g2p reads them in fluent Academic English IPA instead of spelling out letters ("Hắc âu đấp bờ diêu")!
+    t_norm_caps, n_caps_fixed = normalize_allcaps_english_in_text(t)
+    t = t_norm_caps
+    reworded_items += n_caps_fixed
+
     # Insert natural reading comma before discourse connectors in long unpunctuated clauses (>= 38 chars without punctuation)
     t = re.sub(
         r"([^,.!?;:\n]{38,}?)\s+\b(nhưng|tuy nhiên|bởi vì|vì vậy|cho nên|mặc dù|không chỉ|mà còn|đồng thời|bên cạnh đó|chẳng hạn như)\b",
@@ -338,8 +345,8 @@ def clean_and_reword_book_text(text: str) -> dict:
     )
 
     reword_rules = [
-        (r"\b(?:ngày\s+)?(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b", r"ngày \1 tháng \2 năm \3"),
-        (r"\btháng\s+(\d{1,2})[/-](\d{4})\b", r"tháng \1 năm \2"),
+        (r"\b(?:[Nn]gày\s+)?(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b", r"ngày \1 tháng \2 năm \3"),
+        (r"\b[Tt]háng\s+(\d{1,2})[/-](\d{4})\b", r"tháng \1 năm \2"),
         (r"\b(\d{1,2})h(\d{2})\b", r"\1 giờ \2 phút"),
         (r"\b(\d{1,2})h\s*(sáng|trưa|chiều|tối|đêm)\b", r"\1 giờ \2"),
         (r"(\d+(?:[.,]\d+)?)\s*%", r"\1 phần trăm"),
@@ -1531,6 +1538,98 @@ def is_english_token(word: str) -> bool:
     return False
 
 
+TRUE_ACRONYMS_SET = {
+    "AI", "API", "CEO", "CFO", "CTO", "COO", "CMO", "GDP", "GNP", "PDF", "USA", "UK", "EU", "UN",
+    "WHO", "WTO", "IMF", "WB", "UNESCO", "UNICEF", "ASEAN", "NATO", "APEC", "OPEC", "FIFA", "UEFA",
+    "IOC", "NBA", "NFL", "VTV", "HTV", "VOV", "VTC", "SCTV", "THVL", "NXB", "UBND", "HĐND", "THPT",
+    "THCS", "CNTT", "BĐS", "TNHH", "MXH", "CHXHCN", "XHCN", "PGS", "TS", "THS", "BS", "TP", "HCM",
+    "ROI", "UI", "UX", "SEO", "KOL", "KOC", "KPI", "TVC", "PR", "HR", "QA", "QC", "USB", "CPU",
+    "GPU", "NPU", "TPU", "RAM", "ROM", "SSD", "HDD", "NVME", "LED", "LCD", "OLED", "AMOLED", "QLED",
+    "HDMI", "VGA", "LAN", "WAN", "VPN", "DNS", "IP", "TCP", "UDP", "HTTP", "HTTPS", "SSL", "TLS",
+    "SSH", "FTP", "SQL", "NOSQL", "HTML", "CSS", "XML", "JSON", "YAML", "CSV", "SDK", "CLI", "GUI",
+    "IDE", "OS", "IOS", "MACOS", "IOT", "IIOT", "AR", "VR", "MR", "XR", "LLM", "NLP", "OCR", "TTS",
+    "STT", "ASR", "GPT", "NFT", "DEFI", "DAO", "ETF", "IPO", "FDI", "ODA", "VAT", "PIT", "CIT",
+    "ATM", "POS", "OTP", "PIN", "SIM", "ESIM", "QR", "VIP", "VVIP", "OTA", "CRM", "ERP", "SCM",
+    "HRM", "CMS", "LMS", "SAAS", "PAAS", "IAAS", "AWS", "GCP", "USD", "VND", "EUR", "JPY", "GBP",
+}
+
+EN_FUNCTION_LOWER_SET = {
+    "to", "and", "of", "in", "on", "for", "with", "by", "at", "from", "the", "a", "an", "or", "as", "into", "onto", "upon"
+}
+
+
+def normalize_allcaps_english_in_text(text: str) -> tuple[str, int]:
+    """
+    Converts ALL-CAPS English words (e.g. 'HOW TO WIN FRIENDS and INFLUENCE PEOPLE') into
+    Title Case / lowercase ('How to Win Friends and Influence People') while preserving true acronyms
+    (AI, CEO, GDP, PDF, VTV...) and Vietnamese words. Prevents sea_g2p from spelling out ALL-CAPS
+    English words letter-by-letter in Vietnamese ('Hắc âu đấp bờ diêu').
+    """
+    if not text:
+        return text, 0
+    matches = list(re.finditer(r"[A-Za-zÀ-ỹ]+(?:['-][A-Za-zÀ-ỹ]+)*", text))
+    if not matches:
+        return text, 0
+
+    n = len(matches)
+    words = [m.group(0) for m in matches]
+    is_en_hint = []
+    for w in words:
+        low = w.lower()
+        if re.search(r"[À-ỹ]", w) or w.startswith(("VBEEACT", "VBEETAG")):
+            is_en_hint.append(False)
+        elif is_english_token(w) or low in ("and", "the", "for", "with", "from", "how", "win", "people", "friends", "influence"):
+            is_en_hint.append(True)
+        else:
+            is_en_hint.append(False)
+
+    replacements = {}
+    changed_count = 0
+    for i, m in enumerate(matches):
+        w = words[i]
+        # Only inspect ASCII ALL-CAPS words of length >= 2
+        if not (len(w) >= 2 and w.isascii() and w.isupper()):
+            continue
+        if w in TRUE_ACRONYMS_SET or w in ROMAN_MAP:
+            continue
+        # Must contain at least one English vowel (A, E, I, O, U, Y)
+        if not re.search(r"[AEIOUY]", w):
+            continue
+        low = w.lower()
+        near_en = (
+            (i > 0 and is_en_hint[i - 1])
+            or (i + 1 < n and is_en_hint[i + 1])
+            or (i > 1 and is_en_hint[i - 2])
+            or (i + 2 < n and is_en_hint[i + 2])
+        )
+        should_convert = False
+        if is_english_token(w):
+            should_convert = True
+        elif near_en and (low in AMBIGUOUS_EN_VN_MAP or low in EN_FUNCTION_LOWER_SET):
+            should_convert = True
+
+        if should_convert:
+            if low in EN_FUNCTION_LOWER_SET and i > 0 and is_en_hint[i - 1]:
+                replacements[i] = low
+            else:
+                replacements[i] = w.capitalize()
+            is_en_hint[i] = True
+            changed_count += 1
+
+    if not replacements:
+        return text, 0
+
+    out_parts = []
+    last_idx = 0
+    for i, m in enumerate(matches):
+        if i in replacements:
+            out_parts.append(text[last_idx : m.start()])
+            out_parts.append(replacements[i])
+            last_idx = m.end()
+    out_parts.append(text[last_idx:])
+    return "".join(out_parts), changed_count
+
+
 def translate_en_to_vi_text(text: str) -> str:
     """Translates English paragraphs/articles into natural Vietnamese via Google GTX endpoint with safe fallback."""
     if not text or not text.strip():
@@ -1941,6 +2040,10 @@ def convert_to_pure_vietnamese(text: str, skip_book_clean: bool = False) -> str:
     t = re.sub(r"\bHTV\b", "hát tê vê", t, flags=re.I)
     t = re.sub(r"\bRahula\b", "Ra hu la", t, flags=re.I)
     t = re.sub(r"\bRadula\b", "Ra hu la", t, flags=re.I)
+
+    # Convert any remaining ALL-CAPS English words (e.g. HOW TO WIN FRIENDS) to Title Case / lowercase
+    # so sea_g2p NEVER spells them out as Vietnamese letters ("Hắc âu đấp bờ diêu")!
+    t, _ = normalize_allcaps_english_in_text(t)
 
     # Uppercase English acronyms that collide with unaccented Vietnamese words -> wrap in <en>...</en> for authentic English letter pronunciation
     for acr in ("ROI", "UI", "UX", "SEO", "KOL", "KOC", "TVC", "PR", "HR", "QA", "QC"):
@@ -3298,6 +3401,7 @@ def load_jobs_state():
 
 
 _FOLEY_CACHE: dict[tuple, np.ndarray] = {}
+REAL_BREATHS_DIR = BASE_DIR / "voices_ref" / "real_breaths"
 
 
 def _get_natural_breath_wav(
@@ -3305,105 +3409,80 @@ def _get_natural_breath_wav(
     is_female: bool = False,
     variant: int = 0,
     intensity: float = 1.0,
+    voice_tone_st: float = 0.0,
 ) -> np.ndarray:
     """
-    Synthesize a 48,000 Hz subtle, physiological human vocal-tract inhalation breath (Klatt open-glottis model).
-    Produces an intimate, gentle 0.22s intake of breath (-32 dBFS, peak ~0.025) before speaking —
-    completely distinct from a sigh ([thở dài]) or throat-clear ([hắng giọng]).
+    Loads an authentic 48,000 Hz human inhalation breath extracted from YouTube
+    (https://youtube.com/shorts/kRYqDUFcH24 + studio human breath reference 7O6ec8IaBzc),
+    adapted into Male ('Nam') and Female ('Nữ') banks with per-character vocal-tract tone
+    shifts (voice_tone_st) and gentle, unobtrusive studio level ('có chừng mực').
     """
-    key = ("breath_v3", sr, bool(is_female), int(variant) % 4, round(float(intensity), 2))
+    v_idx = int(variant) % 3
+    tone_q = round(float(voice_tone_st), 1)
+    int_q = round(float(intensity), 2)
+    key = ("real_breath_v4", sr, bool(is_female), v_idx, int_q, tone_q)
     if key in _FOLEY_CACHE:
         return _FOLEY_CACHE[key]
 
-    rng = np.random.default_rng(seed=91023 + (100 if is_female else 0) + (int(variant) % 4) * 17)
-    dur_in = 0.22 + 0.02 * (int(variant) % 3)
-    n_in = int(round(dur_in * sr))
-    t = np.linspace(0.0, 1.0, n_in, endpoint=False, dtype=np.float32)
+    gender_tag = "female" if is_female else "male"
+    wav_path = REAL_BREATHS_DIR / f"breath_{gender_tag}_{v_idx}.wav"
+    out = None
+    if wav_path.is_file():
+        try:
+            import scipy.io.wavfile as _wavio
+            file_sr, raw_pcm = _wavio.read(str(wav_path))
+            w = raw_pcm.astype(np.float32) / 32768.0
+            if w.ndim > 1:
+                w = w.mean(axis=1)
+            # Apply subtle per-voice tone adaptation (voice_tone_st semitones) + target sample rate
+            pitch_factor = 2.0 ** (tone_q / 12.0)
+            target_len = max(64, int(round(len(w) * (float(sr) / float(file_sr)) / pitch_factor)))
+            if target_len != len(w):
+                w = scipy.signal.resample(w, target_len).astype(np.float32)
+            # Keep level gentle and moderate ('có chừng mực': peak ~0.014 - 0.018)
+            scale = max(0.50, min(float(intensity), 1.15)) * 0.88
+            out = (w * scale).astype(np.float32)
+        except Exception:
+            out = None
 
-    # Smooth inhalation envelope: gentle intake onset, peak at ~38% duration, soft taper into glottal closure
-    env = (np.power(np.maximum(t, 1e-4), 1.35) * np.exp(-3.8 * t))
-    env = env / (np.max(env) + 1e-8)
-    env *= np.sin(np.pi * t) ** 0.65
+    if out is None:
+        out = np.zeros(int(round(0.22 * sr)), dtype=np.float32)
 
-    white = rng.standard_normal(n_in).astype(np.float32)
-    pink = scipy.signal.lfilter([1.0], [1.0, -0.88], white).astype(np.float32)
-    pink = pink / (np.std(pink) + 1e-8)
-
-    f1 = (615.0 if is_female else 525.0) * (1.0 + 0.03 * (int(variant) % 3))
-    f2 = (1710.0 if is_female else 1490.0) * (1.0 + 0.02 * (int(variant) % 2))
-    f3 = (2760.0 if is_female else 2440.0)
-    nyq = 0.5 * sr
-
-    def _resonator(sig: np.ndarray, fc: float, bw: float, gain: float) -> np.ndarray:
-        low = max(40.0, fc - bw * 0.5) / nyq
-        high = min(nyq * 0.92, fc + bw * 0.5) / nyq
-        if low >= high:
-            return np.zeros_like(sig)
-        sos = scipy.signal.butter(2, [low, high], btype="bandpass", output="sos")
-        return scipy.signal.sosfilt(sos, sig).astype(np.float32) * gain
-
-    tract = (
-        _resonator(pink, f1, 190.0, 0.56)
-        + _resonator(pink, f2, 260.0, 0.92)
-        + _resonator(pink, f3, 380.0, 0.40)
-    )
-    tract = tract / (np.max(np.abs(tract)) + 1e-8)
-    breath = tract * env * float(0.025 * max(0.45, min(intensity, 1.35)))
-
-    pre_pad = np.zeros(int(round(0.045 * sr)), dtype=np.float32)
-    post_pad = np.zeros(int(round(0.055 * sr)), dtype=np.float32)
-    out = np.concatenate([pre_pad, breath.astype(np.float32), post_pad])
     _FOLEY_CACHE[key] = out
     return out
 
 
 def _get_page_turn_wav(sr: int = 48000, variant: int = 0) -> np.ndarray:
     """
-    Synthesize a 48,000 Hz realistic studio paper book page-turn sound:
-    1) Finger-tip paper edge catch (crisp cellulose micro-crinkle),
-    2) Arcing paper sheet slide (swept resonant air-paper friction),
-    3) Soft page settle onto the opposite stack.
+    Loads an authentic 48,000 Hz paper book page-turn sound extracted from YouTube
+    (https://youtu.be/p3QPVWRKago — ASMR Flipping Book), trimmed and leveled gently
+    ('có chừng mực, không quá hớp').
     """
-    key = ("page_turn_v3", sr, int(variant) % 3)
+    v_idx = int(variant) % 3
+    key = ("real_page_turn_v4", sr, v_idx)
     if key in _FOLEY_CACHE:
         return _FOLEY_CACHE[key]
 
-    rng = np.random.default_rng(seed=77401 + (int(variant) % 3) * 31)
-    dur = 0.44 + 0.03 * (int(variant) % 3)
-    n = int(round(dur * sr))
-    t = np.linspace(0.0, 1.0, n, endpoint=False, dtype=np.float32)
-    nyq = 0.5 * sr
+    wav_path = REAL_BREATHS_DIR / f"pageturn_real_{v_idx}.wav"
+    out = None
+    if wav_path.is_file():
+        try:
+            import scipy.io.wavfile as _wavio
+            file_sr, raw_pcm = _wavio.read(str(wav_path))
+            w = raw_pcm.astype(np.float32) / 32768.0
+            if w.ndim > 1:
+                w = w.mean(axis=1)
+            if file_sr != sr:
+                target_len = max(64, int(round(len(w) * (float(sr) / float(file_sr)))))
+                w = scipy.signal.resample(w, target_len).astype(np.float32)
+            # Gentle, unobtrusive studio level (peak ~0.022)
+            out = (w * 0.82).astype(np.float32)
+        except Exception:
+            out = None
 
-    noise = rng.standard_normal(n).astype(np.float32)
+    if out is None:
+        out = np.zeros(int(round(0.35 * sr)), dtype=np.float32)
 
-    # Phase 1: Initial finger-tip paper corner lift (0.00 - 0.16 of duration)
-    env_lift = np.exp(-((t - 0.08) / 0.042) ** 2).astype(np.float32)
-    sos_lift = scipy.signal.butter(2, [2200.0 / nyq, 6400.0 / nyq], btype="bandpass", output="sos")
-    crinkle_impulses = (rng.random(n) > 0.992).astype(np.float32) * rng.uniform(0.4, 1.0, n).astype(np.float32)
-    lift_sig = scipy.signal.sosfilt(sos_lift, noise * 0.45 + crinkle_impulses * 2.2).astype(np.float32) * env_lift
-
-    # Phase 2: Arcing page swoosh across air (0.14 - 0.74 of duration, dual-band swept texture)
-    env_arc_lo = np.exp(-((t - 0.34) / 0.16) ** 2).astype(np.float32)
-    env_arc_hi = np.exp(-((t - 0.46) / 0.14) ** 2).astype(np.float32)
-    sos_arc_lo = scipy.signal.butter(2, [750.0 / nyq, 2100.0 / nyq], btype="bandpass", output="sos")
-    sos_arc_hi = scipy.signal.butter(2, [1900.0 / nyq, 4800.0 / nyq], btype="bandpass", output="sos")
-    arc_sig = (
-        scipy.signal.sosfilt(sos_arc_lo, noise).astype(np.float32) * env_arc_lo * 0.65
-        + scipy.signal.sosfilt(sos_arc_hi, noise).astype(np.float32) * env_arc_hi * 0.80
-    )
-
-    # Phase 3: Soft paper page settle onto book (0.74 - 0.92 of duration)
-    env_settle = np.exp(-((t - 0.80) / 0.055) ** 2).astype(np.float32)
-    sos_settle = scipy.signal.butter(2, [260.0 / nyq, 1150.0 / nyq], btype="bandpass", output="sos")
-    settle_sig = scipy.signal.sosfilt(sos_settle, noise).astype(np.float32) * env_settle * 0.48
-
-    page_wav = lift_sig * 0.55 + arc_sig * 0.85 + settle_sig * 0.50
-    page_wav = page_wav / (np.max(np.abs(page_wav)) + 1e-8)
-    page_wav = (page_wav * 0.075).astype(np.float32)
-
-    pre_pad = np.zeros(int(round(0.08 * sr)), dtype=np.float32)
-    post_pad = np.zeros(int(round(0.09 * sr)), dtype=np.float32)
-    out = np.concatenate([pre_pad, page_wav, post_pad])
     _FOLEY_CACHE[key] = out
     return out
 
@@ -3836,13 +3915,18 @@ def synthesize_vbee_audio(
     speech_units = []
     pending_pre_silence = 0.0
     chars_since_page_turn = 0
+    chars_since_breath = 0
+    total_chars_planned = 0
+    # Compute a subtle per-character vocal-tract breath tone offset in [-1.1, +1.1] semitones so different Male/Female personas have distinct breath tones
+    voice_hash_int = int(hashlib.blake2b(str(resolved_voice).encode("utf-8"), digest_size=2).hexdigest(), 16)
+    voice_breath_tone_st = float((vmeta or {}).get("pitch_st", 0.0)) + ((voice_hash_int % 9) - 4) * 0.25
+
     for it in plan_items:
         if it["type"] == "silence":
             pending_pre_silence += float(it["sec"])
         else:
             cl = it["clause"]
             s_idx = it["speech_idx"]
-            p_idx = it.get("para_idx", 0)
             t_samp, k_samp, p_samp, rep_samp, pause_after, sent_speed_mul = _get_emotion_prosody_params(
                 cl["emo"], cl["text"], it["idx_in_para"]
             )
@@ -3850,22 +3934,35 @@ def synthesize_vbee_audio(
                 pause_after = max(pause_after, 0.44)
             eff_speed = round(max(0.55, min(2.4, base_speed_mul * sent_speed_mul)), 3)
 
-            # Determine automatic Book Page-Turn and Natural Human Inhalation Breath (never at 00:00 unless explicitly tagged)
-            do_page_turn = bool(cl.get("has_page_turn", False))
-            do_breath = bool(cl.get("has_breath", False))
+            # Strict Moderation ('Lấy có chừng mực. Bỏ vào có chừng mực chứ ko quá hớp sẽ khó cho ng nghe'):
+            # 1) Never insert automatic page-turns or breaths on short title/author/credit lines (use clean silence pauses instead).
+            # 2) Page-Turn: Only on explicit [lật sách] tag, OR at a true Chương/Phần/Chapter heading (after >= 70 chars of opening title/credits),
+            #    OR at a paragraph boundary after >= 1,100 chars (~1 printed page) in a long book.
+            # 3) Breath: Only on explicit [lấy hơi] tag, OR before a substantive narrative sentence (>= 85 chars) after >= 220 chars of continuous reading.
+            explicit_page_turn = bool(cl.get("has_page_turn", False))
+            explicit_breath = bool(cl.get("has_breath", False)) and not explicit_page_turn
+            do_page_turn = explicit_page_turn
+            do_breath = explicit_breath
             is_chapter_line = bool(re.match(r"^\s*(?:chương|phần|hồi|quyển|tập|chapter|part|lời mở đầu|lời nói đầu)\b", cl["text"], flags=re.I))
+            is_short_credit = bool(cl.get("is_heading_or_credit")) and not is_chapter_line
 
             if is_book_or_novel and s_idx > 0:
-                if is_chapter_line or (it["idx_in_para"] == 0 and (p_idx % 2 == 1 or chars_since_page_turn >= 420)):
+                if is_chapter_line and total_chars_planned >= 65 and chars_since_page_turn >= 65:
                     do_page_turn = True
-                    do_breath = True
                     chars_since_page_turn = 0
-                elif it["idx_in_para"] == 0 or len(cl["text"]) >= 90 or cl["emo"] in ("sad", "tragedy", "horror_ngoc_ngan", "drama_chinh_kich", "insight"):
+                elif it["idx_in_para"] == 0 and not is_short_credit and chars_since_page_turn >= 1100:
+                    do_page_turn = True
+                    chars_since_page_turn = 0
+                elif not do_page_turn and not is_short_credit and len(cl["text"]) >= 85 and chars_since_breath >= 210:
                     do_breath = True
-            elif s_idx > 0 and (len(cl["text"]) >= 105 or it["idx_in_para"] == 0):
+                    chars_since_breath = 0
+            elif s_idx > 0 and not is_short_credit and len(cl["text"]) >= 95 and chars_since_breath >= 230:
                 do_breath = True
+                chars_since_breath = 0
 
             chars_since_page_turn += len(cl["text"])
+            chars_since_breath += len(cl["text"])
+            total_chars_planned += len(cl["text"])
 
             speech_units.append({
                 "speech_idx": s_idx,
@@ -3892,7 +3989,7 @@ def synthesize_vbee_audio(
         """
         Synthesize a slice of speech_units using 100% Authentic 48kHz VieNeu-TTS v3 Turbo
         (RTX 5070 GPU Batch-32 CUDA Graph when available) with content-addressed .npy/.mp3 caching,
-        plus 48kHz Studio Book Page-Turn Foley and Subtle Human Inhalation Breath.
+        plus 48kHz Real Book Page-Turn Foley and Real Multi-Tone Human Inhalation Breath.
         """
         norm_texts = []
         for u in units_slice:
@@ -3908,7 +4005,7 @@ def synthesize_vbee_audio(
         missing_meta = {}
         for u, nt in zip(units_slice, norm_texts):
             ckey = hashlib.blake2b(
-                f"studio_v3_48k|{resolved_voice}|{u['eff_speed']}|{u['emo']}|{nt}".encode("utf-8"),
+                f"studio_v4_48k|{resolved_voice}|{u['eff_speed']}|{u['emo']}|{nt}".encode("utf-8"),
                 digest_size=10,
             ).hexdigest()
             cpath = SEG_CACHE_DIR / f"{ckey}.npy"
@@ -3979,7 +4076,7 @@ def synthesize_vbee_audio(
         unit_wavs = []
         for u, nt in zip(units_slice, norm_texts):
             ckey = hashlib.blake2b(
-                f"studio_v3_48k|{resolved_voice}|{u['eff_speed']}|{u['emo']}|{nt}".encode("utf-8"),
+                f"studio_v4_48k|{resolved_voice}|{u['eff_speed']}|{u['emo']}|{nt}".encode("utf-8"),
                 digest_size=10,
             ).hexdigest()
             sp_w = wav_map.get(ckey)
@@ -3996,7 +4093,8 @@ def synthesize_vbee_audio(
                         sr=sr,
                         is_female=is_female_voice,
                         variant=u["speech_idx"],
-                        intensity=0.92 if u["emo"] == "neutral" else 1.05,
+                        intensity=0.88 if u["emo"] == "neutral" else 0.98,
+                        voice_tone_st=voice_breath_tone_st,
                     )
                 )
             parts_w.append(sp_w)

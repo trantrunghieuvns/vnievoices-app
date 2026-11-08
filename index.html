@@ -4027,8 +4027,11 @@
           if (!bLines.length) continue;
           let curPara = [];
           let sentEndCount = 0;
-          for (let bl of bLines) {
-            if (isShortTitleOrCreditLine(bl)) {
+          for (let idxBl = 0; idxBl < bLines.length; idxBl++) {
+            let bl = bLines[idxBl];
+            const prevWasChapter = idxBl > 0 && chapterHeadingRe.test(bLines[idxBl - 1]);
+            const isChapterSubtitle = prevWasChapter && bl.length <= 88 && !/[,;–—-]$/.test(bl);
+            if (isShortTitleOrCreditLine(bl) || isChapterSubtitle) {
               if (curPara.length) {
                 let pJoin = curPara.join(" ");
                 if (!/[.!?…”"]$/.test(pJoin) && !/\x02VBEEACT\d+\x03$/.test(pJoin)) {
@@ -4082,13 +4085,52 @@
         t = t.replace(/\b([A-Z]{2,})\s+và\s+([A-Z]{2,})\b/g, (_, w1, w2) => { rewordedItems++; return `${w1} and ${w2}`; });
 
         // Smart inline reading-point insertion for unpunctuated title/author/translator/publisher transitions
-        t = t.replace(/(?<=[A-Za-zÀ-ỹ0-9])\s+(?=(?:Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Nhà\s+xuất\s+bản|NXB|Chương\s+\d+|Phần\s+\d+|HOW\s+TO\s+WIN|BÍ\s+QUYẾT\s+ĐỂ)(?:\s*[:,-]|\s+))/giu, () => {
+        t = t.replace(/(?<=[A-Za-zÀ-ỹ0-9])\s+(?=(?:Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Nhà\s+xuất\s+bản|NXB|Chương\s+\d+|Phần\s+\d+|HOW\s+TO\s+WIN|How\s+to\s+Win|BÍ\s+QUYẾT\s+ĐỂ)(?:\s*[:,-]|\s+))/giu, () => {
           rewordedItems++;
           return ". ";
         });
         t = t.replace(/(?:^|(?<=[\s.!?]))(Tác\s+giả|Dịch\s+giả|Người\s+dịch|Biên\s+dịch|Nhà\s+xuất\s+bản)\s*:\s*/giu, (_, lbl) => {
           rewordedItems++;
           return `${lbl}, `;
+        });
+
+        // Convert ALL-CAPS English words/titles (e.g. HOW TO WIN FRIENDS and INFLUENCE PEOPLE) to Title Case / lowercase
+        // so sea_g2p reads them in fluent Academic English IPA instead of spelling out letters ("Hắc âu đấp bờ diêu")!
+        const CLIENT_TRUE_ACRONYMS = new Set([
+          "AI","API","CEO","CFO","CTO","COO","CMO","GDP","GNP","PDF","USA","UK","EU","UN","WHO","WTO","IMF","WB",
+          "UNESCO","UNICEF","ASEAN","NATO","APEC","OPEC","FIFA","UEFA","IOC","NBA","NFL","VTV","HTV","VOV","VTC",
+          "NXB","UBND","HĐND","THPT","THCS","CNTT","BĐS","TNHH","MXH","CHXHCN","XHCN","PGS","TS","THS","BS","TP","HCM",
+          "ROI","UI","UX","SEO","KOL","KOC","KPI","TVC","PR","HR","QA","QC","USB","CPU","GPU","NPU","TPU","RAM","ROM",
+          "SSD","HDD","NVME","LED","LCD","OLED","AMOLED","QLED","HDMI","VGA","LAN","WAN","VPN","DNS","IP","TCP","UDP",
+          "HTTP","HTTPS","SSL","TLS","SSH","FTP","SQL","HTML","CSS","XML","JSON","YAML","CSV","SDK","CLI","GUI","IDE",
+          "OS","IOS","MACOS","IOT","AR","VR","MR","XR","LLM","NLP","OCR","TTS","STT","ASR","GPT","NFT","ETF","IPO",
+          "FDI","ODA","VAT","ATM","POS","OTP","PIN","SIM","QR","VIP","VVIP","OTA","CRM","ERP","AWS","GCP","USD","VND","EUR"
+        ]);
+        const CLIENT_EN_FUNC_LOWER = new Set(["to","and","of","in","on","for","with","by","at","from","the","a","an","or","as","into"]);
+        t = t.replace(/\b([A-Z]{2,})(?:\s+(?:and|or|to|of|in|on|for|with|[A-Z]{2,}))+\b/g, (span) => {
+          const toks = span.split(/\s+/);
+          const hasEnglishWord = toks.some(w => {
+            const up = w.toUpperCase();
+            if (CLIENT_TRUE_ACRONYMS.has(up) || ROMAN_CLIENT_MAP[up]) return false;
+            return isEnglishWordClient(w) || /^(?:HOW|WIN|FRIENDS|INFLUENCE|PEOPLE|BOOK|CHAPTER|PART|THE|WITH|FROM)$/i.test(w);
+          });
+          if (!hasEnglishWord) return span;
+          return toks.map((w, idx) => {
+            const up = w.toUpperCase();
+            if (CLIENT_TRUE_ACRONYMS.has(up) || ROMAN_CLIENT_MAP[up]) return w;
+            const low = w.toLowerCase();
+            if (idx > 0 && CLIENT_EN_FUNC_LOWER.has(low)) return low;
+            rewordedItems++;
+            return low.charAt(0).toUpperCase() + low.slice(1);
+          }).join(" ");
+        });
+        t = t.replace(/\b([A-Z]{3,})\b/g, (w) => {
+          if (CLIENT_TRUE_ACRONYMS.has(w) || ROMAN_CLIENT_MAP[w] || !/[AEIOUY]/.test(w)) return w;
+          if (isEnglishWordClient(w)) {
+            rewordedItems++;
+            return w.charAt(0) + w.slice(1).toLowerCase();
+          }
+          return w;
         });
 
         const clientRewordRules = [
