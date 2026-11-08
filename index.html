@@ -2164,6 +2164,171 @@
       display: none !important;
     }
 
+  
+    /* ══════════════════════════════════════════════════════════════════════════
+       PRO STUDIO 2-COLUMN DASHBOARD OVERHAUL (Fixes Blank Voice Cards & Clutter)
+       ══════════════════════════════════════════════════════════════════════════ */
+    .voice-grid, .voice-card, #personaGrid108, #historySection .drawer-body {
+      content-visibility: visible !important;
+      contain-intrinsic-size: none !important;
+    }
+    /* Hide duplicate bottom floating dock & duplicate bottom action bar import/read buttons */
+    #floatingActionDock {
+      display: none !important;
+    }
+    #btnActionImportAll, #btnSubmitTts {
+      display: none !important;
+    }
+    .big-action-bar {
+      margin-top: 10px !important;
+      padding: 10px 14px !important;
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 10px !important;
+      flex-wrap: wrap !important;
+    }
+
+    /* Studio Mode Master Bar & Speed Bar */
+    .studio-mode-master-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      border: 1.5px solid #334155;
+      border-radius: 14px;
+      color: #f8fafc;
+    }
+    .studio-mode-group, .studio-speed-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .studio-bar-label {
+      font-size: 11.5px;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+      color: #94a3b8;
+      margin-right: 2px;
+      white-space: nowrap;
+    }
+    .studio-mode-pill {
+      appearance: none;
+      border: 1.5px solid #475569;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+      white-space: nowrap;
+    }
+    .studio-mode-pill:hover {
+      background: #334155;
+      border-color: #60a5fa;
+      color: #ffffff;
+    }
+    .studio-mode-pill.active {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border-color: #93c5fd;
+      color: #ffffff;
+      box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);
+    }
+    .studio-mode-pill[data-studio-mode="tvc_heroic"].active {
+      background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+      border-color: #fca5a5;
+      box-shadow: 0 3px 10px rgba(220, 38, 38, 0.35);
+    }
+    .studio-mode-pill[data-studio-mode="tvc_inspiring"].active {
+      background: linear-gradient(135deg, #d97706 0%, #059669 100%);
+      border-color: #fde68a;
+      box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
+    }
+    .speed-chip.is-active-spd {
+      background: #2563eb !important;
+      border-color: #93c5fd !important;
+      color: #ffffff !important;
+      font-weight: 900 !important;
+    }
+    .studio-speed-badge {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid #0284c7;
+      padding: 4px 9px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .studio-quick-samples-bar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+    }
+    .studio-quick-samples-bar .studio-bar-label {
+      color: #475569;
+    }
+    .studio-sample-highlight-fire {
+      background: #fef2f2 !important;
+      border-color: #f87171 !important;
+      color: #b91c1c !important;
+      font-weight: 900 !important;
+    }
+    .studio-sample-highlight-gold {
+      background: #fffbeb !important;
+      border-color: #fbbf24 !important;
+      color: #92400e !important;
+      font-weight: 900 !important;
+    }
+
+    /* Clean Desktop 2-Column Studio Grid (@media min-width: 1080px) */
+    @media (min-width: 1080px) {
+      .main-wrap {
+        max-width: 1480px !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.15fr) minmax(440px, 0.85fr) !important;
+        gap: 18px !important;
+        align-items: start !important;
+      }
+      #bgSessionBanner, #cloneSection, #historySection, #legalComplianceSection {
+        grid-column: 1 / -1 !important;
+      }
+      #ttsForm {
+        grid-column: 1 / 2 !important;
+        margin: 0 !important;
+      }
+      #voiceCatalogSection {
+        grid-column: 2 / 3 !important;
+        margin: 0 !important;
+        position: sticky !important;
+        top: 74px !important;
+      }
+      .tts-textarea {
+        min-height: 250px !important;
+      }
+      .voice-grid {
+        max-height: 490px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+    }
+
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
 </head>
@@ -2240,6 +2405,37 @@
             <span id="btnTopReadNowLabel">BẤM ĐỌC NGAY!</span>
           </button>
         </div>
+      </div>
+
+            <!-- STUDIO MASTERING MODE BAR (Trong Vang Phòng Thu • TVC Hào Hùng • TVC Cảm Hứng • Sách Nói • Tốc Độ Giữ Nguyên Pitch) -->
+      <div class="studio-mode-master-bar" id="studioModeMasterBar">
+        <div class="studio-mode-group">
+          <span class="studio-bar-label">🎛️ CHẾ ĐỘ PHÒNG THU:</span>
+          <button type="button" class="studio-mode-pill active" data-studio-mode="studio_clear" title="Âm thanh Condenser U87 44.1kHz trong vang, sáng rõ">🎙️ Studio Trong Vang</button>
+          <button type="button" class="studio-mode-pill" data-studio-mode="tvc_heroic" title="Đọc TVC Hào Hùng, Khí Thế, Sử Thi đầy nội lực">🔥 TVC Hào Hùng</button>
+          <button type="button" class="studio-mode-pill" data-studio-mode="tvc_inspiring" title="Đọc TVC Truyền Cảm Hứng, Ấm Áp, Bay Bổng">✨ TVC Cảm Hứng</button>
+          <button type="button" class="studio-mode-pill" data-studio-mode="audiobook_deep" title="Đọc Sách Nói Chậm Rãi, Trầm Ấm, Sâu Lắng">📖 Sách Nói Sâu Lắng</button>
+          <button type="button" class="studio-mode-pill" data-studio-mode="review_fast" title="Đọc Tin Tức & Review Nhanh, Rõ Chữ">⚡ Review &amp; Tin Tức</button>
+        </div>
+        <div class="studio-speed-group">
+          <span class="studio-bar-label">⏩ TỐC ĐỘ (0% MÉO GIỌNG):</span>
+          <button type="button" class="speed-chip speed-quick-btn" data-spd="0.85">0.85x Chậm</button>
+          <button type="button" class="speed-chip speed-quick-btn is-active-spd" data-spd="1.0">1.0x Chuẩn</button>
+          <button type="button" class="speed-chip speed-quick-btn" data-spd="1.15">1.15x</button>
+          <button type="button" class="speed-chip speed-quick-btn" data-spd="1.25">1.25x TVC</button>
+          <button type="button" class="speed-chip speed-quick-btn" data-spd="1.5">1.5x Nhanh</button>
+          <span id="topSpeedValBadge" class="studio-speed-badge">1.0x (Giữ nguyên Pitch)</span>
+        </div>
+      </div>
+
+      <!-- 1-CLICK SAMPLE SCRIPTS BAR (TVC Hào Hùng, TVC Cảm Hứng, Sách Nói, Hài Châu Tinh Trì) -->
+      <div class="studio-quick-samples-bar">
+        <span class="studio-bar-label">✨ KỊCH BẢN MẪU 1-CLICK:</span>
+        <button type="button" class="sample-pill studio-sample-highlight-fire" data-tpl="tvc_heroic">🔥 Mẫu TVC Hào Hùng</button>
+        <button type="button" class="sample-pill studio-sample-highlight-gold" data-tpl="tvc_inspiring">✨ Mẫu TVC Truyền Cảm Hứng</button>
+        <button type="button" class="sample-pill" data-tpl="audiobook_deep">📖 Mẫu Sách Nói Kẻ Trộm Hương</button>
+        <button type="button" class="sample-pill" data-tpl="hai_tinh_bo">🎬 Mẫu Châu Tinh Trì</button>
+        <button type="button" class="sample-pill" data-tpl="tvc_sale">📢 Mẫu TVC Siêu Sale</button>
       </div>
 
       <!-- Compact Secondary Tools (Dán Link Báo & Bài Mẫu — Thu gọn mặc định để giao diện thoáng sạch) -->
@@ -3550,6 +3746,27 @@
 ];
 
       const TEMPLATES = {
+        tvc_heroic: {
+          title: "TVC Hào Hùng — Khát Vọng Vươn Tầm Việt Nam",
+          voice: "Đặng Quốc Khánh — Nam Ký Sự & Tài Liệu Bắc",
+          preset: "tvc_heroic",
+          personaId: "P061",
+          text: "Từ những bước chân kiên cường vượt qua muôn trùng thử thách, bản lĩnh Việt Nam chưa bao giờ khuất phục! Hôm nay, ngọn lửa khát vọng lại bùng lên mạnh mẽ hơn bao giờ hết. Vững vàng nội lực, bứt phá giới hạn, cùng kiến tạo kỷ nguyên vươn mình rực rỡ!"
+        },
+        tvc_inspiring: {
+          title: "TVC Truyền Cảm Hứng — Đánh Thức Hành Trình Mới",
+          voice: "Huỳnh Tấn Khang — Nam Kể Chuyện & Tâm Sự Đời Sống (Miền Nam)",
+          preset: "tvc_inspiring",
+          personaId: "P085",
+          text: "Mỗi buổi sớm mai thức dậy là một cơ hội để bạn viết tiếp ước mơ của chính mình. Đừng sợ những bước đi chậm rãi, chỉ cần trái tim bạn luôn hướng về phía ánh sáng. Hãy lắng nghe thanh âm trong trẻo của cuộc sống và bắt đầu hành trình rực rỡ ngay hôm nay."
+        },
+        audiobook_deep: {
+          title: "Sách Nói Sâu Lắng — Kẻ Trộm Hương",
+          voice: "Huỳnh Tấn Khang — Nam Kể Chuyện & Tâm Sự Đời Sống (Miền Nam)",
+          preset: "audiobook_deep",
+          personaId: "P085",
+          text: "Trong căn phòng cổ tĩnh lặng, từng trang sách cũ khẽ mở ra như đưa ta trở về những tháng năm xa xôi. Hương thời gian dịu dàng thấm vào từng con chữ, chậm rãi, ấm áp và đi sâu vào lòng người."
+        },
         hai_tinh_bo: {
           title: "Tuyệt Đỉnh Công Phu — Hài Tỉnh Bơ Điện Ảnh",
           voice: "Huỳnh Tấn Khang — Nam Kể Chuyện & Tâm Sự Đời Sống (Miền Nam)",
@@ -3639,10 +3856,22 @@
       const aiEmotionStatsBadge = document.getElementById("aiEmotionStatsBadge");
 
       function applySpeedValue(val, regenerateIfInstant) {
-        const num = Math.max(0.5, Math.min(4.9, Number(val) || 1.0));
+        const num = Math.max(0.5, Math.min(2.0, Number(val) || 1.0));
         speedSlider.value = String(num);
         const formatted = num.toFixed(2).replace(/\.00$/, ".0") + "x";
-        document.getElementById("speedVal").textContent = formatted;
+        const spdValEl = document.getElementById("speedVal");
+        if (spdValEl) spdValEl.textContent = formatted;
+        const topSpdValEl = document.getElementById("topSpeedValBadge");
+        if (topSpdValEl) topSpdValEl.textContent = formatted + " (Giữ nguyên Pitch)";
+        document.querySelectorAll(".speed-quick-btn").forEach(b => {
+          const bSpd = parseFloat(b.getAttribute("data-spd") || "0");
+          b.classList.toggle("is-active-spd", Math.abs(bSpd - num) < 0.02);
+        });
+        if (mainPlayer) {
+          mainPlayer.preservesPitch = true;
+          mainPlayer.mozPreservesPitch = true;
+          mainPlayer.webkitPreservesPitch = true;
+        }
         if (regenerateIfInstant && instantRegenCheckbox && instantRegenCheckbox.checked) {
           triggerTtsSynthesis();
         }
@@ -5279,7 +5508,10 @@
           const tpl = TEMPLATES[btn.getAttribute("data-tpl")];
           if (!tpl) return;
           recordTitle.value = tpl.title;
-          currentPreset = tpl.preset || "human_rewrite";
+          currentPreset = tpl.preset || "studio_clear";
+          document.querySelectorAll(".studio-mode-pill").forEach(b => {
+            b.classList.toggle("active", b.getAttribute("data-studio-mode") === currentPreset);
+          });
           selectedPersonaId = tpl.personaId || "AUTO";
           renderPersonaBrowser();
           ttsInput.value = stripAllTechnicalTagsForDisplay(tpl.text);
@@ -5346,6 +5578,14 @@
         const fullUrl = resolveMediaUrl(url);
         document.getElementById("playerTitle").textContent = title;
         document.getElementById("playerVoice").textContent = "Nhân vật: " + voiceName + " • Tốc độ: " + Number(speedSlider.value).toFixed(2).replace(/\.00$/, ".0") + "x";
+        mainPlayer.preservesPitch = true;
+        mainPlayer.mozPreservesPitch = true;
+        mainPlayer.webkitPreservesPitch = true;
+        mainPlayer.playbackRate = 1.0;
+        mainPlayer.preservesPitch = true;
+        mainPlayer.mozPreservesPitch = true;
+        mainPlayer.webkitPreservesPitch = true;
+        mainPlayer.playbackRate = 1.0;
         mainPlayer.src = fullUrl;
         mainPlayer.play().catch(() => {});
         const dlBtn = document.getElementById("playerDownloadBtn");
@@ -5536,11 +5776,23 @@
           candidates.push(window.location.origin);
         }
 
-        // Priority #1: Company PC RTX 5070 12GB CUDA Batch-32 Compute Server (Direct & active_vietvoice_tunnel.json)
+        // Priority #1: Company PC RTX 5070 12GB CUDA Batch-32 Compute Server (Direct, GitHub & ntfy Live Relay)
         candidates.push("https://foot-west-couples-bacteria.trycloudflare.com");
+        try {
+          const nCtrl = new AbortController();
+          const nTimer = setTimeout(() => nCtrl.abort(), 1400);
+          const rn = await fetch("https://ntfy.sh/vietvoice_rtx5070_compute/raw?poll=1&since=48h", { signal: nCtrl.signal });
+          clearTimeout(nTimer);
+          if (rn.ok) {
+            const rawLines = (await rn.text()).trim().split(/\r?\n/).map(s => s.trim()).filter(s => s.startsWith("https://") && s.includes(".trycloudflare.com"));
+            if (rawLines.length) {
+              candidates.unshift(rawLines[rawLines.length - 1]);
+            }
+          }
+        } catch (_) {}
         for (const tJsonUrl of [
           "/active_vietvoice_tunnel.json?t=" + Date.now(),
-          "https://raw.githubusercontent.com/trantrunghieuvns/vietvoice-app/main/active_vietvoice_tunnel.json?t=" + Date.now()
+          "https://raw.githubusercontent.com/trantrunghieuvns/vnievoices-app/main/active_vietvoice_tunnel.json?t=" + Date.now()
         ]) {
           try {
             const jCtrl = new AbortController();
@@ -6022,8 +6274,8 @@
         btn.disabled = true;
         spinner.style.display = "inline-block";
         icon.style.display = "none";
-        lbl.textContent = "⚡ HyperStream 40K: Đang tách câu mở đầu (< 1s)...";
-        setCompanionLoadingState(true, "⚡ HyperStream 40K: Đang tách câu mở đầu để phát ngay (< 1s)...", 1);
+        lbl.textContent = "Đang nạp: 1%";
+        setCompanionLoadingState(true, "Đang nạp: 1%", 1);
         await yieldToMain();
 
         // MANDATORY PRE-READ SANITIZATION & RE-WORDING:
@@ -6261,6 +6513,37 @@
       window.switchAppTab = switchAppTab;
 
       // Initialize default clean Main Workspace tab on load
+            // Bind 5-Mode Studio Mastering & Acting Selector Pills
+      document.querySelectorAll(".studio-mode-pill").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".studio-mode-pill").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const mode = btn.getAttribute("data-studio-mode") || "studio_clear";
+          currentPreset = mode;
+          if (mode === "tvc_heroic") {
+            selectedPersonaId = "P061";
+          } else if (mode === "tvc_inspiring") {
+            selectedPersonaId = "P085";
+          } else if (mode === "audiobook_deep") {
+            selectedPersonaId = "P085";
+          } else {
+            selectedPersonaId = "AUTO";
+          }
+          const hintEl = document.getElementById("statusHint");
+          const modeLabels = {
+            studio_clear: "🎙️ Studio Trong Vang (44.1kHz)",
+            tvc_heroic: "🔥 TVC Hào Hùng & Khí Thế",
+            tvc_inspiring: "✨ TVC Truyền Cảm Hứng",
+            audiobook_deep: "📖 Sách Nói Sâu Lắng",
+            review_fast: "⚡ Review & Tin Tức"
+          };
+          if (hintEl) hintEl.textContent = modeLabels[mode] || "🎙️ Studio Trong Vang";
+          if (instantRegenCheckbox && instantRegenCheckbox.checked && (ttsInput.value || "").trim()) {
+            triggerTtsSynthesis();
+          }
+        });
+      });
+
       switchAppTab("main");
 
       document.getElementById("navTts").addEventListener("click", () => switchAppTab("main"));
