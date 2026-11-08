@@ -4,5 +4,6 @@
   "tunnel_url": "https://encoding-hawaii-overseas-past.trycloudflare.com",
   "tailscale_url": "http://100.68.114.94:8890",
   "lan_url": "http://192.168.100.164:8890",
-  "updated_at": "2026-11-08 20:15:48"
+  "updated_at": "2026-11-08 20:15:48",
+  "url": "https://encoding-hawaii-overseas-past.trycloudflare.com"
 }
